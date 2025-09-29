@@ -287,7 +287,8 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:pass%403264@localhost:3306/hospital_management"
+  // url      = "mysql://root:pass%403264@localhost:3306/hospital_management"
+  url      = "mysql://schoolAttendance:Sensarsoft%40123@[2a02:4780:12:f6a7::1]:3306/hospital_management"
 }
 
 enum HospitalStatus {
