@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
-import { AdminStratorService } from "./adminstrator.service";
+import { AdminStratorService } from "./AdminStrator.Service";
 
 @Controller("adminstrators")
 export class AdminStratorController {

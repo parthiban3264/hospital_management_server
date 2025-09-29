@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
-import { ConsultationService } from "./consultation.service";
+import { ConsultationService } from "./Consultation.Service";
 
 @Controller("consultations")
 export class ConsultationController {

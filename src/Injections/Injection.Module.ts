@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { InjectionService } from "./injection.service";
-import { InjectionController } from "./injection.controller";
+import { InjectionService } from "./Injection.Service";
+import { InjectionController } from "./Injection.controller";
 
 @Module({
   controllers: [InjectionController],

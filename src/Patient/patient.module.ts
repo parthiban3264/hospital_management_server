@@ -12,7 +12,7 @@ import { Module } from '@nestjs/common';
 
 import { PatientController } from './patient.controller';
 import { PrismaService } from '../prisma/prisma.service';
-import { PatientService } from './patientservice';
+import { PatientService } from './PatientService';
 
 @Module({
   controllers: [PatientController],

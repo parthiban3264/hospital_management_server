@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
-import { InjectionService } from "./injection.service";
+import { InjectionService } from "./Injection.Service";
 
 @Controller("injections")
 export class InjectionController {

@@ -6,7 +6,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { UserModule } from './Users/user.module';
 import { PatientModule } from './Patient/patient.module';
 import { AdminModule } from './Admins/admin.module';
-import { AdminStratorModule } from './AdminStrator/adminstrator.module';
+import { AdminStratorModule } from './AdminStrator/Adminstrator.module';
 import { ConsultationModule } from './Consultation/Consultation.Module';
 import { TreatmentModule } from './Treatments/Treatment.Module';
 import { MedicianModule } from './Medicians/Medician.Module';
