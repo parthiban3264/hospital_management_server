@@ -8,7 +8,7 @@ import { JwtStrategy } from "../jwt/jwt.strategy";
 @Module({
   imports: [
      JwtModule.register({
-      secret: "46501720c4de4deea09d4f960fa2313f",
+      secret: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEyMywiaWF0IjoxNzU5NzQ0ODQ0LCJleHAiOjE3NjQ5Mjg4NDR9.rgToyms64UJEpp4iekgzeJ5YXUcPZpjOn8s8S7j1x4E",
       signOptions: { expiresIn: "60d" },
     }),
   ],
