@@ -338,7 +338,7 @@ model Hospital {
 model User {
   id           Int         @id @default(autoincrement())
   hospital_Id  Int
-  user_Id      Int
+  user_Id      String  @unique 
   password     String
   role         String
   AdminStrator AdminStrator[]
@@ -350,7 +350,7 @@ model User {
 model Admin {
   id             Int         @id @default(autoincrement())
   hospital_Id    Int
-  user_Id        Int
+  user_Id        String
   name           String
   designation    String      // was 'destination'
   phone          String
@@ -361,16 +361,17 @@ model Admin {
   gender         String
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-  Consultation   Consultation[]
+  Consultation   Consultation[] @relation("Doctor_Consultations")
   Doctor         Treatment[] @relation("Doctor_Treatment")
   Staff          Treatment[] @relation("Staff_Treatment")
-  Hospital       Hospital    @relation(fields: [hospital_Id], references: [id])
-  User           User        @relation(fields: [user_Id], references: [id])
+  Hospital       Hospital    @relation(fields: [hospital_Id], references: [id ])
+  User           User        @relation(fields: [user_Id], references: [user_Id])
+   @@unique([hospital_Id, user_Id])
 }
 
 model AdminStrator {
   id           Int     @id @default(autoincrement())
-  user_Id      Int
+  user_Id      String
   name         String
   status       String
   designation  String  // was 'destination'
@@ -379,46 +380,133 @@ model AdminStrator {
   photo        String
   address      String
   gender       String
-  User         User    @relation(fields: [user_Id], references: [id])
+  User         User    @relation(fields: [user_Id], references: [user_Id ])
 }
 
+// model Patient {
+//   id                  Int                  @id @default(autoincrement())
+//   hospital_Id         Int
+//   user_Id             String 
+//   name                String
+//   phone               Json                
+//   email               Json                 
+//   photo               String?
+//   status              PatientStatus @default(ACTIVE)              
+//   address             Json?
+//   dob                 DateTime
+//   gender              String?
+//   bldGrp              String?
+//   currentProblem      String?
+//   medicalHistory      String?
+//   height              Float?
+//   weight              Float?
+//   bp                  String?             
+//   sugar               String?             
+//   custom              Json?
+//   tempCreatedAt       DateTime
+//   createdAt           DateTime             @default(now())
+//   updatedAt           DateTime             @updatedAt
+//   Consultation        Consultation[]        @relation("Patient_Consultations")
+//   Treatment           Treatment[]
+//   MedicineAndInjection MedicineAndInjection[]
+//   TestingAndScanning  TestingAndScanningPatient[]
+//   Payments            Payment[]
+//   Hospital            Hospital           @relation(fields: [hospital_Id], references: [id ])
+//   User                User                 @relation(fields: [user_Id], references: [user_Id ])
+//   @@unique([ hospital_Id, user_Id ])
+// }
+
 model Patient {
-  id                  Int                  @id @default(autoincrement())
-  hospital_Id         Int
-  user_Id             Int
-  name                String
-  phone               Json                
-  email               Json                 
-  photo               String?
-  status              PatientStatus @default(ACTIVE)              
-  address             Json?
-  dob                 DateTime
-  gender              String?
-  bldGrp              String?
-  currentProblem      String?
-  medicalHistory      String?
-  height              Float?
-  weight              Float?
-  bp                  String?             
-  sugar               String?             
-  custom              Json?
-  tempCreatedAt       DateTime
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  Consultation        Consultation[]
-  Treatment           Treatment[]
-  MedicineAndInjection MedicineAndInjection[]
-  TestingAndScanning  TestingAndScanningPatient[]
-  Payments            Payment[]
-  Hospital            Hospital             @relation(fields: [hospital_Id], references: [id])
-  User                User                 @relation(fields: [user_Id], references: [id])
+  id                   Int                      @id @default(autoincrement())
+  hospital_Id          Int
+  user_Id              String
+  name                 String
+  phone                Json
+  email                Json
+  photo                String?
+  status               PatientStatus @default(ACTIVE)
+  address              Json?
+  dob                  DateTime
+  gender               String?
+  bldGrp               String?
+  currentProblem       String?
+  medicalHistory       String?
+  height               Float?
+  weight               Float?
+  bp                   String?
+  sugar                String?
+  custom               Json?
+  tempCreatedAt        DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  Consultation         Consultation[]           @relation("Patient_Consultations")  // ✅ array
+  Treatment            Treatment[]
+  MedicineAndInjection MedicineAndInjection[] @relation("Patient_MedicineAndInjection")
+  TestingAndScanning   TestingAndScanningPatient[]
+  Payments             Payment[]
+
+  Hospital             Hospital @relation(fields: [hospital_Id], references: [id])
+  User                 User     @relation(fields: [user_Id], references: [user_Id])
+
+  @@unique([hospital_Id, user_Id])
 }
+
+
+// model Consultation {
+//   id                Int         @id @default(autoincrement())
+//   hospital_Id       Int
+//   patient_Id        String 
+//   doctor_Id         String  
+//   date              DateTime
+//   purpose           String
+//   temperature       Float
+//   symptoms          String
+//   notes             Json
+//   diagnosis         String
+//   treatment         Boolean
+//   medicineInjection Boolean
+//   scanningTesting   Boolean
+//   status            String      // consider enum
+//   access            Json
+//   createdAt         DateTime    @default(now())
+//   updatedAt         DateTime    @updatedAt
+//   paymentStatus     Boolean
+//   Hospital          Hospital    @relation(fields: [hospital_Id], references: [id])
+//   Patient           Patient     @relation(fields: [patient_Id], references: [user_Id])
+//   Doctor            Admin       @relation(fields: [doctor_Id], references: [user_Id])
+// }
+
+// model Consultation {
+//   id                Int         @id @default(autoincrement())
+//   hospital_Id       Int
+//   patient_Id        String
+//   doctor_Id         String
+//   date              DateTime
+//   purpose           String
+//   temperature       Float
+//   symptoms          String
+//   notes             Json
+//   diagnosis         String
+//   treatment         Boolean
+//   medicineInjection Boolean
+//   scanningTesting   Boolean
+//   status            String      // consider enum
+//   access            Json
+//   createdAt         DateTime    @default(now())
+//   updatedAt         DateTime    @updatedAt
+//   paymentStatus     Boolean
+
+//   Hospital          Hospital    @relation(fields: [hospital_Id], references: [id])
+//   Patient           Patient     @relation("Patient_Consultations", fields: [patient_Id], references: [user_Id])
+//   Doctor            Admin       @relation("Doctor_Consultations", fields: [doctor_Id], references: [user_Id])
+// }
 
 model Consultation {
   id                Int         @id @default(autoincrement())
   hospital_Id       Int
-  patient_Id        Int
-  doctor_Id         Int
+  patient_Id        String
+  doctor_Id         String
   date              DateTime
   purpose           String
   temperature       Float
@@ -428,15 +516,18 @@ model Consultation {
   treatment         Boolean
   medicineInjection Boolean
   scanningTesting   Boolean
-  status            String      // consider enum
+  status            String
   access            Json
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   paymentStatus     Boolean
-  Hospital          Hospital    @relation(fields: [hospital_Id], references: [id])
-  Patient           Patient     @relation(fields: [patient_Id], references: [id])
-  Doctor            Admin       @relation(fields: [doctor_Id], references: [id])
+
+  Hospital          Hospital @relation(fields: [hospital_Id], references: [id])
+  Patient           Patient  @relation("Patient_Consultations", fields: [patient_Id,hospital_Id], references: [user_Id,hospital_Id])
+  Doctor            Admin    @relation("Doctor_Consultations", fields: [doctor_Id,hospital_Id], references: [user_Id,hospital_Id])
 }
+
+
 
 model Treatment {
   id             Int         @id @default(autoincrement())
@@ -494,7 +585,7 @@ model TestingAndScanningHospital {
 model MedicineAndInjection {
   id                 Int         @id @default(autoincrement())
   hospital_Id        Int
-  patient_Id         Int
+  patient_Id         String
   doctor_Id          Json        // Array/object
   staff_Id           Json        // Array/object
   medicine_Id        Json        // Array/object
@@ -507,7 +598,7 @@ model MedicineAndInjection {
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
   Hospital           Hospital    @relation(fields: [hospital_Id], references: [id])
-  Patient            Patient     @relation(fields: [patient_Id], references: [id])
+  Patient            Patient     @relation("Patient_MedicineAndInjection",fields: [patient_Id,hospital_Id], references: [user_Id,hospital_Id])
   Medician           Medician[]  @relation("MedicineAndInjection_Medician")
   Injection          Injection[] @relation("Injection_MedicineAndInjection")
 }
@@ -515,7 +606,7 @@ model MedicineAndInjection {
 model TestingAndScanningPatient {
   id            Int         @id @default(autoincrement())
   hospital_Id   Int
-  patient_Id    Int
+  patient_Id    String
   doctor_Id     Json        // Array/object
   staff_Id      Json        // Array/object
   title         String
@@ -525,13 +616,13 @@ model TestingAndScanningPatient {
   paymentStatus Boolean
   result        String
   Hospital      Hospital    @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient     @relation(fields: [patient_Id], references: [id])
+  Patient       Patient     @relation(fields: [patient_Id,hospital_Id], references: [user_Id,hospital_Id])
 }
 
 model Payment {
   id            Int         @id @default(autoincrement())
   hospital_Id   Int
-  patient_Id    Int
+  patient_Id    String
   reason        String
   status        PaymentStatus
   amount        Float
@@ -540,13 +631,13 @@ model Payment {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   Hospital      Hospital    @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient     @relation(fields: [patient_Id], references: [id])
+  Patient       Patient     @relation(fields: [patient_Id,hospital_Id], references: [user_Id,hospital_Id])
 }
 
 model RoomsAvailable {
   id          Int       @id @default(autoincrement())
   hospital_Id Int
-  staff_Id     Int
+  staff_Id     String
   roomNo      String
   capacity    Int
   notes       String
