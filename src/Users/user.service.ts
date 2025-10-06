@@ -73,19 +73,25 @@ export class UserService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
   async create(data: any) {
-    try {
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      const user = await this.prisma.user.create({
-        data: {
-          ...data,
-          password: hashedPassword,
-        },
-      });
-      return { status: "success", data: user };
-    } catch (error) {
-      return { status: "failed", error: error.message };
-    }
+    console.log(typeof(data.user_Id));
+    
+  try {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    console.log(hashedPassword);
+    
+    const user = await this.prisma.user.create({
+      data: {
+        ...data,
+        user_Id: (data.user_Id.toString()), // ✅ convert to string
+        password: hashedPassword,
+      },
+    });
+    return { status: "success", data: user };
+  } catch (error) {
+    return { status: "failed", error: error.message };
   }
+}
+
 
   async findAll() {
     return this.prisma.user.findMany();
