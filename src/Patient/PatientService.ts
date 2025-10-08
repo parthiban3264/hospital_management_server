@@ -86,25 +86,52 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class PatientService {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: any) {
-    const patient = await this.prisma.patient.create({
-      data: {
+  // async create(data: any) {
+  //   const patient = await this.prisma.patient.create({
+  //     data: {
+  //       ...data,
+  //       hospital_Id: data.hospital_Id,
+  //       user_Id: data.user_Id,
+  //     },
+  //   });
+
+  //   return {
+  //     status: 'success',
+  //     message: 'Patient created successfully',
+  //     data: patient,
+  //   };
+  // }
+
+  async createPatientWithUser(data: any) {
+    const defaultPassword = `${data.hospital_Id}pat123`;
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    // Optionally wrap in a transaction for safety
+    const [user, patient] = await this.prisma.$transaction([
+      this.prisma.user.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          user_Id: data.user_Id,
+          password: hashedPassword,
+          role: 'PATIENT',
+        },
+      }),
+      this.prisma.patient.create({
+        data: {
         ...data,
         hospital_Id: data.hospital_Id,
         user_Id: data.user_Id,
       },
-    });
+      }),
+    ]);
 
-    return {
-      status: 'success',
-      message: 'Patient created successfully',
-      data: patient,
-    };
+    return { user, patient, defaultPassword };
   }
 
   async findAll() {

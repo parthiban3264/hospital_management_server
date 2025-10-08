@@ -1,14 +1,27 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
-async create(data: any) {
-  try {
-    const admin = await this.prisma.admin.create({
-      data: {
+   async createAdminWithUser(data: any) {
+      const defaultPassword = `${data.hospital_Id}adm123`;
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+  
+      // Optionally wrap in a transaction for safety
+      const [user, admin] = await this.prisma.$transaction([
+        this.prisma.user.create({
+          data: {
+            hospital_Id: data.hospital_Id,
+            user_Id: data.user_Id,
+            password: hashedPassword,
+            role: 'ADMIN',
+          },
+        }),
+        this.prisma.admin.create({
+       data: {
         hospital_Id: data.hospital_Id, // must exist in Hospital table
         user_Id: data.user_Id,         // must exist in User table
         name: data.name,
@@ -20,20 +33,41 @@ async create(data: any) {
         status: data.status,
         gender: data.gender,
       },
-    });
-
-    return {
-      status: "success",
-      message: "Admin created successfully",
-      data: admin,
-    };
-  } catch (error) {
-    return {
-      status: "failed",
-      error: error.message,
-    };
+    }),
+      ]);
+       return { user, admin, defaultPassword };
   }
-}
+
+
+// async create(data: any) {
+//   try {
+//     const admin = await this.prisma.admin.create({
+//       data: {
+//         hospital_Id: data.hospital_Id, // must exist in Hospital table
+//         user_Id: data.user_Id,         // must exist in User table
+//         name: data.name,
+//         designation: data.designation,
+//         phone: data.phone,
+//         email: data.email,
+//         address: data.address,
+//         photo: data.photo,
+//         status: data.status,
+//         gender: data.gender,
+//       },
+//     });
+
+//     return {
+//       status: "success",
+//       message: "Admin created successfully",
+//       data: admin,
+//     };
+//   } catch (error) {
+//     return {
+//       status: "failed",
+//       error: error.message,
+//     };
+//   }
+// }
 
 
   async findAll() {

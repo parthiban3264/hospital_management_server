@@ -36,16 +36,40 @@
 //   }
 // }
 
-import { Controller, Get, Post, Patch, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, HttpStatus, HttpException } from '@nestjs/common';
 import { PatientService } from './PatientService';
 
 @Controller('patients')
 export class PatientController {
   constructor(private readonly patientService: PatientService) {}
 
-  @Post('create')
-  async create(@Body() body: any) {
-    return this.patientService.create(body);
+  // @Post('create')
+  // async create(@Body() body: any) {
+  //   console.log('body work', body);
+  //   return this.patientService.create(body);
+  // }
+   @Post('create')
+  async create(@Body() createPatientDto: any) {
+    try {
+      // Call service method to create user + patient
+      const result = await this.patientService.createPatientWithUser(createPatientDto);
+
+      return {
+        statusCode: HttpStatus.CREATED,
+        message: 'Patient and User created successfully',
+        data: result,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: 'Failed to create patient and user',
+          details: error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @Get('all')
