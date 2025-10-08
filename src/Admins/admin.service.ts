@@ -7,7 +7,7 @@ export class AdminService {
   constructor(private prisma: PrismaService) {}
 
    async createAdminWithUser(data: any) {
-      const defaultPassword = `${data.hospital_Id}adm123`;
+      const defaultPassword = `admin${data.hospital_Id}`;
       const hashedPassword = await bcrypt.hash(defaultPassword, 10);
   
       // Optionally wrap in a transaction for safety
