@@ -352,7 +352,9 @@ model Admin {
   hospital_Id  Int
   user_Id      String
   name         String
-  designation  String // was 'destination'
+  designation  String?
+  role         String          // e.g., Doctor, Nurse, Admin
+  specialist   String?
   phone        String
   email        String
   address      String
@@ -437,7 +439,7 @@ model Patient {
   bp             String?
   sugar          String?
   custom         Json?
-  tempCreatedAt  DateTime
+  tempCreatedAt  DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
