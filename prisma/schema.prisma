@@ -367,7 +367,7 @@ model Admin {
   Doctor       Treatment[]    @relation("Doctor_Treatment")
   Staff        Treatment[]    @relation("Staff_Treatment")
   Hospital     Hospital       @relation(fields: [hospital_Id], references: [id])
-  User         User           @relation(fields: [user_Id, hospital_Id], references: [user_Id, hospital_Id])
+  User         User           @relation(fields: [hospital_Id,user_Id], references: [hospital_Id,user_Id])
 
   @@unique([hospital_Id, user_Id])
 }
@@ -450,7 +450,7 @@ model Patient {
   Payments             Payment[]
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
-  User     User     @relation(fields: [user_Id, hospital_Id], references: [user_Id, hospital_Id])
+  User     User     @relation(fields: [hospital_Id,user_Id], references: [hospital_Id,user_Id])
 
   @@unique([hospital_Id, user_Id])
 }

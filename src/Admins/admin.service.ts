@@ -28,6 +28,8 @@ export class AdminService {
         designation: data.designation,
         phone: data.phone,
         email: data.email,
+        role: data.role || 'null',
+        specialist: data.specialist,
         address: data.address,
         photo: data.photo,
         status: data.status,
