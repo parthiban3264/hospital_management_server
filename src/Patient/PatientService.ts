@@ -112,14 +112,15 @@ export class PatientService {
     // const defaultPassword = `patient${data.hospital_Id}`;
     const defaultPassword = `abc123`;
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-    const phone = `+91 ${data.phone}`;
+    // const phone = `+91 ${data.phone}`;
+    const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
 
     // Optionally wrap in a transaction for safety
     const [user, patient] = await this.prisma.$transaction([
       this.prisma.user.create({
         data: {
           hospital_Id: data.hospital_Id,
-          user_Id: data.user_Id,
+          user_Id: user_Id,
           password: hashedPassword,
           role: 'PATIENT',
         },
@@ -127,9 +128,9 @@ export class PatientService {
       this.prisma.patient.create({
         data: {
         ...data,
-        phone: phone,
+        phone: data.phone,
         hospital_Id: data.hospital_Id,
-        user_Id: data.phone,
+        user_Id: user_Id,
       },
       }),
     ]);
