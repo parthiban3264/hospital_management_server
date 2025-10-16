@@ -16,6 +16,7 @@ export class PaymentService {
           amount: data.amount,
           transactionId: data.transactionId,
           billingId: data.billingId,
+          type: data.type,
         },
       });
       return { status: "success", message: "Payment created", data: payment };

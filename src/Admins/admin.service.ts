@@ -7,7 +7,8 @@ export class AdminService {
   constructor(private prisma: PrismaService) {}
 
    async createAdminWithUser(data: any) {
-      const defaultPassword = `admin${data.hospital_Id}`;
+      // const defaultPassword = `${data.designation}_${data.hospital_Id}`; // e.g., "Doctor_12"
+      const defaultPassword = `abc123`;
       const hashedPassword = await bcrypt.hash(defaultPassword, 10);
   
       // Optionally wrap in a transaction for safety
@@ -17,7 +18,7 @@ export class AdminService {
             hospital_Id: data.hospital_Id,
             user_Id: data.user_Id,
             password: hashedPassword,
-            role: 'ADMIN',
+            role:data.role,
           },
         }),
         this.prisma.admin.create({
@@ -28,7 +29,7 @@ export class AdminService {
         designation: data.designation,
         phone: data.phone,
         email: data.email,
-        role: data.role || 'null',
+        role: data.role,
         specialist: data.specialist,
         address: data.address,
         photo: data.photo,
@@ -78,22 +79,62 @@ export class AdminService {
     });
   }
 
-  async findOne(id: number) {
-    return this.prisma.admin.findUnique({
-      where: { id },
+  async findAllByHospitalAndRole(hospital_Id: number, designation: string) {
+    return this.prisma.admin.findMany({
+      where: { hospital_Id, designation },
       include: { Hospital: true, User: true },
     });
   }
 
-  async update(id: number, data: any) {
+  // async findOne(id: number) {
+  //   return this.prisma.admin.findUnique({
+  //     where: { id },
+  //     include: { Hospital: true, User: true },
+  //   });
+  // }
+  async findByUser(hospitalId: string, userId: string) {
+    return this.prisma.admin.findUnique({
+      where: {
+        hospital_Id_user_Id: {
+          hospital_Id: parseInt(hospitalId, 10),
+          user_Id: userId,
+        },
+      },
+      include: { Hospital: true, User: true },
+    });
+  }
+
+  // async update(id: number, data: any) {
+  //   try {
+  //     const admin = await this.prisma.admin.update({
+  //       where: { id },
+  //       data,
+  //     });
+  //     return { status: "success", data: admin };
+  //   } catch (error) {
+  //     return { status: "failed", error: error.message };
+  //   }
+  // }
+
+  async updateByAdmin(hospital_Id: number, user_Id: string, data: any) {
     try {
       const admin = await this.prisma.admin.update({
-        where: { id },
+        where: {
+          hospital_Id_user_Id: {
+            hospital_Id,
+            user_Id,
+          },
+        },
         data,
+        include: {
+          Hospital: true,
+        },
       });
+
       return { status: "success", data: admin };
     } catch (error) {
-      return { status: "failed", error: error.message };
+      console.error("Update Error:", error);
+      return { status: "failed", message: error.message };
     }
   }
 

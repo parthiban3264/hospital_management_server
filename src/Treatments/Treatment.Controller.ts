@@ -7,6 +7,7 @@ export class TreatmentController {
 
   @Post('create')
   create(@Body() data: any) {
+    console.log(data);
     return this.service.create(data);
   }
 

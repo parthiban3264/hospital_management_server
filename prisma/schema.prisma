@@ -285,8 +285,8 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  // url      = "mysql://root:pass%403264@localhost:3306/hospital_management"
-  url      = "mysql://schoolAttendance:Sensarsoft%40123@[2a02:4780:12:f6a7::1]:3306/hospital_management"
+  url      = "mysql://root:pass%403264@localhost:3306/hospital_management"
+  // url      = "mysql://schoolAttendance:Sensarsoft%40123@[2a02:4780:12:f6a7::1]:3306/hospital_management"
 }
 
 enum HospitalStatus {
@@ -331,6 +331,7 @@ model Hospital {
   RoomsAvailables       RoomsAvailable[]
   Payments              Payment[]
   MedicineAndInjections MedicineAndInjection[]
+  Fees                  Fees[]
 }
 
 model User {
@@ -353,21 +354,21 @@ model Admin {
   user_Id      String
   name         String
   designation  String?
-  role         String          // e.g., Doctor, Nurse, Admin
+  role         String // e.g., Doctor, Nurse, Admin
   specialist   String?
   phone        String
   email        String
   address      String
-  photo        String?
+  photo        String?        @default("https://cdn-icons-png.flaticon.com/512/387/387561.png")
   status       AdminStatus    @default(ACTIVE)
   gender       String
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  Consultation Consultation[] @relation("Doctor_Consultations")
+  Consultation Consultation[]
   Doctor       Treatment[]    @relation("Doctor_Treatment")
   Staff        Treatment[]    @relation("Staff_Treatment")
   Hospital     Hospital       @relation(fields: [hospital_Id], references: [id])
-  User         User           @relation(fields: [hospital_Id,user_Id], references: [hospital_Id,user_Id])
+  User         User           @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
 
   @@unique([hospital_Id, user_Id])
 }
@@ -426,7 +427,7 @@ model Patient {
   name           String
   phone          Json
   email          Json
-  photo          String?
+  photo          String?       @default("null")
   status         PatientStatus @default(ACTIVE)
   address        Json?
   dob            DateTime
@@ -443,14 +444,14 @@ model Patient {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  Consultation         Consultation[]              @relation("Patient_Consultations") // ✅ array
+  Consultation         Consultation[]
   Treatment            Treatment[]
   MedicineAndInjection MedicineAndInjection[]      @relation("Patient_MedicineAndInjection")
   TestingAndScanning   TestingAndScanningPatient[]
   Payments             Payment[]
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
-  User     User     @relation(fields: [hospital_Id,user_Id], references: [hospital_Id,user_Id])
+  User     User     @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
 
   @@unique([hospital_Id, user_Id])
 }
@@ -504,47 +505,57 @@ model Patient {
 //   Doctor            Admin       @relation("Doctor_Consultations", fields: [doctor_Id], references: [user_Id])
 // }
 
+enum Status {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  ONGOING
+  PENDING
+}
+
 model Consultation {
   id                Int      @id @default(autoincrement())
   hospital_Id       Int
   patient_Id        String
   doctor_Id         String
-  date              DateTime
+  appointdate       String? //Appoint time
   purpose           String
   temperature       Float
   symptoms          String
-  notes             Json
-  diagnosis         String
-  treatment         Boolean
-  medicineInjection Boolean
-  scanningTesting   Boolean
-  status            String
-  access            Json
+  notes             Json?
+  diagnosis         String?
+  treatment         Boolean  @default(false)
+  medicineInjection Boolean  @default(false)
+  scanningTesting   Boolean  @default(false)
+  status            Status @default(PENDING) 
+  access            Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  paymentStatus     Boolean
+  paymentStatus     Boolean  @default(false)
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
-  Patient  Patient  @relation("Patient_Consultations", fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-  Doctor   Admin    @relation("Doctor_Consultations", fields: [doctor_Id, hospital_Id], references: [user_Id, hospital_Id])
+  Patient  Patient  @relation(fields: [hospital_Id, patient_Id], references: [hospital_Id, user_Id])
+  Doctor   Admin    @relation(fields: [hospital_Id, doctor_Id], references: [hospital_Id, user_Id])
 }
+
+
 
 model Treatment {
   id            Int      @id @default(autoincrement())
   hospital_Id   Int
   staff_Id      Json // Array/object
-  patient_Id    Int
+  patient_Id    String
   doctor_Id     Json // Array/object
-  treatmentName Json // Array/object
-  startDate     DateTime
-  endDate       DateTime
-  progress      String
-  status        String // consider enum
+  treatmentName Json? // Array/object
+  startDate     String
+  endDate       String
+  progress      String?
+  treatmentNotes Json?
+  status        Status @default(PENDING) 
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  paymentStatus Boolean
+  paymentStatus Boolean  @default(false)
   Hospital      Hospital @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient  @relation(fields: [patient_Id], references: [id])
+  Patient       Patient  @relation(fields: [hospital_Id, patient_Id], references: [hospital_Id, user_Id])
   Doctor        Admin[]  @relation("Doctor_Treatment")
   Staff         Admin[]  @relation("Staff_Treatment")
 }
@@ -583,51 +594,87 @@ model TestingAndScanningHospital {
 }
 
 model MedicineAndInjection {
-  id                 Int         @id @default(autoincrement())
-  hospital_Id        Int
-  patient_Id         String
-  doctor_Id          Json // Array/object
-  staff_Id           Json // Array/object
-  medicine_Id        Json // Array/object
-  frequencyMedicine  Json
-  injection_Id       Json // Array/object
-  frequencyInjection Json
-  status             String // consider enum
-  notes              Json
-  paymentStatus      Boolean
+  id          Int    @id @default(autoincrement())
+  hospital_Id Int
+  patient_Id  String
+  doctor_Id   Json // Array/object
+  staff_Id    Json // Array/object
+
+  medicine_Id       Json? // Array/object
+  dosageMedicine    Json?
+  medicineNotes     Json?
+  frequencyMedicine Json?
+  durationMedicine  String?
+  medicineStatus    Boolean @default(false) // consider enum
+
+  injection_Id       Json?
+  dosageInjection    Json?
+  InjectionNotes     Json?
+  frequencyInjection Json?
+  durationInjection  String?
+  injectionStatus    Boolean     @default(false)
+
+  status        Status      @default(PENDING) // consider enum
+  paymentStatus      Boolean     @default(false)
   createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
   Hospital           Hospital    @relation(fields: [hospital_Id], references: [id])
   Patient            Patient     @relation("Patient_MedicineAndInjection", fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Medician           Medician[]  @relation("MedicineAndInjection_Medician")
   Injection          Injection[] @relation("Injection_MedicineAndInjection")
 }
 
+enum TestingAndScanningStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  PENDING
+}
+
 model TestingAndScanningPatient {
-  id            Int      @id @default(autoincrement())
+  id            Int                      @id @default(autoincrement())
   hospital_Id   Int
   patient_Id    String
-  doctor_Id     Json // Array/object
-  staff_Id      Json // Array/object
+  doctor_Id     Json
+  staff_Id      Json?
   title         String
   scheduleDate  DateTime
-  type          String // "Testing" or "Scanning"
-  status        String // consider enum
-  paymentStatus Boolean
-  result        String
-  Hospital      Hospital @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  type          String
+  status        TestingAndScanningStatus @default(PENDING) // consider enum
+  paymentStatus Boolean                  @default(false)
+  result        String?
+  createdAt     DateTime                 @default(now())
+  Hospital      Hospital                 @relation(fields: [hospital_Id], references: [id])
+  Patient       Patient                  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+}
+
+enum PaymentType {
+  manual
+  InstantPay
+  FinalPay
+}
+
+enum PaymentReason {
+  Consultation
+  Treatment
+  Medicine
+  Injection
+  Testing
+  Scanning
+  Other
 }
 
 model Payment {
   id            Int           @id @default(autoincrement())
   hospital_Id   Int
   patient_Id    String
-  reason        String
+  reason        PaymentReason
   status        PaymentStatus
   amount        Float
+  type          PaymentType
   transactionId Json
   billingId     String?
+  createdBy     String?
+  updategdBy    String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   Hospital      Hospital      @relation(fields: [hospital_Id], references: [id])
@@ -641,7 +688,17 @@ model RoomsAvailable {
   roomNo      String
   capacity    Int
   notes       String
-  type        String // consider enum if limited set
+  type        String // consider enum if limited set // e.g., ICU, General, Private
   amount      Float
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
+}
+
+model Fees{
+  id Int @id @default(autoincrement())
+  hospital_Id Int
+  type Float?
+  amount Float ?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Hospital Hospital @relation(fields: [hospital_Id], references: [id])
 }

@@ -17,11 +17,12 @@ export class ConsultationController {
 
   @Get("getById/:id")
   findOne(@Param("id") id: number) {
-    return this.service.findOne(+id);
+   return this.service.findOne(+id);
   }
 
   @Patch("updateById/:id")
   update(@Param("id") id: number, @Body() data: any) {
+     console.log('Consulatation id',id);
     return this.service.update(+id, data);
   }
 

@@ -109,7 +109,8 @@ export class PatientService {
   // }
 
   async createPatientWithUser(data: any) {
-    const defaultPassword = `patient${data.hospital_Id}`;
+    // const defaultPassword = `patient${data.hospital_Id}`;
+    const defaultPassword = `abc123`;
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     // Optionally wrap in a transaction for safety

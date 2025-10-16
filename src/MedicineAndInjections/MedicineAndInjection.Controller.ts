@@ -22,6 +22,8 @@ export class MedicineAndInjectionController {
 
   @Patch("updateById/:id")
   update(@Param("id") id: number, @Body() data: any) {
+    console.log(data);
+    
     return this.service.update(+id, data);
   }
 
