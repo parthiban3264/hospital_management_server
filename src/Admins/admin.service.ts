@@ -23,8 +23,8 @@ export class AdminService {
         }),
         this.prisma.admin.create({
        data: {
-        hospital_Id: data.hospital_Id, // must exist in Hospital table
-        user_Id: data.user_Id,         // must exist in User table
+        hospital_Id: data.hospital_Id,
+        user_Id: data.phone,         
         name: data.name,
         designation: data.designation,
         phone: data.phone,

@@ -127,7 +127,7 @@ export class PatientService {
         data: {
         ...data,
         hospital_Id: data.hospital_Id,
-        user_Id: data.user_Id,
+        user_Id: data.phone,
       },
       }),
     ]);
