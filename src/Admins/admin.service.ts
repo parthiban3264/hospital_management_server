@@ -10,6 +10,7 @@ export class AdminService {
       // const defaultPassword = `${data.designation}_${data.hospital_Id}`; // e.g., "Doctor_12"
       const defaultPassword = `abc123`;
       const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+      const phone = `+91 ${data.phone}`;
   
       // Optionally wrap in a transaction for safety
       const [user, admin] = await this.prisma.$transaction([
@@ -27,7 +28,7 @@ export class AdminService {
         user_Id: data.phone,         
         name: data.name,
         designation: data.designation,
-        phone: data.phone,
+        phone: phone,
         email: data.email,
         role: data.role,
         specialist: data.specialist,
