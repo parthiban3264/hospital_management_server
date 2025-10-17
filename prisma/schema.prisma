@@ -425,6 +425,7 @@ model Patient {
   hospital_Id    Int
   user_Id        String
   name           String
+  ac_name        String?
   phone          Json
   email          Json
   photo          String?       @default("null")

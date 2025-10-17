@@ -93,6 +93,8 @@ export class PatientController {
     @Param('user_Id') user_Id: string,
     @Body() body: any,
   ) {
+    console.log('Updating patient for hospital_Id:', hospital_Id, 'and user_Id:', user_Id,body);
+    
     return this.patientService.updateByUserId(Number(hospital_Id), user_Id, body);
   }
 
