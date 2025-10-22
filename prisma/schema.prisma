@@ -530,7 +530,7 @@ model Consultation {
   access            Json?
   createdAt         String?
   updatedAt         DateTime @updatedAt
-       Boolean  @default(false)
+  paymentStatus     Boolean  @default(false)
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   Patient  Patient  @relation(fields: [hospital_Id, patient_Id], references: [hospital_Id, user_Id])
