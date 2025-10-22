@@ -15,6 +15,11 @@ export class MedicianController {
     return this.service.findAll();
   }
 
+  @Get('all/:hospitalId')
+  findAllByhospital(@Param('hospitalId') hospitalId: number) {
+    return this.service.finfindAllByhospitaldAll(hospitalId);
+  }
+
   @Get("getById/:id")
   findOne(@Param("id") id: number) {
     return this.service.findOne(+id);

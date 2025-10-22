@@ -24,9 +24,7 @@ export class ConsultationService {
         hospital_Id: Number(data.hospital_Id), // required for composite relations
         patient_Id: data.patient_Id,           // string
         doctor_Id: data.doctor_Id,             // string
-        appointdate: data.appointdate ,
         purpose: data.purpose,
-        temperature: Number(data.temperature),
         symptoms: data.symptoms,
         notes: data.notes ? JSON.parse(data.notes) : null,
         paymentStatus: data.paymentStatus === true,
@@ -81,34 +79,34 @@ export class ConsultationService {
     return { status: "success", message: "Consultation fetched", data: consultation };
   }
 
-  // async update(id: number, data: any) {
-  //   try {
-  //     const consultation = await this.prisma.consultation.update({
-  //       where: { id },
-  //       data,
-  //     });
-  //     return { status: "success", message: "Consultation updated", data: consultation };
-  //   } catch (error) {
-  //     return { status: "failed", error: error.message };
-  //   }
-  // }
-
   async update(id: number, data: any) {
-  try {
-    const consultation = await this.prisma.consultation.update({
-      where: { id },
-      data: {
-        treatment: data.treatment ?? undefined,
-        medicineInjection: data.medicineInjection ?? undefined,
-        scanningTesting: data.testingScanning ?? undefined,
-        status: data.status ?? undefined,
-      },
-    });
-    return { status: "success", message: "Consultation updated", data: consultation };
-  } catch (error) {
-    return { status: "failed", error: error.message };
+    try {
+      const consultation = await this.prisma.consultation.update({
+        where: { id },
+        data,
+      });
+      return { status: "success", message: "Consultation updated", data: consultation };
+    } catch (error) {
+      return { status: "failed", error: error.message };
+    }
   }
-}
+
+//   async update(id: number, data: any) {
+//   try {
+//     const consultation = await this.prisma.consultation.update({
+//       where: { id },
+//       data: {
+//         treatment: data.treatment ?? undefined,
+//         medicineInjection: data.medicineInjection ?? undefined,
+//         scanningTesting: data.testingScanning ?? undefined,
+//         status: data.status ?? undefined,
+//       },
+//     });
+//     return { status: "success", message: "Consultation updated", data: consultation };
+//   } catch (error) {
+//     return { status: "failed", error: error.message };
+//   }
+// }
 
 
   async remove(id: number) {

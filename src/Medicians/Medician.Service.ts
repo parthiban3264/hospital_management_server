@@ -21,6 +21,14 @@ export class MedicianService {
     return { status: "success", message: "Medicians fetched", data: medicianList };
   }
 
+  async finfindAllByhospitaldAll(hospitalId: number) {
+    const injections = await this.prisma.medician.findMany({
+      where: { hospital_Id: Number(hospitalId) },
+      include: { Hospital: true, MedicineAndInjection: true },
+    });
+    return { status: "success", message: "Injections fetched", data: injections };
+  }
+
   async findOne(id: number) {
     const medician = await this.prisma.medician.findUnique({
       where: { id },

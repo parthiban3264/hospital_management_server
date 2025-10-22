@@ -36,7 +36,9 @@ async findPendingPaymentsByHospital(hospitalId: number) {
     },
     include: {
       Hospital: true,
-      Patient: true,
+      Patient: {
+        include: {Consultation: true}
+      },
     },
     orderBy: {
       createdAt: 'asc', // Sort by creation date
@@ -54,7 +56,10 @@ async findPendingPaidByHospital(hospitalId: number) {
     },
     include: {
       Hospital: true,
-      Patient: true,
+      Patient: {
+        include: {Consultation: true}
+      },
+      
     },
     orderBy: {
       createdAt: 'asc', // Sort by creation date

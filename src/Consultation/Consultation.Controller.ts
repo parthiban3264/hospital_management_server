@@ -17,6 +17,7 @@ export class ConsultationController {
 
    @Get('all/:hospitalId')
   async findAllByHospital(@Param('hospitalId') hospitalId: number) {
+    
     const consultations = await this.service.findAllByHospital(hospitalId);
     return { status: 'success', message: 'Consultations fetched', data: consultations };
   }
