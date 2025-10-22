@@ -7,6 +7,9 @@ export class MedicineAndInjectionController {
 
   @Post('create')
   create(@Body() data: any) {
+    console.log('medicine-and-injection body', data);
+    console.log(data.medicine_Id);
+    
     return this.service.create(data);
   }
 

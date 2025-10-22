@@ -76,6 +76,8 @@ export class MedicineAndInjectionService {
   /** ✅ Create a new Medicine & Injection record */
   async create(data: any) {
     try {
+      console.log(data.medicine_Id,'---medicine ids---');
+      
       const record = await this.prisma.medicineAndInjection.create({
         data: {
           hospital_Id: Number(data.hospital_Id),
@@ -100,6 +102,7 @@ export class MedicineAndInjectionService {
           paymentStatus: Boolean(data.paymentStatus ?? false),
         },
       });
+      
 
       return { status: "success", message: "Record created successfully", data: record };
     } catch (error) {

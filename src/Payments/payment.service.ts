@@ -9,7 +9,8 @@ export class PaymentService {
     try {
       const payment = await this.prisma.payment.create({
         data: {
-          hospital_Id: data.hospital_Id,
+          hospital_Id: Number(data.hospital_Id),
+          staff_Id: data.staff_Id,
           patient_Id: data.patient_Id,
           reason: data.reason,
           status: data.status,
@@ -17,6 +18,7 @@ export class PaymentService {
           transactionId: data.transactionId,
           billingId: data.billingId,
           type: data.type,
+          createdAt: data.createdAt || new Date().toISOString(),
         },
       });
       return { status: "success", message: "Payment created", data: payment };
@@ -24,6 +26,41 @@ export class PaymentService {
       return { status: "failed", error: error.message };
     }
   }
+async findPendingPaymentsByHospital(hospitalId: number) {
+  return this.prisma.payment.findMany({
+    where: {
+      hospital_Id: Number(hospitalId),
+      status: {
+        in: ['PENDING'], // Only pending or ongoing payments
+      },
+    },
+    include: {
+      Hospital: true,
+      Patient: true,
+    },
+    orderBy: {
+      createdAt: 'asc', // Sort by creation date
+    },
+  });
+}
+
+async findPendingPaidByHospital(hospitalId: number) {
+  return this.prisma.payment.findMany({
+    where: {
+      hospital_Id: Number(hospitalId),
+      status: {
+        in: ['PAID'], // Only pending or ongoing payments
+      },
+    },
+    include: {
+      Hospital: true,
+      Patient: true,
+    },
+    orderBy: {
+      createdAt: 'asc', // Sort by creation date
+    },
+  });
+}
 
   async findAll() {
     const payments = await this.prisma.payment.findMany({
@@ -42,17 +79,25 @@ export class PaymentService {
   }
 
   async update(id: number, data: any) {
-    try {
-      const payment = await this.prisma.payment.update({
-        where: { id },
-        data,
-      });
-      return { status: "success", message: "Payment updated", data: payment };
-    } catch (error) {
-      return { status: "failed", error: error.message };
-    }
-  }
+  try {
+    const payment = await this.prisma.payment.update({
+      where: { id },
+      data,
+    });
 
+    // if (payment.hospital_Id !== hospitalId) {
+    //   return { status: "failed", message: "Hospital mismatch" };
+    // }
+
+    return { status: "success", message: "Payment updated", data: payment };
+  } catch (error) {
+    console.error(error);
+    if (error.code === 'P2025') {
+      return { status: "failed", message: "Payment not found" };
+    }
+    return { status: "failed", error: error.message };
+  }
+}
   async remove(id: number) {
     try {
       const payment = await this.prisma.payment.delete({ where: { id } });

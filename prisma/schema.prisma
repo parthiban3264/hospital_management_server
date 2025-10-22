@@ -304,12 +304,7 @@ enum PatientStatus {
   INACTIVE
 }
 
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
-}
+
 
 model Hospital {
   id                    Int                          @id @default(autoincrement())
@@ -424,6 +419,7 @@ model Patient {
   id             Int           @id @default(autoincrement())
   hospital_Id    Int
   user_Id        String
+  staff_Id       String
   name           String
   ac_name        String?
   phone          Json
@@ -440,9 +436,11 @@ model Patient {
   weight         Float?
   bp             String?
   sugar          String?
-  custom         Json?
+  temperature       Float?
+  // custom         Json?
+  // paymentStatus  Boolean     @default(false)
   tempCreatedAt  DateTime?
-  createdAt      DateTime      @default(now())
+  createdAt      String?         
   updatedAt      DateTime      @updatedAt
 
   Consultation         Consultation[]
@@ -519,18 +517,18 @@ model Consultation {
   hospital_Id       Int
   patient_Id        String
   doctor_Id         String
-  appointdate       String? //Appoint time
+  // appointdate       String? //Appoint time
   purpose           String
-  temperature       Float
-  symptoms          String
+  // temperature       Float?
+  symptoms          Boolean  @default(false)
   notes             Json?
-  diagnosis         String?
+  // diagnosis         String?
   treatment         Boolean  @default(false)
   medicineInjection Boolean  @default(false)
   scanningTesting   Boolean  @default(false)
   status            Status @default(PENDING) 
   access            Json?
-  createdAt         DateTime @default(now())
+  createdAt         String?
   updatedAt         DateTime @updatedAt
   paymentStatus     Boolean  @default(false)
 
@@ -605,14 +603,14 @@ model MedicineAndInjection {
   dosageMedicine    Json?
   medicineNotes     Json?
   frequencyMedicine Json?
-  durationMedicine  String?
+  durationMedicine  Json?
   medicineStatus    Boolean @default(false) // consider enum
 
   injection_Id       Json?
   dosageInjection    Json?
   InjectionNotes     Json?
   frequencyInjection Json?
-  durationInjection  String?
+  durationInjection  Json?
   injectionStatus    Boolean     @default(false)
 
   status        Status      @default(PENDING) // consider enum
@@ -649,34 +647,30 @@ model TestingAndScanningPatient {
 }
 
 enum PaymentType {
-  manual
-  InstantPay
-  FinalPay
+  ManualPay
+  OnlinePay
 }
-
-enum PaymentReason {
-  Consultation
-  Treatment
-  Medicine
-  Injection
-  Testing
-  Scanning
-  Other
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 }
 
 model Payment {
   id            Int           @id @default(autoincrement())
   hospital_Id   Int
   patient_Id    String
-  reason        PaymentReason
-  status        PaymentStatus
-  amount        Float
-  type          PaymentType
-  transactionId Json
+  staff_Id     String?
+  reason        String
+  status        PaymentStatus @default(PENDING)
+  amount        Float?
+  type          PaymentType?
+  transactionId Json?
   billingId     String?
   createdBy     String?
   updategdBy    String?
-  createdAt     DateTime      @default(now())
+  createdAt     String
   updatedAt     DateTime      @updatedAt
   Hospital      Hospital      @relation(fields: [hospital_Id], references: [id])
   Patient       Patient       @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])

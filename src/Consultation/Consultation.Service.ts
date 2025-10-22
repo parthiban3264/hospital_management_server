@@ -30,6 +30,7 @@ export class ConsultationService {
         symptoms: data.symptoms,
         notes: data.notes ? JSON.parse(data.notes) : null,
         paymentStatus: data.paymentStatus === true,
+        createdAt : data.createdAt || new Date().toISOString(),
       },
     });
     return { status: 'success', data: consultation };
@@ -38,7 +39,6 @@ export class ConsultationService {
     return { status: 'failed', error: e.message };
   }
 }
-
 
   async findAll() {
     const consultations = await this.prisma.consultation.findMany({
@@ -51,6 +51,26 @@ export class ConsultationService {
     return { status: "success", message: "Consultations fetched", data: consultations };
   }
 
+  async findAllByHospital(hospitalId: number) {
+    return this.prisma.consultation.findMany({
+      where: { hospital_Id: Number(hospitalId) }, // assuming hospitalId is numeric
+      include: {
+        Hospital: true,
+        Patient: true,
+        Doctor: true,
+      },
+    });
+  }
+  async findByHospitalDoctor(hospitalId: number, doctorId: string) {
+    return this.prisma.consultation.findMany({
+      where: { hospital_Id: Number(hospitalId),doctor_Id: doctorId}, // assuming hospitalId is numeric
+      include: {
+        Hospital: true,
+        Patient: true,
+        Doctor: true,
+      },
+    });
+  }
   async findOne(id: number) {
     const consultation = await this.prisma.consultation.findUnique({
       where: { id },

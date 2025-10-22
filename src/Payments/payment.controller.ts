@@ -15,6 +15,17 @@ export class PaymentController {
     return this.service.findAll();
   }
 
+  @Get('all/pending/:hospitalId')
+async getPendingPayments(@Param('hospitalId') hospitalId: number) {
+  return this.service.findPendingPaymentsByHospital(hospitalId);
+}
+
+  @Get('all/paid/:hospitalId')
+async getPaidPayments(@Param('hospitalId') hospitalId: number) {
+  return this.service.findPendingPaidByHospital(hospitalId);
+}
+
+
   @Get("getById/:id")
   findOne(@Param("id") id: number) {
     return this.service.findOne(+id);

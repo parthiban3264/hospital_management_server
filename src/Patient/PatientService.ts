@@ -130,6 +130,7 @@ export class PatientService {
         ...data,
         phone: data.phone,
         hospital_Id: data.hospital_Id,
+        createdAt: data.createdAt || new Date().toISOString(),
         user_Id: user_Id,
       },
       }),
