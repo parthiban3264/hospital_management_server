@@ -116,7 +116,7 @@ export class PatientService {
     const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
 
     // Optionally wrap in a transaction for safety
-    const [user, patient] = await this.prisma.$transaction([
+    const [user, patient, payment] = await this.prisma.$transaction([
       this.prisma.user.create({
         data: {
           hospital_Id: data.hospital_Id,
@@ -134,9 +134,20 @@ export class PatientService {
         user_Id: user_Id,
       },
       }),
+       this.prisma.payment.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          patient_Id: user_Id,
+          reason: data.title ?? 'Registration Fee',
+          status: 'PENDING',
+          amount: data.amount ?? 500,
+          type: 'REGISTRATIONFEE',
+          createdAt: data.createdAt,
+        },
+      }),
     ]);
 
-    return { user, patient, defaultPassword };
+    return { user, patient, defaultPassword,payment };
   }
 
   async findAll() {

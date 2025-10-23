@@ -51,6 +51,8 @@ export class PatientController {
    @Post('create')
   async create(@Body() createPatientDto: any) {
     try {
+      console.log(createPatientDto);
+      
       // Call service method to create user + patient
       const result = await this.patientService.createPatientWithUser(createPatientDto);
 

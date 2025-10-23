@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class TestingAndScanningPatientService {
   constructor(private prisma: PrismaService) {}
 
   async create(data: any) {
-    try {
-      const record = await this.prisma.testingAndScanningPatient.create({
+    const [test, payment] = await this.prisma.$transaction([
+      this.prisma.testingAndScanningPatient.create({
         data: {
           hospital_Id: data.hospital_Id,
           patient_Id: data.patient_Id,
@@ -19,19 +19,44 @@ export class TestingAndScanningPatientService {
           status: data.status,
           paymentStatus: data.paymentStatus,
           result: data.result,
+          createdAt: data.createdAt,
         },
-      });
-      return { status: "success", message: "Record created", data: record };
-    } catch (error) {
-      return { status: "failed", error: error.message };
-    }
+      }),
+      this.prisma.payment.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          patient_Id: data.patient_Id,
+          reason: 'Testing & Scanning Fee',
+          status: 'PENDING',
+          amount: data.amount ?? 800,
+          type: 'TESTINGFEESANDSCANNINGFEE',
+          createdAt: data.createdAt,
+        },
+      }),
+    ]);
+
+    return { test, payment };
   }
 
   async findAll() {
     const records = await this.prisma.testingAndScanningPatient.findMany({
       include: { Hospital: true, Patient: true },
     });
-    return { status: "success", message: "Records fetched", data: records };
+    return { status: 'success', message: 'Records fetched', data: records };
+  }
+  async finfindAllTestandScandAll(hospital_Id: number, type: string) {
+    const records = await this.prisma.testingAndScanningPatient.findMany({
+      where: {
+        hospital_Id: Number(hospital_Id),
+        type: type.toUpperCase(),
+        status: {
+          in: ['PENDING'],
+        },
+        paymentStatus: true,
+      },
+      include: { Hospital: true, Patient: true },
+    });
+    return { status: 'success', message: 'Records fetched', data: records };
   }
 
   async findOne(id: number) {
@@ -40,7 +65,7 @@ export class TestingAndScanningPatientService {
       include: { Hospital: true, Patient: true },
     });
     if (!record) throw new NotFoundException(`Record with ID ${id} not found`);
-    return { status: "success", message: "Record fetched", data: record };
+    return { status: 'success', message: 'Record fetched', data: record };
   }
 
   async update(id: number, data: any) {
@@ -49,9 +74,9 @@ export class TestingAndScanningPatientService {
         where: { id },
         data,
       });
-      return { status: "success", message: "Record updated", data: record };
+      return { status: 'success', message: 'Record updated', data: record };
     } catch (error) {
-      return { status: "failed", error: error.message };
+      return { status: 'failed', error: error.message };
     }
   }
 
@@ -60,9 +85,9 @@ export class TestingAndScanningPatientService {
       const record = await this.prisma.testingAndScanningPatient.delete({
         where: { id },
       });
-      return { status: "success", message: "Record deleted", data: record };
+      return { status: 'success', message: 'Record deleted', data: record };
     } catch (error) {
-      return { status: "failed", error: error.message };
+      return { status: 'failed', error: error.message };
     }
   }
 }

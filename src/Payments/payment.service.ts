@@ -37,7 +37,7 @@ async findPendingPaymentsByHospital(hospitalId: number) {
     include: {
       Hospital: true,
       Patient: {
-        include: {Consultation: true}
+        include: {Consultation: true, TestingAndScanning: true},
       },
     },
     orderBy: {

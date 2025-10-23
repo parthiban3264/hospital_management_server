@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
 import { TestingAndScanningPatientService } from "./testingAndScanningPatient.service";
 
-@Controller("testing-and-scanning-patient")
+@Controller("testing_and_scanning_patient")
 export class TestingAndScanningPatientController {
   constructor(private readonly service: TestingAndScanningPatientService) {}
 
@@ -13,6 +13,11 @@ export class TestingAndScanningPatientController {
   @Get('all')
   findAll() {
     return this.service.findAll();
+  }
+
+  @Get('all/:hospital_Id/:type')
+  findAllTestandScan(@Param('hospital_Id') hospital_Id: number, @Param('type') type: string) {
+    return this.service.finfindAllTestandScandAll(Number(hospital_Id), type);
   }
 
   @Get("getById/:id")
