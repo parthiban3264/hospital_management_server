@@ -16,6 +16,7 @@ export class TestingAndScanningPatientService {
           title: data.title,
           scheduleDate: new Date(data.scheduleDate),
           type: data.type,
+          selectedOptions: data.selectedOptions,
           status: data.status,
           paymentStatus: data.paymentStatus,
           result: data.result,
@@ -44,7 +45,7 @@ export class TestingAndScanningPatientService {
     });
     return { status: 'success', message: 'Records fetched', data: records };
   }
-  async finfindAllTestandScandAll(hospital_Id: number, type: string) {
+  async finfindAllTestandScanAll(hospital_Id: number, type: string) {
     const records = await this.prisma.testingAndScanningPatient.findMany({
       where: {
         hospital_Id: Number(hospital_Id),
@@ -54,7 +55,13 @@ export class TestingAndScanningPatientService {
         },
         paymentStatus: true,
       },
-      include: { Hospital: true, Patient: true },
+      include: { Hospital: {
+        select: {Admins: {select: {id: true,user_Id:true, name: true}},id:true, name: true,address: true,}, 
+    },
+    Patient: {
+      include:{Consultation:true}
+    },
+    },
     });
     return { status: 'success', message: 'Records fetched', data: records };
   }

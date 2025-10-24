@@ -441,7 +441,7 @@ model Patient {
   // paymentStatus  Boolean     @default(false)
   tempCreatedAt  DateTime?
   createdAt      String?         
-  updatedAt      DateTime      @updatedAt
+  updatedAt      String?      
 
   Consultation         Consultation[]
   Treatment            Treatment[]
@@ -508,6 +508,7 @@ enum Status {
   SCHEDULED
   COMPLETED
   CANCELLED
+  ENDPROCESS
   ONGOING
   PENDING
 }
@@ -529,7 +530,7 @@ model Consultation {
   status            Status @default(PENDING) 
   access            Json?
   createdAt         String?
-  updatedAt         DateTime @updatedAt
+  updatedAt         String?
   paymentStatus     Boolean  @default(false)
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
@@ -630,6 +631,12 @@ enum TestingAndScanningStatus {
   CANCELLED
   PENDING
 }
+// enum Levels {
+//   REGISTER
+//   FEE
+//   QUEUE
+
+// }
 
 model TestingAndScanningPatient {
   id            Int                      @id @default(autoincrement())
@@ -637,8 +644,10 @@ model TestingAndScanningPatient {
   patient_Id    String
   doctor_Id     Json
   staff_Id      Json?
+  // levels        Levels?
   title         String?
   scheduleDate  DateTime
+  selectedOptions Json?
   type          String?
   status        TestingAndScanningStatus @default(PENDING) // consider enum
   paymentStatus Boolean                  @default(false)

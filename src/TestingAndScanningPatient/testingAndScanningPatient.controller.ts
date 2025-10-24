@@ -17,7 +17,7 @@ export class TestingAndScanningPatientController {
 
   @Get('all/:hospital_Id/:type')
   findAllTestandScan(@Param('hospital_Id') hospital_Id: number, @Param('type') type: string) {
-    return this.service.finfindAllTestandScandAll(Number(hospital_Id), type);
+    return this.service.finfindAllTestandScanAll(Number(hospital_Id), type);
   }
 
   @Get("getById/:id")
