@@ -16,8 +16,12 @@ export class TestingAndScanningPatientController {
   }
 
   @Get('all/:hospital_Id/:type')
-  findAllTestandScan(@Param('hospital_Id') hospital_Id: number, @Param('type') type: string) {
-    return this.service.finfindAllTestandScanAll(Number(hospital_Id), type);
+  findAllTestandScanByType(@Param('hospital_Id') hospital_Id: number, @Param('type') type: string) {
+    return this.service.findAllTestandScanByType(Number(hospital_Id), type);
+  }
+   @Get('all/:hospital_Id')
+  findAllTestandScan(@Param('hospital_Id') hospital_Id: number) {
+    return this.service.finfindAllTestandScan(Number(hospital_Id));
   }
 
   @Get("getById/:id")
