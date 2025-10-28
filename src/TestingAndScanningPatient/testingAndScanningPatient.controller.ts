@@ -23,6 +23,20 @@ export class TestingAndScanningPatientController {
   findAllTestandScan(@Param('hospital_Id') hospital_Id: number) {
     return this.service.finfindAllTestandScan(Number(hospital_Id));
   }
+  @Patch('update-payment-status/:paymentId')
+  async updateTestingAndScanning(@Param('paymentId') paymentId: number) {
+    try {
+      const result = await this.service.updateTestingAndScanningByPayment(paymentId);
+      return result;
+    } catch (error) {
+      console.error('Error updating testing & scanning records:', error);
+      return {
+        success: false,
+        message: 'Failed to update testing & scanning records.',
+        error: error.message,
+      };
+    }
+  }
 
   @Get("getById/:id")
   findOne(@Param("id") id: number) {

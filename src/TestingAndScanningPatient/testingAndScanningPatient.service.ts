@@ -5,25 +5,62 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class TestingAndScanningPatientService {
   constructor(private prisma: PrismaService) {}
 
+  // async create(data: any) {
+  //   const [test, payment] = await this.prisma.$transaction([
+  //     this.prisma.testingAndScanningPatient.create({
+  //       data: {
+  //         hospital_Id: data.hospital_Id,
+  //         patient_Id: data.patient_Id,
+  //         doctor_Id: data.doctor_Id,
+  //         staff_Id: data.staff_Id,
+  //         title: data.title,
+  //         scheduleDate: new Date(data.scheduleDate),
+  //         type: data.type,
+  //         selectedOptions: data.selectedOptions,
+  //         status: data.status,
+  //         paymentStatus: data.paymentStatus,
+  //         result: data.result,
+  //         createdAt: data.createdAt,
+  //       },
+  //     }),
+  //     this.prisma.payment.create({
+  //       data: {
+  //         hospital_Id: data.hospital_Id,
+  //         patient_Id: data.patient_Id,
+  //         reason: 'Testing & Scanning Fee',
+  //         status: 'PENDING',
+  //         amount: data.amount,
+  //         type: 'TESTINGFEESANDSCANNINGFEE',
+  //         createdAt: data.createdAt,
+  //       },
+  //     }),
+  //   ]);
+
+  //   return { test, payment };
+  // }
   async create(data: any) {
-    const [test, payment] = await this.prisma.$transaction([
-      this.prisma.testingAndScanningPatient.create({
+  return this.prisma.$transaction(async (tx) => {
+    // Step 1: Find an existing PENDING payment for the same patient in the same hospital
+    let payment = await tx.payment.findFirst({
+      where: {
+        hospital_Id: data.hospital_Id,
+        patient_Id: data.patient_Id,
+        type: 'TESTINGFEESANDSCANNINGFEE', // match your logic
+        status: 'PENDING',
+      },
+    });
+
+    // Step 2: Create or update payment
+    if (payment) {
+      payment = await tx.payment.update({
+        where: { id: payment.id },
         data: {
-          hospital_Id: data.hospital_Id,
-          patient_Id: data.patient_Id,
-          doctor_Id: data.doctor_Id,
-          staff_Id: data.staff_Id,
-          title: data.title,
-          scheduleDate: new Date(data.scheduleDate),
-          type: data.type,
-          selectedOptions: data.selectedOptions,
-          status: data.status,
-          paymentStatus: data.paymentStatus,
-          result: data.result,
-          createdAt: data.createdAt,
+          amount: (payment.amount ?? 0) + (data.amount ?? 0),
+          updatedAt: data.createdAt,
         },
-      }),
-      this.prisma.payment.create({
+      });
+    } else {
+      payment = await tx.payment.create({
         data: {
           hospital_Id: data.hospital_Id,
           patient_Id: data.patient_Id,
@@ -33,11 +70,48 @@ export class TestingAndScanningPatientService {
           type: 'TESTINGFEESANDSCANNINGFEE',
           createdAt: data.createdAt,
         },
-      }),
-    ]);
+      });
+    }
+
+    // Step 3: Create new test linked to that payment
+    const test = await tx.testingAndScanningPatient.create({
+      data: {
+        hospital_Id: data.hospital_Id,
+        patient_Id: data.patient_Id,
+        doctor_Id: data.doctor_Id,
+        staff_Id: data.staff_Id,
+        title: data.title,
+        scheduleDate: new Date(data.scheduleDate),
+        type: data.type,
+        selectedOptions: data.selectedOptions,
+        status: data.status,
+        paymentStatus: data.paymentStatus,
+        result: data.result,
+        createdAt: data.createdAt,
+        payment_Id: payment.id, // link to the same payment
+      },
+    });
 
     return { test, payment };
+  });
+}
+async updateTestingAndScanningByPayment(paymentId: number) {
+    const result = await this.prisma.testingAndScanningPatient.updateMany({
+      where: { payment_Id: Number(paymentId) },
+      data: { paymentStatus: true },
+    });
+
+    // Return simple success + how many records were updated
+    return {
+      success: true,
+      message: `Updated ${result.count} testing & scanning records successfully.`,
+    };
   }
+//await prisma.testingAndScanningPatient.updateMany({
+//   where: { payment_Id: paymentId },
+//   data: { paymentStatus: true },
+// });
+
 
   async findAll() {
     const records = await this.prisma.testingAndScanningPatient.findMany({
