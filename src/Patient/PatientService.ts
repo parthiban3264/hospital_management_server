@@ -195,6 +195,33 @@ export class PatientService {
     };
   }
 
+    async findCheckUserId(hospital_Id: number, user_Id: string) {
+    const patient = await this.prisma.patient.findUnique({
+      where: {
+        hospital_Id_user_Id: {
+          hospital_Id,
+          user_Id,
+        },
+      },
+      include: {
+        Hospital: true,
+        User: true,
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException(
+        `Patient with user_Id ${user_Id} in hospital ${hospital_Id} not found`,
+      );
+    }
+
+    return {
+      status: 'success',
+      message: 'Patient fetched successfully',
+      data: patient,
+    };
+  }
+
   async updateByUserId(hospital_Id: number, user_Id: string, data: any) {
     const patient = await this.prisma.patient.update({
       where: {

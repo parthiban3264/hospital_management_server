@@ -16,6 +16,7 @@ import { TestingAndScanningHospitalModule } from './TestingAndScanningHospitals/
 import { TestingAndScanningPatientModule } from './TestingAndScanningPatient/testingAndScanningPatient.module';
 import { PaymentModule } from './Payments/payment.module';
 import { RoomsAvailableModule } from './RoomsAvailables/rooms-available.module';
+import { TonicModule } from './Tonic/tonic.module';
 
 @Module({
   imports: [HospitalModule,
@@ -32,6 +33,7 @@ import { RoomsAvailableModule } from './RoomsAvailables/rooms-available.module';
     TestingAndScanningPatientModule,
     PaymentModule,
     RoomsAvailableModule,
+    TonicModule,
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],

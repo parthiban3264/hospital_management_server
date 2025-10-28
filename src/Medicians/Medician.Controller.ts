@@ -24,6 +24,17 @@ export class MedicianController {
   findOne(@Param("id") id: number) {
     return this.service.findOne(+id);
   }
+   @Get("getById/:hospitalId/:id")
+  findById(@Param("hospitalId") hospitalId:number,@Param("id") id: number) {
+    return this.service.findById(Number(hospitalId), +id);
+  }
+
+   @Get("getByName/:hospitalId/:name")
+  findByName(@Param("hospitalId") hospitalId : number ,@Param("name") name: string) {
+    console.log(hospitalId,name);
+    
+    return this.service.findByName(Number(hospitalId), name);
+  }
 
   @Patch("updateById/:id")
   update(@Param("id") id: number, @Body() data: any) {

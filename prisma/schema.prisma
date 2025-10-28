@@ -321,6 +321,7 @@ model Hospital {
   Treatments            Treatment[]
   Medicians             Medician[]
   Injections            Injection[]
+  Tonics                Tonic[]
   TestingAndScannings   TestingAndScanningPatient[]
   TestingAndScanningHs  TestingAndScanningHospital[]
   RoomsAvailables       RoomsAvailable[]
@@ -508,6 +509,7 @@ enum Status {
   SCHEDULED
   COMPLETED
   CANCELLED
+  ENDPROCESS
   ENDPROCESSING
   ONGOING
   PENDING
@@ -564,11 +566,24 @@ model Medician {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   medicianName         String
-  stock                Int
+  stock                Int?
   amount               Float
   dosage Float?
-  staff_Id             Json // Array/object
+  staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("MedicineAndInjection_Medician")
+  Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
+  // @@unique([medicianName, hospital_Id])
+}
+
+model Tonic {
+  id                   Int                    @id @default(autoincrement())
+  hospital_Id          Int
+  tonicName            String
+  stock                Json? // Quantity 250ml=stack=50, 500ml etc. 100ml=50
+  amount               Json?
+  dosage Float?
+  staff_Id             Json? // Array/object
+  MedicineAndInjection MedicineAndInjection[] @relation("Tonic_MedicineAndInjection")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
 }
 
@@ -576,10 +591,10 @@ model Injection {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   injectionName        String
-  stock                Int
-  amount               Float
+  stock                Json?
+  amount               Json?
   dosage Float?
-  staff_Id             Json // Array/object
+  staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("Injection_MedicineAndInjection")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
 }
@@ -623,6 +638,7 @@ model MedicineAndInjection {
   Patient            Patient     @relation("Patient_MedicineAndInjection", fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Medician           Medician[]  @relation("MedicineAndInjection_Medician")
   Injection          Injection[] @relation("Injection_MedicineAndInjection")
+  Tonic             Tonic[]     @relation("Tonic_MedicineAndInjection")
 }
 
 enum TestingAndScanningStatus {

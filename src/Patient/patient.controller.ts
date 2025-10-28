@@ -88,6 +88,14 @@ export class PatientController {
     return this.patientService.findOneByUserId(Number(hospital_Id), user_Id);
   }
 
+  @Get('get/check/:hospital_Id/:user_Id')
+  async findCheckUserId(
+    @Param('hospital_Id') hospital_Id: string,
+    @Param('user_Id') user_Id: string,
+  ) {
+    return this.patientService.findCheckUserId(Number(hospital_Id), user_Id);
+  }
+
   // ✅ Update
   @Patch('update/:hospital_Id/:user_Id')
   async update(

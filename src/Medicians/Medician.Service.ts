@@ -7,7 +7,7 @@ export class MedicianService {
 
   async create(data: any) {
     try {
-      const medician = await this.prisma.medician.create({ data });
+      const medician = await this.prisma.medician.createMany({ data });
       return { status: "success", message: "Medician created", data: medician };
     } catch (error) {
       return { status: "failed", error: error.message };
@@ -37,6 +37,55 @@ export class MedicianService {
     if (!medician) throw new NotFoundException(`Medician with ID ${id} not found`);
     return { status: "success", message: "Medician fetched", data: medician };
   }
+
+    async findById(id: number, hospitalId: number) {
+    const medician = await this.prisma.medician.findUnique({
+      where: { id ,hospital_Id: hospitalId},
+      include: { Hospital: true, MedicineAndInjection: true },
+    });
+    if (!medician) throw new NotFoundException(`Medician with ID ${id} not found`);
+    return { status: "success", message: "Medician fetched", data: medician };
+  }
+
+async findByName(hospitalId: number, name: string) {
+  // Try exact match first
+  const exactMatch = await this.prisma.medician.findFirst({
+    where: {
+      medicianName: { equals: name },
+      hospital_Id: hospitalId,
+    },
+    include: { Hospital: true, MedicineAndInjection: true },
+  });
+
+  // If no exact match, provide autocomplete suggestions
+  if (!exactMatch) {
+    const suggestions = await this.prisma.medician.findMany({
+      where: {
+        medicianName: { startsWith: name },
+        hospital_Id: hospitalId,
+      },
+      take: 5,
+      select: { id: true, medicianName: true, amount: true },
+    });
+
+    if (suggestions.length === 0) {
+      throw new NotFoundException(
+        `Medician with name "${name}" in hospital ID ${hospitalId} not found`
+      );
+    }
+
+    // Return suggestions instead of error
+    return {
+      status: 'partial',
+      message: 'No exact match found. Showing suggestions.',
+      data: suggestions,
+    };
+  }
+
+  // Return exact match
+  return { status: 'success', message: 'Medician fetched', data: exactMatch };
+}
+
 
   async update(id: number, data: any) {
     try {

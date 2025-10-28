@@ -29,7 +29,7 @@ export class TestingAndScanningPatientService {
           patient_Id: data.patient_Id,
           reason: 'Testing & Scanning Fee',
           status: 'PENDING',
-          amount: data.amount ?? 800,
+          amount: data.amount,
           type: 'TESTINGFEESANDSCANNINGFEE',
           createdAt: data.createdAt,
         },

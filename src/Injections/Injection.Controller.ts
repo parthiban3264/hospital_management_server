@@ -18,6 +18,12 @@ export class InjectionController {
   findAllByhospital(@Param('hospitalId') hospitalId: number) {
     return this.service.finfindAllByhospitaldAll(hospitalId);
   }
+    @Get("getByName/:hospitalId/:name")
+  findByHospitalAndName(@Param("hospitalId") hospitalId : number ,@Param("name") name: string) {
+    console.log(hospitalId,name);
+    
+    return this.service.findByHospitalAndName(Number(hospitalId), name);
+  }
 
   @Get("getById/:id")
   findOne(@Param("id") id: number) {
