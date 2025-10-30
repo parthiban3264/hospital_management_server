@@ -23,8 +23,6 @@ enum PatientStatus {
   INACTIVE
 }
 
-
-
 model Hospital {
   id                    Int                          @id @default(autoincrement())
   name                  String
@@ -47,9 +45,9 @@ model Hospital {
   Payments              Payment[]
   MedicineAndInjections MedicineAndInjection[]
   Fees                  Fees[]
-  MedicinePatients    MedicinePatient[]
-  InjectionPatients   InjectionPatient[]
-  TonicPatients       TonicPatient[]
+  MedicinePatients      MedicinePatient[]
+  InjectionPatients     InjectionPatient[]
+  TonicPatients         TonicPatient[]
 }
 
 model User {
@@ -126,19 +124,19 @@ model Patient {
   weight         Float?
   bp             String?
   sugar          String?
-  temperature       Float?
+  temperature    Float?
   tempCreatedAt  DateTime?
-  createdAt      String?         
-  updatedAt      String?      
+  createdAt      String?
+  updatedAt      String?
 
   Consultation         Consultation[]
   Treatment            Treatment[]
   MedicineAndInjection MedicineAndInjection[]      @relation("Patient_MedicineAndInjection")
   TestingAndScanning   TestingAndScanningPatient[]
   Payments             Payment[]
-  MedicinePatients    MedicinePatient[]
-  InjectionPatients   InjectionPatient[]
-  TonicPatients       TonicPatient[]
+  MedicinePatients     MedicinePatient[]
+  InjectionPatients    InjectionPatient[]
+  TonicPatients        TonicPatient[]
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   User     User     @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
@@ -156,24 +154,32 @@ enum Status {
   PENDING
 }
 
+enum QueueStatus {
+  PENDING
+  ONGOING
+  DRQUEUE
+  COMPLETED
+}
+
 model Consultation {
-  id                Int      @id @default(autoincrement())
+  id                Int         @id @default(autoincrement())
   hospital_Id       Int
   patient_Id        String
   doctor_Id         String
   // appointdate       String? //Appoint time
   purpose           String
-  symptoms          Boolean  @default(false)
+  symptoms          Boolean     @default(false)
   notes             Json?
   // diagnosis         String?
-  treatment         Boolean  @default(false)
-  medicineInjection Boolean  @default(false)
-  scanningTesting   Boolean  @default(false)
-  status            Status @default(PENDING) 
+  treatment         Boolean     @default(false)
+  medicineInjection Boolean     @default(false)
+  scanningTesting   Boolean     @default(false)
+  status            Status      @default(PENDING)
+  queueStatus       QueueStatus @default(PENDING)
   access            Json?
   createdAt         String?
   updatedAt         String?
-  paymentStatus     Boolean  @default(false)
+  paymentStatus     Boolean     @default(false)
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   Patient  Patient  @relation(fields: [hospital_Id, patient_Id], references: [hospital_Id, user_Id])
@@ -181,23 +187,23 @@ model Consultation {
 }
 
 model Treatment {
-  id            Int      @id @default(autoincrement())
-  hospital_Id   Int
-  staff_Id      Json // Array/object
-  patient_Id    String
-  doctor_Id     Json // Array/object
-  treatmentName Json? // Array/object
-  startDate     String
-  endDate       String
-  progress      String?
+  id             Int      @id @default(autoincrement())
+  hospital_Id    Int
+  staff_Id       Json // Array/object
+  patient_Id     String
+  doctor_Id      Json // Array/object
+  treatmentName  Json? // Array/object
+  startDate      String
+  endDate        String
+  progress       String?
   treatmentNotes Json?
-  status        Status @default(PENDING) 
-  createdAt     DateTime @default(now())
-  paymentStatus Boolean  @default(false)
-  Hospital      Hospital @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient  @relation(fields: [hospital_Id, patient_Id], references: [hospital_Id, user_Id])
-  Doctor        Admin[]  @relation("Doctor_Treatment")
-  Staff         Admin[]  @relation("Staff_Treatment")
+  status         Status   @default(PENDING)
+  createdAt      DateTime @default(now())
+  paymentStatus  Boolean  @default(false)
+  Hospital       Hospital @relation(fields: [hospital_Id], references: [id])
+  Patient        Patient  @relation(fields: [hospital_Id, patient_Id], references: [hospital_Id, user_Id])
+  Doctor         Admin[]  @relation("Doctor_Treatment")
+  Staff          Admin[]  @relation("Staff_Treatment")
 }
 
 model Medician {
@@ -209,10 +215,10 @@ model Medician {
   staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("MedicineAndInjection_Medician")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
-  MedicinePatients    MedicinePatient[]
- 
+  MedicinePatients     MedicinePatient[]
 }
- // @@unique([medicianName, hospital_Id])
+
+// @@unique([medicianName, hospital_Id])
 model Tonic {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
@@ -222,7 +228,7 @@ model Tonic {
   staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("Tonic_MedicineAndInjection")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
-  TonicPatients       TonicPatient[]
+  TonicPatients        TonicPatient[]
 }
 
 model Injection {
@@ -234,7 +240,7 @@ model Injection {
   staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("Injection_MedicineAndInjection")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
-  InjectionPatients   InjectionPatient[]
+  InjectionPatients    InjectionPatient[]
 }
 
 model TestingAndScanningHospital {
@@ -267,16 +273,16 @@ model MedicineAndInjection {
   InjectionNotes     Json?
   frequencyInjection Json?
   durationInjection  Json?
-  injectionStatus    Boolean     @default(false)
+  injectionStatus    Boolean @default(false)
 
   status        Status      @default(PENDING) // consider enum
-  paymentStatus      Boolean     @default(false)
-  createdAt          DateTime    @default(now())
-  Hospital           Hospital    @relation(fields: [hospital_Id], references: [id])
-  Patient            Patient     @relation("Patient_MedicineAndInjection", fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-  Medician           Medician[]  @relation("MedicineAndInjection_Medician")
-  Injection          Injection[] @relation("Injection_MedicineAndInjection")
-  Tonic             Tonic[]     @relation("Tonic_MedicineAndInjection")
+  paymentStatus Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  Hospital      Hospital    @relation(fields: [hospital_Id], references: [id])
+  Patient       Patient     @relation("Patient_MedicineAndInjection", fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  Medician      Medician[]  @relation("MedicineAndInjection_Medician")
+  Injection     Injection[] @relation("Injection_MedicineAndInjection")
+  Tonic         Tonic[]     @relation("Tonic_MedicineAndInjection")
 }
 
 enum TestingAndScanningStatus {
@@ -321,28 +327,30 @@ model TestingAndScanningPatient {
   result          String?
   createdAt       String
   updatedAt       String?
-  payment_Id      Int?                     // link to Payment
-  Payment         Payment? @relation(fields: [payment_Id], references: [id])
-  Hospital        Hospital @relation(fields: [hospital_Id], references: [id])
-  Patient         Patient  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  payment_Id      Int? // link to Payment
+  Payment         Payment?                 @relation(fields: [payment_Id], references: [id])
+  Hospital        Hospital                 @relation(fields: [hospital_Id], references: [id])
+  Patient         Patient                  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
 }
-
 
 enum PaymentType {
   ManualPay
   OnlinePay
 }
+
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
   REFUNDED
 }
+
 enum Type {
   REGISTRATIONFEE
   TESTINGFEESANDSCANNINGFEE
   TREATMENTFEE
   MEDICINEFEEANDINJECTIONFEE
+  MEDICINETONICINJECTIONFEES
   ROOMCHARGE
   OTHER
 }
@@ -368,29 +376,28 @@ enum Type {
 // }
 
 model Payment {
-  id            Int           @id @default(autoincrement())
-  hospital_Id   Int
-  patient_Id    String
-  staff_Id      String?
-  reason        String
-  status        PaymentStatus @default(PENDING)
-  amount        Float?
-  paymentType   PaymentType?
-  type          Type?
-  transactionId Json?
-  billingId     String?
-  createdBy     String?
-  updategdBy    String?
-  createdAt     String
-  updatedAt     String?
-  Hospital      Hospital      @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient       @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-  TestingAndScanningPatients TestingAndScanningPatient[] 
-  MedicinePatient  MedicinePatient[]
-  InjectionPatient InjectionPatient[]
-  TonicPatient     TonicPatient[]
+  id                         Int                         @id @default(autoincrement())
+  hospital_Id                Int
+  patient_Id                 String
+  staff_Id                   String?
+  reason                     String
+  status                     PaymentStatus               @default(PENDING)
+  amount                     Float?
+  paymentType                PaymentType?
+  type                       Type?
+  transactionId              Json?
+  billingId                  String?
+  createdBy                  String?
+  updategdBy                 String?
+  createdAt                  String
+  updatedAt                  String?
+  Hospital                   Hospital                    @relation(fields: [hospital_Id], references: [id])
+  Patient                    Patient                     @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  TestingAndScanningPatients TestingAndScanningPatient[]
+  MedicinePatient            MedicinePatient[]
+  InjectionPatient           InjectionPatient[]
+  TonicPatient               TonicPatient[]
 }
-
 
 model RoomsAvailable {
   id          Int      @id @default(autoincrement())
@@ -404,92 +411,91 @@ model RoomsAvailable {
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 }
 
-model Fees{
-  id Int @id @default(autoincrement())
+model Fees {
+  id          Int      @id @default(autoincrement())
   hospital_Id Int
-  type Float?
-  amount Float ?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Hospital Hospital @relation(fields: [hospital_Id], references: [id])
+  type        Float?
+  amount      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 }
 
 model MedicinePatient {
-  id              Int       @id @default(autoincrement())
-  hospital_Id     Int
-  patient_Id      String
-  doctor_Id       String
-  medicine_Id     Int
-  reason          String?
-  quantity        Int
-  afterEat        Boolean
-  morning         Boolean   @default(false)
-  afternoon       Boolean   @default(false)
-  night           Boolean   @default(false)
-  days            Int?       @default(0)
-  quantityNeeded  Float?
-  tabletsCharge   Int?
-  total           Float?
-  status          Status    @default(PENDING)
-  paymentStatus   Boolean   @default(false)
-  createdAt       String?
-  updatedAt       String?
+  id             Int     @id @default(autoincrement())
+  hospital_Id    Int
+  patient_Id     String
+  doctor_Id      String
+  medicine_Id    Int
+  reason         String?
+  quantity       Float
+  afterEat       Boolean
+  morning        Boolean @default(false)
+  afternoon      Boolean @default(false)
+  night          Boolean @default(false)
+  days           Int?    @default(0)
+  quantityNeeded Float?
+  tabletsCharge  Int?
+  total          Float?
+  status         Status  @default(PENDING)
+  paymentStatus  Boolean @default(false)
+  createdAt      String?
+  updatedAt      String?
 
-  payment_Id      Int?
-  Payment         Payment? @relation(fields: [payment_Id], references: [id])
-  Hospital   Hospital  @relation(fields: [hospital_Id], references: [id])
-  Patient    Patient   @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-  Medician   Medician  @relation(fields: [medicine_Id], references: [id])
+  payment_Id Int?
+  Payment    Payment? @relation(fields: [payment_Id], references: [id])
+  Hospital   Hospital @relation(fields: [hospital_Id], references: [id])
+  Patient    Patient  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  Medician   Medician @relation(fields: [medicine_Id], references: [id])
 }
 
 model InjectionPatient {
-  id              Int       @id @default(autoincrement())
-  hospital_Id     Int
-  patient_Id      String
-  doctor_Id       String
-  injection_Id    Int
-reason          String?
-  quantity        Int
+  id            Int     @id @default(autoincrement())
+  hospital_Id   Int
+  patient_Id    String
+  doctor_Id     String
+  injection_Id  Int
+  reason        String?
+  quantity      Float
   // afterEat        Boolean?
-  morning         Boolean   @default(false)
-  afternoon       Boolean   @default(false)
-  night           Boolean   @default(false)
-  days            Int?       @default(0)
-  status          Boolean   @default(false)
-  total           Float?
-  paymentStatus   Boolean   @default(false)
-  createdAt       String?
-  updatedAt       String?
+  morning       Boolean @default(false)
+  afternoon     Boolean @default(false)
+  night         Boolean @default(false)
+  days          Int?    @default(0)
+  status        Boolean @default(false)
+  total         Float?
+  paymentStatus Boolean @default(false)
+  createdAt     String?
+  updatedAt     String?
 
-  payment_Id      Int?
-  Payment         Payment? @relation(fields: [payment_Id], references: [id])
-  Hospital   Hospital   @relation(fields: [hospital_Id], references: [id])
-  Patient    Patient    @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-  Injection  Injection  @relation(fields: [injection_Id], references: [id])
+  payment_Id Int?
+  Payment    Payment?  @relation(fields: [payment_Id], references: [id])
+  Hospital   Hospital  @relation(fields: [hospital_Id], references: [id])
+  Patient    Patient   @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  Injection  Injection @relation(fields: [injection_Id], references: [id])
 }
 
 model TonicPatient {
-  id              Int       @id @default(autoincrement())
-  hospital_Id     Int
-  patient_Id      String
-  doctor_Id       String
-  tonic_Id        Int
-  reason          String?
-  quantity        Int?
-  afterEat        Boolean
-  morning         Boolean   @default(false)
-  afternoon       Boolean   @default(false)
-  night           Boolean   @default(false)
-  days            Int       @default(0)
-  total           Float?
-  paymentStatus   Boolean   @default(false)
-  createdAt       String?
-  updatedAt       String?
+  id            Int     @id @default(autoincrement())
+  hospital_Id   Int
+  patient_Id    String
+  doctor_Id     String
+  tonic_Id      Int
+  reason        String?
+  quantity      Int?
+  afterEat      Boolean
+  morning       Boolean @default(false)
+  afternoon     Boolean @default(false)
+  night         Boolean @default(false)
+  days          Int     @default(0)
+  total         Float?
+  paymentStatus Boolean @default(false)
+  createdAt     String?
+  updatedAt     String?
 
-  payment_Id      Int?
-  Payment         Payment? @relation(fields: [payment_Id], references: [id])
-  Hospital   Hospital  @relation(fields: [hospital_Id], references: [id])
-  Patient    Patient   @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-  Tonic      Tonic     @relation(fields: [tonic_Id], references: [id])
+  payment_Id Int?
+  Payment    Payment? @relation(fields: [payment_Id], references: [id])
+  Hospital   Hospital @relation(fields: [hospital_Id], references: [id])
+  Patient    Patient  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  Tonic      Tonic    @relation(fields: [tonic_Id], references: [id])
 }
-

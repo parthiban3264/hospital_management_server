@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ConsultationGateway } from './consultation.gateway';
+import { QueueStatus } from '@prisma/client';
 
 @Injectable()
 export class ConsultationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService,
+    private gateway: ConsultationGateway,
+  ) {}
 
   // async create(data: any) {
   //   try {
@@ -107,6 +111,15 @@ export class ConsultationService {
       return { status: 'failed', error: error.message };
     }
   }
+async updateQueueStatus(id: number, queueStatus: QueueStatus) {
+  const updated = await this.prisma.consultation.update({
+    where: { id },
+    data: { queueStatus },
+  });
+
+  this.gateway.sendQueueStatusUpdate(updated.id, updated.queueStatus);
+  return updated;
+}
 
   //   async update(id: number, data: any) {
   //   try {

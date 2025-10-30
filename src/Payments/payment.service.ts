@@ -67,9 +67,9 @@ async findPendingPaidByHospital(hospitalId: number) {
   });
 }
 
-  async findAll() {
+  async findAll(hospital: number) {
     const payments = await this.prisma.payment.findMany({
-      include: { Hospital: true, Patient: true },
+      where: { hospital_Id: Number(hospital) },
     });
     return { status: "success", message: "Payments fetched", data: payments };
   }

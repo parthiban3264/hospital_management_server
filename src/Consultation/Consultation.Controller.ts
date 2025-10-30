@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
+import { Controller, Get, Post, Put, Delete, Body, Param, Patch, BadRequestException } from "@nestjs/common";
 import { ConsultationService } from "./Consultation.Service";
+import { QueueStatus } from "@prisma/client";
 
 @Controller("consultations")
 export class ConsultationController {
@@ -36,6 +37,18 @@ export class ConsultationController {
   update(@Param("id") id: number, @Body() data: any) {
      console.log('Consulatation id',id);
     return this.service.update(+id, data);
+  }
+   @Patch(':id/queue-status')
+  async updateQueueStatus(
+    @Param('id') id: string,
+    @Body('queueStatus') queueStatus: string,
+  ) {
+    // Validate input against the enum
+    if (!Object.values(QueueStatus).includes(queueStatus as QueueStatus)) {
+      throw new BadRequestException(`Invalid queue status: ${queueStatus}`);
+    }
+
+    return this.service.updateQueueStatus(Number(id), queueStatus as QueueStatus);
   }
 
   @Delete("deleteById/:id")

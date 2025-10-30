@@ -10,9 +10,9 @@ export class PaymentController {
     return this.service.create(data);
   }
 
-  @Get('all')
-  findAll() {
-    return this.service.findAll();
+  @Get('all/:hospitalId')
+  findAll(@Param('hospitalId') hospitalId: number) {
+    return this.service.findAll(Number(hospitalId));
   }
 
   @Get('all/pending/:hospitalId')
