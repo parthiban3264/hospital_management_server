@@ -172,7 +172,8 @@ model Consultation {
   notes             Json?
   // diagnosis         String?
   treatment         Boolean     @default(false)
-  medicineInjection Boolean     @default(false)
+  medicineTonic Boolean     @default(false)
+  Injection         Boolean     @default(false)
   scanningTesting   Boolean     @default(false)
   status            Status      @default(PENDING)
   queueStatus       QueueStatus @default(PENDING)
@@ -184,6 +185,9 @@ model Consultation {
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   Patient  Patient  @relation(fields: [hospital_Id, patient_Id], references: [hospital_Id, user_Id])
   Doctor   Admin    @relation(fields: [hospital_Id, doctor_Id], references: [hospital_Id, user_Id])
+  MedicinePatient MedicinePatient[]
+  InjectionPatient InjectionPatient[]
+  TonicPatient     TonicPatient[]
 }
 
 model Treatment {
@@ -427,6 +431,7 @@ model MedicinePatient {
   patient_Id     String
   doctor_Id      String
   medicine_Id    Int
+  consultation_Id Int?
   reason         String?
   quantity       Float
   afterEat       Boolean
@@ -447,6 +452,7 @@ model MedicinePatient {
   Hospital   Hospital @relation(fields: [hospital_Id], references: [id])
   Patient    Patient  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Medician   Medician @relation(fields: [medicine_Id], references: [id])
+  Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
 }
 
 model InjectionPatient {
@@ -455,14 +461,14 @@ model InjectionPatient {
   patient_Id    String
   doctor_Id     String
   injection_Id  Int
+  consultation_Id Int?
   reason        String?
   quantity      Float
-  // afterEat        Boolean?
   morning       Boolean @default(false)
   afternoon     Boolean @default(false)
   night         Boolean @default(false)
   days          Int?    @default(0)
-  status        Boolean @default(false)
+  status        Status  @default(PENDING)
   total         Float?
   paymentStatus Boolean @default(false)
   createdAt     String?
@@ -473,6 +479,7 @@ model InjectionPatient {
   Hospital   Hospital  @relation(fields: [hospital_Id], references: [id])
   Patient    Patient   @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Injection  Injection @relation(fields: [injection_Id], references: [id])
+  Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
 }
 
 model TonicPatient {
@@ -481,14 +488,16 @@ model TonicPatient {
   patient_Id    String
   doctor_Id     String
   tonic_Id      Int
+  consultation_Id Int?
   reason        String?
-  quantity      Int?
+  quantity      Float
   afterEat      Boolean
   morning       Boolean @default(false)
   afternoon     Boolean @default(false)
   night         Boolean @default(false)
   days          Int     @default(0)
   total         Float?
+  status        Status  @default(PENDING)
   paymentStatus Boolean @default(false)
   createdAt     String?
   updatedAt     String?
@@ -498,4 +507,5 @@ model TonicPatient {
   Hospital   Hospital @relation(fields: [hospital_Id], references: [id])
   Patient    Patient  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Tonic      Tonic    @relation(fields: [tonic_Id], references: [id])
+  Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
 }

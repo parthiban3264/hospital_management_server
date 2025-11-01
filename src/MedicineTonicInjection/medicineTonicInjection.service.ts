@@ -1,119 +1,4 @@
-// import { Injectable } from "@nestjs/common";
-// import { PrismaService } from "src/prisma/prisma.service";
-// import { PaymentStatus, Type } from "@prisma/client";
-
-// @Injectable()
-// export class MedicineTonicInjectionService {
-//   constructor(private prisma: PrismaService) {}
-
-// //  async create(data: any) {
-// //   return this.prisma.$transaction(async (tx) => {
-// //     const { hospital_Id, patient_Id, createdAt } = data;
-
-// //     // ✅ 1️⃣ Calculate total from all three types
-// //     let totalAmount = 0;
-
-// //     if (data.medicines?.length) {
-// //       totalAmount += data.medicines.reduce((sum, m) => sum + (m.total ?? 0), 0);
-// //     }
-// //     if (data.injections?.length) {
-// //       totalAmount += data.injections.reduce((sum, i) => sum + (i.total ?? 0), 0);
-// //     }
-// //     if (data.tonics?.length) {
-// //       totalAmount += data.tonics.reduce((sum, t) => sum + (t.total ?? 0), 0);
-// //     }
-
-// //     // ✅ 2️⃣ Find or create combined payment
-// //     let payment = await tx.payment.findFirst({
-// //       where: {
-// //         hospital_Id,
-// //         patient_Id,
-// //         type: Type.MEDICINETONICINJECTIONFEES,
-// //         status: PaymentStatus.PENDING,
-// //       },
-// //     });
-
-// //     if (payment) {
-// //       payment = await tx.payment.update({
-// //         where: { id: payment.id },
-// //         data: {
-// //           amount: (payment.amount ?? 0) + totalAmount,
-// //           updatedAt: data.createdAt ?? new Date().toISOString(),
-// //         },
-// //       });
-// //     } else {
-// //       payment = await tx.payment.create({
-// //         data: {
-// //           hospital_Id,
-// //           patient_Id,
-// //           reason: "Perscription Fees",
-// //           type: Type.MEDICINETONICINJECTIONFEES,
-// //           status: PaymentStatus.PENDING,
-// //           amount: totalAmount,
-// //           createdAt: data.createdAt ?? new Date().toISOString(),
-// //         },
-// //       });
-// //     }
-
-// //     // ✅ 3️⃣ Prepare data for bulk insert
-// //     const createdAtValue = data.createdAt ?? new Date().toISOString();
-// //     const results: any = { payment };
-
-// //     if (data.medicines?.length) {
-// //       const medicineData = data.medicines.map((m) => ({
-// //         ...m,
-// //         hospital_Id,
-// //         patient_Id,
-// //         payment_Id: payment.id,
-// //         createdAt: createdAtValue,
-// //       }));
-
-// //       await tx.medicinePatient.createMany({
-// //         data: medicineData,
-// //       });
-
-// //       results.medicines = medicineData;
-// //     }
-
-// //     if (data.injections?.length) {
-// //       const injectionData = data.injections.map((i) => ({
-// //         ...i,
-// //         hospital_Id,
-// //         patient_Id,
-// //         payment_Id: payment.id,
-// //         createdAt: createdAtValue,
-// //       }));
-
-// //       await tx.injectionPatient.createMany({
-// //         data: injectionData,
-// //       });
-
-// //       results.injections = injectionData;
-// //     }
-
-// //     if (data.tonics?.length) {
-// //       const tonicData = data.tonics.map((t) => ({
-// //         ...t,
-// //         hospital_Id,
-// //         patient_Id,
-// //         payment_Id: payment.id,
-// //         createdAt: createdAtValue,
-// //       }));
-
-// //       await tx.tonicPatient.createMany({
-// //         data: tonicData,
-// //       });
-
-// //       results.tonics = tonicData;
-// //     }
-
-// //     // ✅ 4️⃣ Return summary
-// //     return results;
-// //   });
-// // }
-// // }
-
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaymentStatus, Type } from '@prisma/client';
 
@@ -230,5 +115,78 @@ export class MedicineTonicInjectionService {
       // ✅ 6️⃣ Return summary
       return results;
     });
+  }
+
+   // ✅ GET grouped by hospital
+  async getAllByHospital(hospital_Id: number) {
+    const [medicines, tonics, injections] = await Promise.all([
+      this.prisma.medicinePatient.findMany({ where: { hospital_Id } }),
+      this.prisma.tonicPatient.findMany({ where: { hospital_Id } }),
+      this.prisma.injectionPatient.findMany({ where: { hospital_Id } }),
+    ]);
+    return { medicines, tonics, injections };
+  }
+
+  // ✅ UPDATE by type and id
+  async updateRecord(type: "medicine" | "tonic" | "injection", id: number, data: any) {
+    const updatedData = {
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (type === "medicine") {
+      const existing = await this.prisma.medicinePatient.findUnique({ where: { id } });
+      if (!existing) throw new HttpException("Record not found", HttpStatus.NOT_FOUND);
+      return this.prisma.medicinePatient.update({
+        where: { id },
+        data: updatedData,
+      });
+    }
+
+    if (type === "tonic") {
+      const existing = await this.prisma.tonicPatient.findUnique({ where: { id } });
+      if (!existing) throw new HttpException("Record not found", HttpStatus.NOT_FOUND);
+      return this.prisma.tonicPatient.update({
+        where: { id },
+        data: updatedData,
+      });
+    }
+
+    if (type === "injection") {
+      const existing = await this.prisma.injectionPatient.findUnique({ where: { id } });
+      if (!existing) throw new HttpException("Record not found", HttpStatus.NOT_FOUND);
+      return this.prisma.injectionPatient.update({
+        where: { id },
+        data: updatedData,
+      });
+    }
+
+    throw new HttpException("Invalid type provided", HttpStatus.BAD_REQUEST);
+  }
+
+  // ✅ DELETE by type and id
+  async deleteRecord(type: "medicine" | "tonic" | "injection", id: number) {
+    if (type === "medicine") {
+      const existing = await this.prisma.medicinePatient.findUnique({ where: { id } });
+      if (!existing) throw new HttpException("Record not found", HttpStatus.NOT_FOUND);
+      await this.prisma.medicinePatient.delete({ where: { id } });
+      return { message: `${type} record deleted successfully`, id };
+    }
+
+    if (type === "tonic") {
+      const existing = await this.prisma.tonicPatient.findUnique({ where: { id } });
+      if (!existing) throw new HttpException("Record not found", HttpStatus.NOT_FOUND);
+      await this.prisma.tonicPatient.delete({ where: { id } });
+      return { message: `${type} record deleted successfully`, id };
+    }
+
+    if (type === "injection") {
+      const existing = await this.prisma.injectionPatient.findUnique({ where: { id } });
+      if (!existing) throw new HttpException("Record not found", HttpStatus.NOT_FOUND);
+      await this.prisma.injectionPatient.delete({ where: { id } });
+      return { message: `${type} record deleted successfully`, id };
+    }
+
+    throw new HttpException("Invalid type provided", HttpStatus.BAD_REQUEST);
   }
 }

@@ -71,6 +71,41 @@ export class ConsultationService {
       },
     });
   }
+
+async findAllByMedical(hospitalId: number) {
+  return this.prisma.consultation.findMany({
+    where: { 
+      hospital_Id: Number(hospitalId),
+      status: { in: ['ENDPROCESSING', 'ONGOING'] },
+      medicineTonic: true,
+    },
+    include: {
+      Hospital: true,
+      Patient: true,
+      MedicinePatient: {
+        include: {
+          Medician: true, 
+          Payment: true,
+        },
+      },
+      InjectionPatient: {
+        include: {
+          Injection: true, 
+          Payment: true, 
+        },
+      },
+      TonicPatient: {
+        include: {
+          Tonic: true,
+          Payment: true,
+        },
+      },
+      Doctor: true,
+    },
+  });
+}
+
+
   async findByHospitalDoctor(hospitalId: number, doctorId: string) {
     return this.prisma.consultation.findMany({
       where: { hospital_Id: Number(hospitalId), doctor_Id: doctorId }, // assuming hospitalId is numeric
