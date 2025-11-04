@@ -189,6 +189,7 @@ model Consultation {
   MedicinePatient  MedicinePatient[]
   InjectionPatient InjectionPatient[]
   TonicPatient     TonicPatient[]
+  Payment          Payment[]   
 }
 
 model Treatment {
@@ -385,6 +386,7 @@ model Payment {
   hospital_Id                Int
   patient_Id                 String
   staff_Id                   String?
+  consultation_Id Int?
   reason                     String
   status                     PaymentStatus               @default(PENDING)
   amount                     Float?
@@ -402,6 +404,8 @@ model Payment {
   MedicinePatient            MedicinePatient[]
   InjectionPatient           InjectionPatient[]
   TonicPatient               TonicPatient[]
+  Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
+
 }
 
 model RoomsAvailable {

@@ -15,6 +15,7 @@ export class PaymentService {
           reason: data.reason,
           status: data.status,
           amount: data.amount,
+          consultation_Id: data.consultation_Id,
           transactionId: data.transactionId,
           billingId: data.billingId,
           type: data.type,
@@ -57,10 +58,8 @@ async findPendingPaidByHospital(hospitalId: number) {
     },
     include: {
       Hospital: true,
-      Patient: {
-        include: {Consultation: true}
-      },
-      
+      Patient: true,
+      Consultation: true,
     },
     orderBy: {
       createdAt: 'asc', // Sort by creation date

@@ -109,46 +109,42 @@ export class PatientService {
   // }
 
   async createPatientWithUser(data: any) {
-    // const defaultPassword = `patient${data.hospital_Id}`;
-    const defaultPassword = `abc123`;
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-    // const phone = `+91 ${data.phone}`;
-    const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
+  const defaultPassword = `abc123`;
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-    // Optionally wrap in a transaction for safety
-    const [user, patient, payment] = await this.prisma.$transaction([
-      this.prisma.user.create({
-        data: {
-          hospital_Id: data.hospital_Id,
-          user_Id: user_Id,
-          password: hashedPassword,
-          role: 'PATIENT',
-        },
-      }),
-      this.prisma.patient.create({
-        data: {
+  // Normalize user ID (phone)
+  const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
+
+  // ✅ Use a callback transaction since we need sequential logic
+  const result = await this.prisma.$transaction(async (tx) => {
+    // 1️⃣ Create User
+    const user = await tx.user.create({
+      data: {
+        hospital_Id: data.hospital_Id,
+        user_Id: user_Id,
+        password: hashedPassword,
+        role: 'PATIENT',
+      },
+    });
+
+    // 2️⃣ Create Patient
+    const patient = await tx.patient.create({
+      data: {
         ...data,
         phone: data.phone,
         hospital_Id: data.hospital_Id,
         createdAt: data.createdAt || new Date().toISOString(),
         user_Id: user_Id,
       },
-      }),
-       this.prisma.payment.create({
-        data: {
-          hospital_Id: data.hospital_Id,
-          patient_Id: user_Id,
-          reason: data.title ?? 'Registration Fee',
-          status: 'PENDING',
-          amount: data.amount ?? 500,
-          type: 'REGISTRATIONFEE',
-          createdAt: data.createdAt,
-        },
-      }),
-    ]);
+    });
+    // Return all created records
+    return { user, patient, };
+  });
 
-    return { user, patient, defaultPassword,payment };
-  }
+  // Return result along with default password
+  return { ...result, defaultPassword };
+}
+
 
   async findAll() {
     const patients = await this.prisma.patient.findMany({

@@ -21,26 +21,51 @@ export class ConsultationService {
   // }
 
   async create(data: any) {
-    try {
-      console.log('Creating consultation with data:', data);
-      const consultation = await this.prisma.consultation.create({
-        data: {
-          hospital_Id: Number(data.hospital_Id), // required for composite relations
-          patient_Id: data.patient_Id, // string
-          doctor_Id: data.doctor_Id, // string
-          purpose: data.purpose,
-          symptoms: data.symptoms,
-          notes: data.notes ? JSON.parse(data.notes) : null,
-          paymentStatus: data.paymentStatus === true,
-          createdAt: data.createdAt || new Date().toISOString(),
-        },
-      });
-      return { status: 'success', data: consultation };
-    } catch (e) {
-      console.error(e);
-      return { status: 'failed', error: e.message };
-    }
+  try {
+    console.log('Creating consultation with data:', data);
+
+    // Step 1️⃣ - Create consultation
+    const consultation = await this.prisma.consultation.create({
+      data: {
+        hospital_Id: Number(data.hospital_Id),
+        patient_Id: data.patient_Id,
+        doctor_Id: data.doctor_Id,
+        purpose: data.purpose,
+        symptoms: data.symptoms,
+        notes: data.notes ? JSON.parse(data.notes) : null,
+        paymentStatus: data.paymentStatus === true,
+        createdAt: data.createdAt || new Date().toISOString(),
+      },
+    });
+
+    // Step 2️⃣ - Create payment linked to consultation
+    const payment = await this.prisma.payment.create({
+      data: {
+        hospital_Id: Number(data.hospital_Id),
+        patient_Id: data.patient_Id,
+        consultation_Id: consultation.id, // ✅ works now
+        reason: data.title ?? 'Registration Fee',
+        status: 'PENDING',
+        amount: data.amount ?? 500,
+        type: 'REGISTRATIONFEE',
+        createdAt: data.createdAt || new Date().toISOString(),
+      },
+    });
+
+    // Step 3️⃣ - Return response
+    return {
+      status: 'success',
+      data: {
+        consultationId: consultation.id,
+        paymentId: payment.id,
+      },
+    };
+  } catch (e) {
+    console.error(e);
+    return { status: 'failed', error: e.message };
   }
+}
+
 
   async findAll() {
     const consultations = await this.prisma.consultation.findMany({
