@@ -66,6 +66,7 @@ export class TestingAndScanningPatientService {
           patient_Id: data.patient_Id,
           reason: 'Testing & Scanning Fee',
           status: 'PENDING',
+          consultation_Id: data.consultation_Id,
           amount: data.amount,
           type: 'TESTINGFEESANDSCANNINGFEE',
           createdAt: data.createdAt,

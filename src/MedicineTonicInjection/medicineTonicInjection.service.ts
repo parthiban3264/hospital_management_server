@@ -55,6 +55,7 @@ export class MedicineTonicInjectionService {
             hospital_Id,
             patient_Id,
             reason: 'Prescription Fees',
+            consultation_Id: data.consultation_Id,
             type: Type.MEDICINETONICINJECTIONFEES,
             status: PaymentStatus.PENDING,
             amount: totalAmount, // ✅ number, not string
