@@ -121,11 +121,6 @@ model Patient {
   bldGrp         String?
   currentProblem String?
   medicalHistory String?
-  height         Float?
-  weight         Float?
-  bp             String?
-  sugar          String?
-  temperature    Float?
   tempCreatedAt  DateTime?
   createdAt      String?
   updatedAt      String?
@@ -173,6 +168,11 @@ model Consultation {
   notes           Json?
   // diagnosis         String?
   treatment       Boolean     @default(false)
+  height         Float?
+  weight         Float?
+  bp             String?
+  sugar          String?
+  temperature    Float?
   medicineTonic   Boolean     @default(false)
   Injection       Boolean     @default(false)
   scanningTesting Boolean     @default(false)
@@ -216,8 +216,11 @@ model Medician {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   medicianName         String
+  medicianCode         String?
   stock                Int?
   amount               Float
+  expiryDate           String?
+  manifacturingDate    String?
   staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("MedicineAndInjection_Medician")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
@@ -229,9 +232,12 @@ model Tonic {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   tonicName            String
+  tonicCode            String?
   stock                Json? // Quantity 250ml=stack=50, 500ml etc. 100ml=50
   amount               Json?
   staff_Id             Json? // Array/object
+  expiryDate           String?
+  manifacturingDate    String?
   MedicineAndInjection MedicineAndInjection[] @relation("Tonic_MedicineAndInjection")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
   TonicPatients        TonicPatient[]
@@ -241,8 +247,12 @@ model Injection {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   injectionName        String
+  injectionCode        String?
   stock                Json?
+  unit                 String?                // ✅ Added: mg, mL
   amount               Json?
+  expiryDate           String?
+  manifacturingDate    String?
   staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("Injection_MedicineAndInjection")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])

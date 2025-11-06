@@ -24,7 +24,7 @@ export class MedicianService {
   async finfindAllByhospitaldAll(hospitalId: number) {
     const injections = await this.prisma.medician.findMany({
       where: { hospital_Id: Number(hospitalId) },
-      include: { Hospital: true, MedicineAndInjection: true },
+      // include: { Hospital: true, MedicineAndInjection: true },
     });
     return { status: "success", message: "Injections fetched", data: injections };
   }

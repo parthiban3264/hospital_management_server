@@ -9,6 +9,10 @@ export class TonicController {
   create(@Body() data: any) {
     return this.tonicService.create(data);
   }
+   @Get('all/:hospitalId')
+  findAllByhospital(@Param('hospitalId') hospitalId: number) {
+    return this.tonicService.finfindAllByhospitaldAll(hospitalId);
+  }
 
   @Get('all/:hospital_Id/:tonicName')
   findAll(@Query('hospital_Id') hospital_Id: string, @Query('tonicName') tonicName: string) {

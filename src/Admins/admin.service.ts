@@ -11,7 +11,9 @@ export class AdminService {
       const defaultPassword = `abc123`;
       const hashedPassword = await bcrypt.hash(defaultPassword, 10);
       // const phone = data.phone .startsWith('+91') ? data.phone : `+91 ${data.phone}`;
-      const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
+      const user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
+      console.log(user_Id,data.phone);
+      
 
   
       // Optionally wrap in a transaction for safety

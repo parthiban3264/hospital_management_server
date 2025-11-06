@@ -6,7 +6,13 @@ export class TonicService {
   constructor(private prisma: PrismaService) {}
 
   create(data: any) {
-    return this.prisma.tonic.createMany({ data });
+    try{
+const tonic = this.prisma.tonic.createMany({ data });
+    return { status: 'success', message: 'Tonic created', data: tonic };
+    }catch(error){
+      return { status: 'failed', error: error.message };
+    }
+    
   }
 
   findAll() {
@@ -15,6 +21,13 @@ export class TonicService {
 
   findByHospital(hospital_Id: number) {
     return this.prisma.tonic.findMany({ where: { hospital_Id } });
+  }
+  async finfindAllByhospitaldAll(hospitalId: number) {
+    const tonic = await this.prisma.tonic.findMany({
+      where: { hospital_Id: Number(hospitalId) },
+      // include: { Hospital: true, MedicineAndInjection: true },
+    });
+    return { status: "success", message: "tonics fetched", data: tonic };
   }
 
  async findByHospitalAndName(hospital_Id: number, name: string) {
