@@ -168,11 +168,11 @@ model Consultation {
   notes           Json?
   // diagnosis         String?
   treatment       Boolean     @default(false)
-  height         Float?
-  weight         Float?
-  bp             String?
-  sugar          String?
-  temperature    Float?
+  height          Float?
+  weight          Float?
+  bp              String?
+  sugar           String?
+  temperature     Float?
   medicineTonic   Boolean     @default(false)
   Injection       Boolean     @default(false)
   scanningTesting Boolean     @default(false)
@@ -189,7 +189,7 @@ model Consultation {
   MedicinePatient  MedicinePatient[]
   InjectionPatient InjectionPatient[]
   TonicPatient     TonicPatient[]
-  Payment          Payment[]   
+  Payment          Payment[]
 }
 
 model Treatment {
@@ -249,7 +249,7 @@ model Injection {
   injectionName        String
   injectionCode        String?
   stock                Json?
-  unit                 String?                // ✅ Added: mg, mL
+  unit                 String? // ✅ Added: mg, mL
   amount               Json?
   expiryDate           String?
   manifacturingDate    String?
@@ -328,26 +328,7 @@ enum TestingAndScanningStatus {
 //   Patient       Patient                  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
 // }
 
-model TestingAndScanningPatient {
-  id              Int                      @id @default(autoincrement())
-  hospital_Id     Int
-  patient_Id      String
-  doctor_Id       Json
-  staff_Id        Json?
-  title           String?
-  scheduleDate    DateTime
-  selectedOptions Json?
-  type            String?
-  status          TestingAndScanningStatus @default(PENDING)
-  paymentStatus   Boolean                  @default(false)
-  result          String?
-  createdAt       String
-  updatedAt       String?
-  payment_Id      Int? // link to Payment
-  Payment         Payment?                 @relation(fields: [payment_Id], references: [id])
-  Hospital        Hospital                 @relation(fields: [hospital_Id], references: [id])
-  Patient         Patient                  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-}
+
 
 enum PaymentType {
   ManualPay
@@ -396,7 +377,7 @@ model Payment {
   hospital_Id                Int
   patient_Id                 String
   staff_Id                   String?
-  consultation_Id Int?
+  consultation_Id            Int?
   reason                     String
   status                     PaymentStatus               @default(PENDING)
   amount                     Float?
@@ -414,8 +395,7 @@ model Payment {
   MedicinePatient            MedicinePatient[]
   InjectionPatient           InjectionPatient[]
   TonicPatient               TonicPatient[]
-  Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
-
+  Consultation               Consultation?               @relation(fields: [consultation_Id], references: [id])
 }
 
 model RoomsAvailable {
@@ -530,14 +510,69 @@ enum Types {
   TEST
 }
 
+// model ScanAndTest {
+//   id          Int      @id @default(autoincrement())
+//   hospital_Id Int
+//   title       String
+//   options     Json? // e.g., [{"name": "Hemoglobin", "price": 50}, {"name": "Sugar", "price": 100}, {"name": "WBC Count", "price": 60}, {"name": "RBC Count", "price": 60}, {"name": "Platelet Count", "price": 70}, {"name": "Hematocrit", "price": 100}]
+//   type        Types
+//   amount      Float?
+//   crearedAt   String?
+//   updatedAt   String?
+//   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
+//   references  ScanAndTestUnitReferance[] @relation("TestReferences")
+// }
+// model ScanAndTestUnitReferance {
+//   id          Int      @id @default(autoincrement())
+//   optionName  String   // Matches ScanAndTest.options.name, e.g., "Hemoglobin"
+//   unit        String   // e.g. "g/dL", "mg/dL", etc.
+//   reference   Json     // e.g., { "0_1_MF": "13.5–20.0", "144_216_M": "13.5–16.5", ... }
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+//   ScanAndTest ScanAndTest[]
+// }
+model TestingAndScanningPatient {
+  id                    Int                      @id @default(autoincrement())
+  hospital_Id           Int
+  patient_Id            String
+  doctor_Id             Json
+  staff_Id              Json?
+  title                 String?
+  scheduleDate          DateTime
+  queueStatus           QueueStatus              @default(PENDING)
+  selectedOptions       Json?
+  selectedOptionResults Json?
+  type                  String?
+  status                TestingAndScanningStatus @default(PENDING)
+  paymentStatus         Boolean                  @default(false)
+  result                String?
+  createdAt             String
+  updatedAt             String?
+  payment_Id            Int? // link to Payment
+  Payment               Payment?                 @relation(fields: [payment_Id], references: [id])
+  Hospital              Hospital                 @relation(fields: [hospital_Id], references: [id])
+  Patient               Patient                  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+
+}
+
 model ScanAndTest {
   id          Int      @id @default(autoincrement())
   hospital_Id Int
   title       String
-  options     Json?
+  options     Json?     // list of sub-tests [{ name, price }]
   type        Types
   amount      Float?
-  crearedAt   String?
+  createdAt   String?  
   updatedAt   String?
-  Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
+
+  Hospital    Hospital  @relation(fields: [hospital_Id], references: [id])
+}
+
+model ScanAndTestUnitReferance {
+  id          Int      @id @default(autoincrement())
+  optionName  String   @unique// e.g. "Hemoglobin", "ALT", "Creatinine"
+  unit        String   // e.g. "g/dL", "mg/dL", "U/L"
+  referance   Json     // JSON of ranges (age/gender/pregnancy keys)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

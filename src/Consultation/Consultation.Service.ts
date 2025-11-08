@@ -163,7 +163,7 @@ async findAllByMedical(hospitalId: number) {
 
   async update(id: number, data: any) {
     try {
-      const consultation = await this.prisma.consultation.update({
+      const consultation = await this.prisma.consultation.updateMany({
         where: { id },
         data,
       });
