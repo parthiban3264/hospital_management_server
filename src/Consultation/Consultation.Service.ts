@@ -87,7 +87,7 @@ export class ConsultationService {
     };
   }
 
-  async findAllByHospital(hospitalId: number) {
+  async findAllByHospitalOverview(hospitalId: number) {
     return this.prisma.consultation.findMany({
       where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING']} }, // assuming hospitalId is numeric
       include: {
@@ -101,6 +101,125 @@ export class ConsultationService {
       },
     });
   }
+
+  async findAllByHospitalDrQueue(hospitalId: number) {
+  // Step 1️⃣: Fetch consultations
+  const consultations = await this.prisma.consultation.findMany({
+    where: { 
+      hospital_Id: Number(hospitalId),
+      status: { in: ['PENDING', 'ENDPROCESSING', 'ONGOING'] } 
+    },
+    include: {
+      Hospital: { select: { name: true } },
+      Patient: {
+        select: {
+          user_Id: true,
+          name: true,
+          gender: true,
+          phone: true,
+          dob: true,
+          bldGrp: true,
+          address: true,
+          TestingAndScanning: true,
+        },
+      },
+      Doctor: { select: { user_Id:true,name: true, specialist: true } },
+    },
+  });
+
+  // Step 2️⃣: Fetch unit/reference info
+  const unitRefs = await this.prisma.scanAndTestUnitReferance.findMany({
+    select: { optionName: true, unit: true, referance: true },
+  });
+
+  // Step 3️⃣: Helper functions
+  const calculateAgeInMonths = (dob: string | Date | null) => {
+    if (!dob) return 0;
+    const birth = new Date(dob);
+    const now = new Date();
+    return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+  };
+
+  const getReferenceForPatient = (refJson: any, ageMonths: number, gender: string) => {
+    if (!refJson) return 'N/A';
+    let parsed;
+    try {
+      parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
+    } catch {
+      return 'N/A';
+    }
+    const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
+    for (const key of Object.keys(parsed)) {
+      const [minStr, maxStr, g] = key.split('_');
+      const min = parseInt(minStr, 10);
+      const max = parseInt(maxStr, 10);
+      if (ageMonths >= min && ageMonths <= max && g.toLowerCase() === genderKey) {
+        return parsed[key];
+      }
+    }
+    return 'N/A';
+  };
+
+  // Step 4️⃣: Transform TestingAndScanning data
+  const formatted = consultations.map(c => {
+    const patient = c.Patient;
+    const ageMonths = calculateAgeInMonths(patient.dob);
+
+    return {
+      id: c.id,
+      patient_Id: c.patient_Id,
+      purpose: c.purpose,
+      status: c.status,
+      queueStatus: c.queueStatus,
+      symptoms: c.symptoms,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      medicineTonic: c.medicineTonic,
+      Injection: c.Injection,
+      scanningTesting: c.scanningTesting,
+      paymentStatus: c.paymentStatus,
+      Patient: {
+        // patient_Id: patient.user_Id,
+        name: patient.name,
+        dob: patient.dob,
+        phone:typeof patient.phone === 'object' && patient.phone ? (patient.phone as any).mobile ?? '-' : '-',
+        gender: patient.gender,
+        bldGrp: patient.bldGrp,
+        address: patient.address ?? {},
+        TestingAndScanning: (patient.TestingAndScanning || [])
+          .filter(t => t.status === 'COMPLETED')
+          .map(t => ({
+            title: t.title,
+            type: t.type,
+            results: t.result,
+            selectedOptions: (Array.isArray(t.selectedOptions) ? t.selectedOptions : []).map(option => {
+              const key = String(option).toLowerCase();
+              const unitInfo = unitRefs.find(u => u.optionName?.toLowerCase() === key);
+              const reference = unitInfo?.referance
+                ? getReferenceForPatient(unitInfo.referance, ageMonths, patient.gender)
+                : 'N/A';
+
+              return {
+                name: String(option),
+                selectedOption: String(option),
+                result: ((t.selectedOptionResults as Record<string, any>) || {})[String(option)] || '',
+                unit: unitInfo?.unit || '',
+                reference,
+              };
+            }),
+          })),
+      },
+      Doctor: {doctorId:c.Doctor.user_Id, name: c.Doctor.name, specialist: c.Doctor.specialist },
+      Hospital: { name: c.Hospital.name },
+    };
+  });
+
+  return {
+    status: 'success',
+    message: 'Consultations with completed tests fetched',
+    data: formatted,
+  };
+}
 
 async findAllByMedical(hospitalId: number) {
   return this.prisma.consultation.findMany({

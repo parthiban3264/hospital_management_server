@@ -164,6 +164,7 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
               type: true,
             },
           },
+          Admins: { select: { user_Id: true, name: true } },
         },
       },
       Patient: {
@@ -171,6 +172,7 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
           user_Id: true,
           name: true,
           dob: true,
+          bldGrp: true,
           gender: true,
           phone: true,
           address: true,
@@ -189,26 +191,27 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
     select: { optionName: true, unit: true, referance: true },
   });
 
-  // Step 3️⃣: Collect doctor IDs and fetch names
-  const doctorIds = Array.from(
-    new Set(
-      records
-        .flatMap((r) =>
-          Array.isArray(r.Patient?.Consultation)
-            ? r.Patient.Consultation.map((c) => Number(c.doctor_Id))
-            : [],
-        )
-        .filter(Boolean),
-    ),
-  );
+  // Step 3️⃣: Collect doctor user IDs and fetch names
+ const doctorUserIds: string[] = Array.from(
+  new Set(
+    records
+      .flatMap((r) =>
+        Array.isArray(r.Patient?.Consultation)
+          ? r.Patient.Consultation.map((c) => c.doctor_Id) // doctor_Id might be number
+          : [],
+      )
+      .filter(Boolean),
+  ),
+).map(id => id.toString()); // ✅ convert numbers to strings
 
-  const doctors = await this.prisma.admin.findMany({
-    where: { id: { in: doctorIds } },
-    select: { id: true, name: true },
-  });
+const doctors = await this.prisma.admin.findMany({
+  where: { user_Id: { in: doctorUserIds } }, // now matches string[]
+  select: { user_Id: true, name: true },
+});
+
 
   const doctorMap = new Map<number, string>();
-  doctors.forEach((d) => doctorMap.set(d.id, d.name));
+  doctors.forEach((d) => doctorMap.set(Number(d.user_Id), d.name));
 
   // Helper: Calculate age
   const calculateAge = (dob: Date | string | null) => {
@@ -258,7 +261,7 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
       user_Id: '',
       gender: '',
       dob: '',
-      bldGrp:'',
+      bldGrp:'N/A',
       address: {},
       phone: {},
       Consultation: [],
@@ -267,19 +270,14 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
     const age = calculateAge(patient.dob);
     const gender = patient.gender ?? '';
 
-    // Parse selectedOptions (array or object)
+    // Parse selectedOptions
     let selectedOptions: any = {};
     if (rec.selectedOptions) {
       if (typeof rec.selectedOptions === 'string') {
-        try {
-          selectedOptions = JSON.parse(rec.selectedOptions);
-        } catch {
-          selectedOptions = {};
-        }
+        try { selectedOptions = JSON.parse(rec.selectedOptions); } catch { selectedOptions = {}; }
       } else if (Array.isArray(rec.selectedOptions)) {
         selectedOptions = rec.selectedOptions.reduce((acc: any, val: string) => {
-          acc[val] = val; // selected option name itself
-          return acc;
+          acc[val] = val; return acc;
         }, {});
       } else if (typeof rec.selectedOptions === 'object') {
         selectedOptions = rec.selectedOptions;
@@ -311,7 +309,7 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
           price: opt.price ?? null,
           unit: unitInfo?.unit ?? 'N/A',
           reference,
-          selectedOption: selectedOptions[opt.name] ?? 'N/A', // Properly show selected
+          selectedOption: selectedOptions[opt.name] ?? 'N/A',
           result: selectedOptionResults[opt.name] ?? 'N/A',
         };
       });
@@ -319,6 +317,7 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
       return {
         id: test.id,
         title: test.title,
+        results: rec.result,
         type: test.type,
         options: mergedOptions,
       };
@@ -328,11 +327,11 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
     let doctorInfo = { id: 'N/A', name: 'N/A', consultationId: 'N/A' };
     if (Array.isArray(patient.Consultation) && patient.Consultation.length > 0) {
       const consultation = patient.Consultation[0];
-      const docId = Number(consultation?.doctor_Id);
-      if (docId)
+      const docUserId = Number(consultation?.doctor_Id);
+      if (docUserId)
         doctorInfo = {
-          id: String(docId),
-          name: doctorMap.get(docId) ?? 'N/A',
+          id: String(docUserId),
+          name: doctorMap.get(docUserId) ?? 'N/A',
           consultationId: String(consultation.id),
         };
     }
@@ -346,7 +345,7 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
       status: rec.status,
       queueStatus: rec.queueStatus ?? 'N/A',
       scheduleDate: rec.scheduleDate,
-      result: rec.result,
+      // result: rec.result,
       createdAt: rec.createdAt,
       Patient: {
         name: patient.name ?? 'N/A',
@@ -357,7 +356,7 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
         dob: patient.dob ?? '',
         address: patient.address ?? {},
         phone:
-          typeof patient.phone === 'object' && patient.phone ? (patient.phone as any).mobile ?? 'N/A' : 'N/A',
+          typeof patient.phone === 'object' && patient.phone ? (patient.phone as any).mobile ?? '-' : '-',
         doctor: doctorInfo,
       },
       Hospital: { name: hospital.name ?? 'N/A', address: hospital.address ?? 'N/A' },
@@ -372,7 +371,6 @@ async findAllTestAndScanByType(hospital_Id: number, type: string) {
     data: result,
   };
 }
-
 
 
   async finfindAllTestandScan(hospital_Id: number) {
