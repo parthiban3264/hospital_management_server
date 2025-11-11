@@ -85,6 +85,7 @@ export class TestingAndScanningPatientService {
           scheduleDate: new Date(data.scheduleDate),
           type: data.type,
           selectedOptions: data.selectedOptions,
+          selectedOptionResults: data.selectedOptionResults,
           status: data.status,
           paymentStatus: data.paymentStatus,
           result: data.result,

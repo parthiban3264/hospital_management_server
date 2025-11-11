@@ -552,7 +552,6 @@ model TestingAndScanningPatient {
   Payment               Payment?                 @relation(fields: [payment_Id], references: [id])
   Hospital              Hospital                 @relation(fields: [hospital_Id], references: [id])
   Patient               Patient                  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
-
 }
 
 model ScanAndTest {

@@ -110,7 +110,7 @@ export class ConsultationService {
       status: { in: ['PENDING', 'ENDPROCESSING', 'ONGOING'] } 
     },
     include: {
-      Hospital: { select: { name: true } },
+      Hospital: { select: {id:true, name: true } },
       Patient: {
         select: {
           user_Id: true,
@@ -168,6 +168,7 @@ export class ConsultationService {
     return {
       id: c.id,
       patient_Id: c.patient_Id,
+      hospital_Id: c.hospital_Id,
       purpose: c.purpose,
       status: c.status,
       queueStatus: c.queueStatus,
