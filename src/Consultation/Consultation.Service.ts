@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConsultationGateway } from './consultation.gateway';
 import { QueueStatus } from '@prisma/client';
+import { log } from 'console';
 
 @Injectable()
 export class ConsultationService {
@@ -89,7 +90,7 @@ export class ConsultationService {
 
   async findAllByHospitalOverview(hospitalId: number) {
     return this.prisma.consultation.findMany({
-      where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING']} }, // assuming hospitalId is numeric
+      where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING','COMPLETED']} }, // assuming hospitalId is numeric
       include: {
         Hospital: true,
         Patient: {
@@ -222,12 +223,21 @@ export class ConsultationService {
   };
 }
 
-async findAllByMedical(hospitalId: number) {
+async findAllByMedical(hospitalId: number,mode : number) {
+  console.log('Mode in service:', mode);
+  const extraCondition =
+    mode == 0
+      ? { medicineTonic: true }
+      : mode == 1
+      ? { Injection: true,medicineTonic: false }
+      : {};
+      log('Extra Condition:', extraCondition);
   return this.prisma.consultation.findMany({
     where: { 
       hospital_Id: Number(hospitalId),
+      ...extraCondition,
       status: { in: ['ENDPROCESSING', 'ONGOING'] },
-      medicineTonic: true,
+      
     },
     include: {
       Hospital: true,
