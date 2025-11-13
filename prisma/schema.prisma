@@ -190,6 +190,7 @@ model Consultation {
   InjectionPatient InjectionPatient[]
   TonicPatient     TonicPatient[]
   Payment          Payment[]
+  TeatingAndScanningPatient TestingAndScanningPatient[]
 }
 
 model Treatment {
@@ -548,10 +549,12 @@ model TestingAndScanningPatient {
   result                String?
   createdAt             String
   updatedAt             String?
+  consultation_Id        Int?
   payment_Id            Int? // link to Payment
   Payment               Payment?                 @relation(fields: [payment_Id], references: [id])
   Hospital              Hospital                 @relation(fields: [hospital_Id], references: [id])
   Patient               Patient                  @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
+  Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
 }
 
 model ScanAndTest {

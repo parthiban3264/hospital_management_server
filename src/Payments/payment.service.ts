@@ -37,10 +37,10 @@ async findPendingPaymentsByHospital(hospitalId: number) {
       NOT: {type: 'MEDICINETONICINJECTIONFEES' },
     },
     include: {
-      Hospital: true,
-      Patient: {
-        include: {Consultation: true, TestingAndScanning: true},
-      },
+      Hospital: {select: {id:true ,name: true,}},
+      Patient: {select: {user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,},},
+      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,} },
+      TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true, },},
     },
     orderBy: {
       createdAt: 'asc', // Sort by creation date

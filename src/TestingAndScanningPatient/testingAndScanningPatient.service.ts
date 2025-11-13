@@ -81,6 +81,7 @@ export class TestingAndScanningPatientService {
           patient_Id: data.patient_Id,
           doctor_Id: data.doctor_Id,
           staff_Id: data.staff_Id,
+          consultation_Id: data.consultation_Id,
           title: data.title,
           scheduleDate: new Date(data.scheduleDate),
           type: data.type,

@@ -121,10 +121,11 @@ export class ConsultationService {
           dob: true,
           bldGrp: true,
           address: true,
-          TestingAndScanning: true,
+          // TestingAndScanning: true,
         },
       },
       Doctor: { select: { user_Id:true,name: true, specialist: true } },
+      TeatingAndScanningPatient: true,
     },
   });
 
@@ -162,8 +163,10 @@ export class ConsultationService {
   };
 
   // Step 4️⃣: Transform TestingAndScanning data
+
   const formatted = consultations.map(c => {
     const patient = c.Patient;
+    const TeatingAndScanningPatient = c.TeatingAndScanningPatient;
     const ageMonths = calculateAgeInMonths(patient.dob);
 
     return {
@@ -188,8 +191,10 @@ export class ConsultationService {
         gender: patient.gender,
         bldGrp: patient.bldGrp,
         address: patient.address ?? {},
-        TestingAndScanning: (patient.TestingAndScanning || [])
-          .filter(t => t.status === 'COMPLETED')
+    
+      },
+      TeatingAndScanningPatient: (TeatingAndScanningPatient || [])
+          .filter(t => t.status === 'COMPLETED' && t.consultation_Id === c.id)
           .map(t => ({
             title: t.title,
             type: t.type,
@@ -210,7 +215,6 @@ export class ConsultationService {
               };
             }),
           })),
-      },
       Doctor: {doctorId:c.Doctor.user_Id, name: c.Doctor.name, specialist: c.Doctor.specialist },
       Hospital: { name: c.Hospital.name },
     };
