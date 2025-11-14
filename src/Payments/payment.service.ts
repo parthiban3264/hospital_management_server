@@ -48,24 +48,54 @@ async findPendingPaymentsByHospital(hospitalId: number) {
   });
 }
 
+// async findPendingPaidByHospital(hospitalId: number) {
+//   return this.prisma.payment.findMany({
+//     where: {
+//       hospital_Id: Number(hospitalId),
+//       status: {
+//         in: ['PAID'], // Only pending or ongoing payments
+//       },
+//     },
+//     include: {
+//       Hospital: true,
+//       Patient: true,
+//       Consultation: true,
+//     },
+//     orderBy: {
+//       createdAt: 'asc', // Sort by creation date
+//     },
+//   });
+// }
+
 async findPendingPaidByHospital(hospitalId: number) {
   return this.prisma.payment.findMany({
     where: {
       hospital_Id: Number(hospitalId),
-      status: {
-        in: ['PAID'], // Only pending or ongoing payments
+      status: 'PAID',
+      Patient: {
+        Consultation: {
+          some: {
+            symptoms: false,
+            paymentStatus: true,
+            status: 'PENDING',
+          },
+        },
       },
     },
     include: {
       Hospital: true,
-      Patient: true,
-      Consultation: true,
+      Patient: {
+        include: {
+          Consultation: true,
+        },
+      },
     },
     orderBy: {
-      createdAt: 'asc', // Sort by creation date
+      createdAt: 'asc',
     },
   });
 }
+
 
   async findAll(hospital: number) {
     const payments = await this.prisma.payment.findMany({

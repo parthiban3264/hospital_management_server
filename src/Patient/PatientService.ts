@@ -170,11 +170,10 @@ export class PatientService {
         },
       },
       include: {
-        Consultation: true,
-        Treatment: true,
-        Payments: true,
-        Hospital: true,
-        User: true,
+        Consultation: {select: {id: true, patient_Id: true, status:true },},
+        // Payments: true,
+        Hospital: {select: {id:true ,name: true,}},
+        User: {select: {id:true, user_Id: true, role: true,},} 
       },
     });
 
@@ -200,6 +199,7 @@ export class PatientService {
         },
       },
       include: {
+        Consultation: {select: {id: true, patient_Id: true, status:true },},
         Hospital: true,
         User: true,
       },
