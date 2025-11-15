@@ -71,30 +71,25 @@ async findPendingPaidByHospital(hospitalId: number) {
   return this.prisma.payment.findMany({
     where: {
       hospital_Id: Number(hospitalId),
-      status: 'PAID',
-      Patient: {
-        Consultation: {
-          some: {
-            symptoms: false,
-            paymentStatus: true,
-            status: 'PENDING',
-          },
-        },
+      status: "PAID",
+
+      Consultation: {
+        status: "PENDING",
+        paymentStatus: true,
+        symptoms: false,
       },
     },
     include: {
       Hospital: true,
-      Patient: {
-        include: {
-          Consultation: true,
-        },
-      },
+      Patient: true,
+      Consultation: true,
     },
     orderBy: {
-      createdAt: 'asc',
+      createdAt: "asc",
     },
   });
 }
+
 
 
   async findAll(hospital: number) {
