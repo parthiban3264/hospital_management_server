@@ -340,6 +340,7 @@ const doctors = await this.prisma.admin.findMany({
 
     return {
       id: rec.id,
+      consulateId: rec.consultation_Id,
       patient_Id: rec.patient_Id,
       staff_Id: rec.staff_Id,
       title: rec.title,
