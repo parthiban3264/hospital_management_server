@@ -19,6 +19,8 @@ import { RoomsAvailableModule } from './RoomsAvailables/rooms-available.module';
 import { TonicModule } from './Tonic/tonic.module';
 import { MedicineTonicInjectionModule } from './MedicineTonicInjection/medicineTonicInjection.module';
 import { ScanAndTestModule } from './TestAndScan/test-scan.module';
+import { DrawerModule } from './Drawer/drawer.module';
+import { IncomeAndExpenseModule } from './IncomeExpense/incomeExpense.module';
 
 @Module({
   imports: [HospitalModule,
@@ -38,6 +40,8 @@ import { ScanAndTestModule } from './TestAndScan/test-scan.module';
     TonicModule,
     MedicineTonicInjectionModule,
     ScanAndTestModule,
+    DrawerModule,
+    IncomeAndExpenseModule,
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],

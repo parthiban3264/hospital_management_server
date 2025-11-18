@@ -49,6 +49,8 @@ model Hospital {
   InjectionPatients     InjectionPatient[]
   TonicPatients         TonicPatient[]
   ScanAndTests          ScanAndTest[]
+  Drawers               Drawer[]
+  IncomeAndExpenses     IncomeAndExpense[]
 }
 
 model User {
@@ -546,6 +548,8 @@ model TestingAndScanningPatient {
   type                  String?
   status                TestingAndScanningStatus @default(PENDING)
   paymentStatus         Boolean                  @default(false)
+  amount                Float?
+  reason                String?
   result                String?
   createdAt             String
   updatedAt             String?
@@ -566,7 +570,6 @@ model ScanAndTest {
   amount      Float?
   createdAt   String?  
   updatedAt   String?
-
   Hospital    Hospital  @relation(fields: [hospital_Id], references: [id])
 }
 
@@ -577,4 +580,30 @@ model ScanAndTestUnitReferance {
   referance   Json     // JSON of ranges (age/gender/pregnancy keys)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Drawer{
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  admin_Id    String?
+  reason      String
+  amount      Float
+  type        String
+  note        String?
+  createdAt   String
+  updatedAt   String?
+  Hospital    Hospital  @relation(fields: [hospital_Id], references: [id])
+}
+
+model IncomeAndExpense{
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  admin_Id    String?
+  reason      String
+  amount      Float
+  type        String
+  note        String?
+  createdAt   String
+  updatedAt   String?
+  Hospital    Hospital  @relation(fields: [hospital_Id], references: [id])
 }
