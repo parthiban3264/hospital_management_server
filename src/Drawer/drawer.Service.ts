@@ -13,6 +13,7 @@ export class DrawerService {
  async findAll(hospital_Id: number) {
   return this.prisma.drawer.findMany({
     where: { hospital_Id },
+    orderBy: { id: 'desc' },
   });
 }
 
