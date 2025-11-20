@@ -462,7 +462,8 @@ model InjectionPatient {
   injection_Id    Int
   consultation_Id Int?
   reason          String?
-  quantity        Float
+  quantity       String
+  Doase           String?
   morning         Boolean @default(false)
   afternoon       Boolean @default(false)
   night           Boolean @default(false)
@@ -489,7 +490,8 @@ model TonicPatient {
   tonic_Id        Int
   consultation_Id Int?
   reason          String?
-  quantity        Float
+  quantity        String
+  Doase           String?
   afterEat        Boolean
   morning         Boolean @default(false)
   afternoon       Boolean @default(false)
