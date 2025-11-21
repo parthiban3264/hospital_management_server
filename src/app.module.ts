@@ -6,7 +6,6 @@ import { PrismaService } from './prisma/prisma.service';
 import { UserModule } from './Users/user.module';
 import { PatientModule } from './Patient/patient.module';
 import { AdminModule } from './Admins/admin.module';
-import { AdminStratorModule } from './AdminStrator/Adminstrator.module';
 import { ConsultationModule } from './Consultation/Consultation.Module';
 import { TreatmentModule } from './Treatments/Treatment.Module';
 import { MedicianModule } from './Medicians/Medician.Module';
@@ -21,7 +20,7 @@ import { MedicineTonicInjectionModule } from './MedicineTonicInjection/medicineT
 import { ScanAndTestModule } from './TestAndScan/test-scan.module';
 import { DrawerModule } from './Drawer/drawer.module';
 import { IncomeAndExpenseModule } from './IncomeExpense/incomeExpense.module';
-
+import {AdminStratorModule  } from './AdminStrator/Adminstrator.module';
 @Module({
   imports: [HospitalModule,
     UserModule,
