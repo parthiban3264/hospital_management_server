@@ -8,3 +8,4 @@ import { AdminStratorController } from "./AdminStrator.Controller";
   providers: [AdminStratorService, PrismaService],
 })
 export class AdminStratorModule {}
+
