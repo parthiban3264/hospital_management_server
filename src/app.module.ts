@@ -20,7 +20,7 @@ import { MedicineTonicInjectionModule } from './MedicineTonicInjection/medicineT
 import { ScanAndTestModule } from './TestAndScan/test-scan.module';
 import { DrawerModule } from './Drawer/drawer.module';
 import { IncomeAndExpenseModule } from './IncomeExpense/incomeExpense.module';
-import {AdminStratorModule  } from './AdminStrator/Adminstrator.module';
+import {AdminStratorModule  } from './AdminStrator/AdminStrator.module';
 @Module({
   imports: [HospitalModule,
     UserModule,
