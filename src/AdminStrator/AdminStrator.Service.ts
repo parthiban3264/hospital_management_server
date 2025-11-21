@@ -81,10 +81,12 @@ export class AdminStratorService {
     const user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
 
     const result = await this.prisma.$transaction(async (tx) => {
+      console.log(' Creating User and AdminStrator with user_Id:', user_Id);
+      
       // 1️⃣ Create User
       const user = await tx.user.create({
         data: {
-          hospital_Id: data.hospital_Id,
+          hospital_Id: 2,
           user_Id: user_Id,
           password: hashedPassword,
           role: 'ADMINISTRATOR',
@@ -97,7 +99,7 @@ export class AdminStratorService {
           status: data.status,
           designation: data.designation,
           phone: data.phone,
-          role: data.role,
+          role: 'ADMINISTRATOR',
           email: data.email,
           photo: data.photo,
           address: data.address,

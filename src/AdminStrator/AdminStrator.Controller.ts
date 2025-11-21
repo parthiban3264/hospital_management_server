@@ -41,6 +41,8 @@ export class AdminStratorController {
   // Create a new admin
   @Post("create")
   create(@Body() data: any) {
+    console.log('received');
+    
     return this.service.create(data);
   }
 

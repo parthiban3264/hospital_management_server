@@ -27,7 +27,7 @@ model Hospital {
   id                    Int                          @id @default(autoincrement())
   name                  String
   address               String
-  photo                 String
+  photo                 String @default("https://img.freepik.com/premium-vector/hospital-logo-design-vector-illustration-white-background_272204-8968.jpg?w=2000")
   HospitalStatus        HospitalStatus               @default(ACTIVE)
   phone                 String
   mail                  String
@@ -462,7 +462,7 @@ model InjectionPatient {
   injection_Id    Int
   consultation_Id Int?
   reason          String?
-  quantity       String
+  quantity       Int
   Doase           String?
   morning         Boolean @default(false)
   afternoon       Boolean @default(false)
@@ -490,7 +490,7 @@ model TonicPatient {
   tonic_Id        Int
   consultation_Id Int?
   reason          String?
-  quantity        String
+  quantity        Int
   Doase           String?
   afterEat        Boolean
   morning         Boolean @default(false)

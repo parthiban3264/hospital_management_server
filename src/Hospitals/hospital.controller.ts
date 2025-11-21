@@ -8,8 +8,9 @@ export class HospitalController {
   // Corrected create endpoint
   @Post("create")
   create(@Body() data: any) {
-    // Only send scalar fields to the service
     const { name, address, photo, HospitalStatus, phone, mail } = data;
+    console.log('hospital',data);
+    
     return this.hospitalService.create({ name, address, photo, HospitalStatus, phone, mail });
   }
 
