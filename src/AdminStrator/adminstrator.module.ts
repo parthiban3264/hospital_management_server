@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { AdminStratorService } from "./AdminStrator.Service";
+import { AdminStratorService } from "./Adminstrator.Service";
 import { AdminStratorController } from "./AdminStrator.Controller";
 
 @Module({
