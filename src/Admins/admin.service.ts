@@ -6,45 +6,82 @@ import * as bcrypt from 'bcrypt';
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
-   async createAdminWithUser(data: any) {
-      // const defaultPassword = `${data.designation}_${data.hospital_Id}`; // e.g., "Doctor_12"
-      const defaultPassword = `abc123`;
-      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-      // const phone = data.phone .startsWith('+91') ? data.phone : `+91 ${data.phone}`;
-      const user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
-      console.log(user_Id,data.phone);
-      
+  async createAdminWithUser(data: any) {
+  const defaultPassword = `abc123`;
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-  
-      // Optionally wrap in a transaction for safety
-      const [user, admin] = await this.prisma.$transaction([
-        this.prisma.user.create({
-          data: {
-            hospital_Id: data.hospital_Id,
-            user_Id: user_Id,
-            password: hashedPassword,
-            role:data.role,
-          },
-        }),
-        this.prisma.admin.create({
-       data: {
+  // Clean user ID
+  const user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
+
+  console.log("User ID:", user_Id, "Phone:", data.phone);
+
+  try {
+    // 👉 Step 1: Check if user exists in SAME hospital
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        user_Id: user_Id,
         hospital_Id: data.hospital_Id,
-        user_Id: user_Id,         
-        name: data.name,
-        designation: data.designation,
-        phone: data.phone,
-        email: data.email,
-        role: data.role,
-        specialist: data.specialist,
-        address: data.address,
-        photo: data.photo,
-        status: data.status,
-        gender: data.gender,
       },
-    }),
-      ]);
-       return { user, admin, defaultPassword };
+    });
+
+    if (existingUser) {
+      return {
+        success: false,
+        message:
+          "User already exists in this hospital. Please use another phone number.",
+      };
+    }
+
+    // 👉 Step 2: Create user + admin inside a transaction
+    const [user, admin] = await this.prisma.$transaction([
+      this.prisma.user.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          user_Id: user_Id,
+          password: hashedPassword,
+          role: data.role,
+        },
+      }),
+
+      this.prisma.admin.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          user_Id: user_Id,
+          name: data.name,
+          designation: data.designation,
+          phone: data.phone,
+          email: data.email,
+          role: data.role,
+          specialist: data.specialist,
+          address: data.address,
+          photo: data.photo,
+          status: data.status,
+          gender: data.gender,
+        },
+      }),
+    ]);
+
+    return { success: true, user, admin, defaultPassword };
+
+  } catch (error: any) {
+    // 👉 Prisma unique constraint error
+    if (error.code === "P2002") {
+      return {
+        success: false,
+        message:
+          "This phone number is already registered. Please use another.",
+      };
+    }
+
+    // 👉 Other errors
+    return {
+      success: false,
+      message: "Failed to create user. Please try again.",
+      details: error.message,
+    };
   }
+}
+
 
 
 // async create(data: any) {

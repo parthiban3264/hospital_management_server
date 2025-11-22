@@ -10,29 +10,43 @@ export class AdminController {
   //   return this.adminService.create(data);
   // }
 
-     @Post('create')
-    async create(@Body() createPatientDto: any) {
-      try {
-        // Call service method to create user + admins
-        const result = await this.adminService.createAdminWithUser(createPatientDto);
-  
-        return {
-          statusCode: HttpStatus.CREATED,
-          message: 'Patient and User created successfully',
-          data: result,
-        };
-      } catch (error) {
-        console.error(error);
-        throw new HttpException(
-          {
-            status: HttpStatus.BAD_REQUEST,
-            error: 'Failed to create patient and user',
-            details: error.message,
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+    @Post('create')
+async create(@Body() createPatientDto: any) {
+  try {
+    const result = await this.adminService.createAdminWithUser(createPatientDto);
+
+    // 🔹 If user already exists, return proper error response
+    if (!result.success) {
+      return {
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: result.message, // e.g. "This phone number is already registered"
+        data: null,
+      };
     }
+
+    // 🔹 Success response
+    return {
+      statusCode: HttpStatus.CREATED,
+      success: true,
+      message: 'Admin created successfully',
+      data: result,
+    };
+
+  } catch (error) {
+    console.error(error);
+
+    // 🔹 Unexpected error response
+    throw new HttpException(
+      {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: 'Failed to create admin and user',
+        details: error.message,
+      },
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
+  }
+}
+
 
   @Get("all")
   findAll() {
