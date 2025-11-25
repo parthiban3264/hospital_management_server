@@ -142,6 +142,8 @@ async updateWithFile(
 
     // Delete old image if exists
     if (oldImage) {
+        return 'Old image deleted';
+
       const oldLocalPath = oldImage.replace(
         "https://hospitalservers.ramchintech.com",
         "/var/www"
@@ -149,7 +151,6 @@ async updateWithFile(
 
       if (fs.existsSync(oldLocalPath)) {
         fs.unlinkSync(oldLocalPath);
-        return 'Old image deleted';
       }
     }
   }
