@@ -100,17 +100,14 @@ export class HospitalController {
 
   }
 
-  @Patch('updateById/:id')
+ @Patch("updateById/:id")
 @UseInterceptors(
-  FileInterceptor('file', {
+  FileInterceptor("file", {
     storage: diskStorage({
       destination: (req, file, callback) => {
-        const id = req.body.id;
-        if (!id) {
-          return callback(new Error('Missing hospitalId'), '');
-        }
+        const hospitalId = req.params.id;
 
-        const uploadPath = join('/var/www/hospital_images', id);
+        const uploadPath = join("/var/www/hospital_images", hospitalId);
 
         if (!fs.existsSync(uploadPath)) {
           fs.mkdirSync(uploadPath, { recursive: true });
@@ -119,29 +116,26 @@ export class HospitalController {
         callback(null, uploadPath);
       },
       filename: (req, file, callback) => {
-        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
         const ext = extname(file.originalname);
         callback(null, uniqueName + ext);
       },
     }),
-  }),
+  })
 )
 async updateWithFile(
-  @Param("id") id: number,
+  @Param("id") id: string,
   @UploadedFile() file: any,
-  // @Body("hospitalId") hospitalId: string,
   @Body("name") name: string,
   @Body("address") address: string,
   @Body("HospitalStatus") HospitalStatus: string,
   @Body("phone") phone: string,
   @Body("mail") mail: string,
-  @Body("oldImage") oldImage: string,  // pass old image to delete
+  @Body("oldImage") oldImage: string
 ) {
-  if (!id) throw new BadRequestException("hospitalId is required");
-
   let imageUrl = oldImage;
 
-  // If new file uploaded, replace old file
+  // Replace image only if new file is uploaded
   if (file) {
     imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${id}/${file.filename}`;
 
@@ -167,6 +161,7 @@ async updateWithFile(
     imageUrl,
   });
 }
+
 
 }
 
