@@ -64,7 +64,7 @@ export class HospitalController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: (req, file, callback) => {
-          const hospitalId = req.body.hospitalId;
+          const hospitalId = req.body.id;
           if (!hospitalId) {
             return callback(new Error('Missing hospitalId'), '');
           }
