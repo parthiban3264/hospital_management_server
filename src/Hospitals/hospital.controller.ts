@@ -93,7 +93,7 @@ export class HospitalController {
     if (!file) throw new BadRequestException('File is required');
     if (!hospitalId) throw new BadRequestException('hospitalId is required');
 
-    const imageUrl = `https://hospitalserver.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
+    const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
 
 
     // // Save to DB
