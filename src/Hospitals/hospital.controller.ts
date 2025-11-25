@@ -84,7 +84,7 @@ export class HospitalController {
   )
   async uploadFile(
     @UploadedFile() file: any,
-    @Body('hospitalId') hospitalId: number,
+    @Body('hospitalId') hospitalId: string,
     @Body('name') name: string,
     @Body('address') address: string,
     @Body('HospitalStatus') HospitalStatus: string,
