@@ -12,15 +12,15 @@ export class HospitalService {
   try {
     // Valida
     // te ID
-    const hospitalId = Number(data.hospitalId);
-    if (isNaN(hospitalId)) {
-      return { error: "Hospital ID must be a number", status: "failed" };
-    }
-    if (!hospitalId) {
+   
+    if (!data.hospitalId) {
   
       return { error: "Hospital ID is required",hospitalId:hospitalId, status: "failed" };
     }
-
+ const hospitalId = Number(data.hospitalId);
+    if (isNaN(hospitalId)) {
+      return { error: "Hospital ID must be a number", status: "failed" };
+    }
     // Check duplicate
     const exists = await this.prisma.hospital.findUnique({
       where: { id: hospitalId },
