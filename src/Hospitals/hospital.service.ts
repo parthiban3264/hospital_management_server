@@ -34,7 +34,7 @@ export class HospitalService {
     const hospital = await this.prisma.hospital.create({
       data: {
         ...data,
-        id: hospitalId, // ensure number type
+        id: Number(hospitalId), // ensure number type
         photo: data.imageUrl,
       
       },
