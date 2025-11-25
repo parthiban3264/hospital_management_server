@@ -153,13 +153,14 @@ async updateWithFile(
   }
 
   return this.hospitalService.update(+id, {
-    name,
-    address,
-    HospitalStatus,
-    phone,
-    mail,
-    photo:imageUrl,
-  });
+  name,
+  address,
+  phone,
+  mail,
+  photo: imageUrl, // use `photo` not imageUrl
+  ...(HospitalStatus ? { HospitalStatus } : {}), // only include if defined
+});
+
 }
 }
 
