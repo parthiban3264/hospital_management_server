@@ -12,7 +12,8 @@ export class HospitalService {
   try {
     // Validate ID
     if (!data.hospitalId) {
-      return { error: "Hospital ID is required", status: "failed" };
+  
+      return { error: "Hospital ID is required",hospitalId:data.hospitalId, status: "failed" };
     }
 
     const hospitalId = Number(data.hospitalId);
