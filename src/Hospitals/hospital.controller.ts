@@ -49,6 +49,8 @@ export class HospitalController {
 
   @Patch("updateByIdStatus/:id")
   update(@Param("id") id: string, @Body() data: any) {
+    console.log(data);
+    
     return this.hospitalService.updateS(+id, data);
   }
 

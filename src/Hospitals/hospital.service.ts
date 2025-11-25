@@ -191,11 +191,14 @@ export class HospitalService {
 }
  async updateS(id: number, data: any) {
   try {
+    
     const hospital = await this.prisma.hospital.update({
       where: { id },
       data
     }
     );
+    console.log(hospital);
+    
 
     return { data: hospital, status: "success",  };
   } catch (error) {
