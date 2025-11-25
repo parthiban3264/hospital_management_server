@@ -105,12 +105,12 @@ export class HospitalController {
   FileInterceptor('file', {
     storage: diskStorage({
       destination: (req, file, callback) => {
-        const hospitalId = req.body.hospitalId;
-        if (!hospitalId) {
+        const id = req.body.id;
+        if (!id) {
           return callback(new Error('Missing hospitalId'), '');
         }
 
-        const uploadPath = join('/var/www/hospital_images', hospitalId);
+        const uploadPath = join('/var/www/hospital_images', id);
 
         if (!fs.existsSync(uploadPath)) {
           fs.mkdirSync(uploadPath, { recursive: true });
@@ -127,7 +127,7 @@ export class HospitalController {
   }),
 )
 async updateWithFile(
-  @Param("id") id: string,
+  @Param("id") id: number,
   @UploadedFile() file: any,
   // @Body("hospitalId") hospitalId: string,
   @Body("name") name: string,
