@@ -153,6 +153,7 @@ async updateWithFile(
   }
 
   return this.hospitalService.update(+id, {
+    id: +id,
     name,
     address,
     HospitalStatus,
