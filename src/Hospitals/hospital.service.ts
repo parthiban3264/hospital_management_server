@@ -164,48 +164,24 @@ export class HospitalService {
     return { error: error.message, status: "failed" };
   }}
 
-//  async update(id: number, data: any) {
-//   try {
-//     // Check if hospital exists
-//     const existingHospital = await this.prisma.hospital.findUnique({ where: { id } });
-//     if (!existingHospital) {
-//       return { error: "Hospital not found", status: "failed" };
-//     }
-
-//     const hospital = await this.prisma.hospital.update({
-//       where: { id },
-//       data:{
-//         name: data.name,
-//         address: data.address,  
-//         HospitalStatus: data.HospitalStatus,
-//         phone: data.phone,
-//         mail: data.mail,
-//         photo: data.photo,
-//       }
-//     });
-
-//     return { data: hospital, status: "success" };
-//   } catch (error) {
-//     return { error: error.message, status: "failed" };
-//   }
-// }
-
-async update(id: number, data: any) {
+ async update(id: number, data: any) {
   try {
+    // Check if hospital exists
     const existingHospital = await this.prisma.hospital.findUnique({ where: { id } });
-    if (!existingHospital) return { error: "Hospital not found", status: "failed" };
-
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.address !== undefined) updateData.address = data.address;
-    if (data.HospitalStatus !== undefined) updateData.HospitalStatus = data.HospitalStatus;
-    if (data.phone !== undefined) updateData.phone = data.phone;
-    if (data.mail !== undefined) updateData.mail = data.mail;
-    if (data.photo !== undefined) updateData.photo = data.photo;
+    if (!existingHospital) {
+      return { error: "Hospital not found", status: "failed" };
+    }
 
     const hospital = await this.prisma.hospital.update({
       where: { id },
-      data: updateData,
+      data:{
+        name: data.name,
+        address: data.address,  
+        HospitalStatus: data.HospitalStatus,
+        phone: data.phone,
+        mail: data.mail,
+        photo: data.photo,
+      }
     });
 
     return { data: hospital, status: "success" };
@@ -213,6 +189,7 @@ async update(id: number, data: any) {
     return { error: error.message, status: "failed" };
   }
 }
+
 
   async remove(id: number) {
     try {
