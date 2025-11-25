@@ -124,7 +124,7 @@ export class HospitalController {
   })
 )
 async updateWithFile(
-  @Param("id") id: string,
+  @Param("id") id: number,
   @UploadedFile() file: any,
   @Body("name") name: string,
   @Body("address") address: string,
@@ -153,7 +153,6 @@ async updateWithFile(
   }
 
   return this.hospitalService.update(+id, {
-    id: +id,
     name,
     address,
     HospitalStatus,
@@ -162,7 +161,5 @@ async updateWithFile(
     imageUrl,
   });
 }
-
-
 }
 

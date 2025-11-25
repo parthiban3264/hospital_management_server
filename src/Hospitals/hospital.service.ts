@@ -40,6 +40,7 @@ export class HospitalService {
         phone: data.phone,
         mail: data.mail,
         photo: data.imageUrl,
+
       },
     });
 
@@ -173,7 +174,14 @@ export class HospitalService {
 
     const hospital = await this.prisma.hospital.update({
       where: { id },
-      data,
+      data:{
+        name: data.name,
+        address: data.address,  
+        HospitalStatus: data.HospitalStatus,
+        phone: data.phone,
+        mail: data.mail,
+        photo: data.imageUrl,
+      }
     });
 
     return { data: hospital, status: "success" };
