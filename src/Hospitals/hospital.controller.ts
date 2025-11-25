@@ -123,6 +123,24 @@ export class HospitalController {
     }),
   })
 )
+@Patch("updateById/:id")
+@UseInterceptors(
+  FileInterceptor("file", {
+    storage: diskStorage({
+      destination: (req, file, callback) => {
+        const hospitalId = req.params.id;
+        const uploadPath = join("/var/www/hospital_images", hospitalId);
+        if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+        callback(null, uploadPath);
+      },
+      filename: (req, file, callback) => {
+        const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        callback(null, uniqueName + ext);
+      },
+    }),
+  })
+)
 async updateWithFile(
   @Param("id") id: number,
   @UploadedFile() file: any,
@@ -135,32 +153,32 @@ async updateWithFile(
 ) {
   let imageUrl = oldImage;
 
-  // Replace image only if new file is uploaded
   if (file) {
     imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${id}/${file.filename}`;
-
-    // Delete old image if exists
     if (oldImage) {
       const oldLocalPath = oldImage.replace(
         "https://hospitalservers.ramchintech.com",
         "/var/www"
       );
-
-      if (fs.existsSync(oldLocalPath)) {
-        fs.unlinkSync(oldLocalPath);
-      }
+      if (fs.existsSync(oldLocalPath)) fs.unlinkSync(oldLocalPath);
     }
   }
 
-  return this.hospitalService.update(+id, {
-  name,
-  address,
-  phone,
-  mail,
-  photo: imageUrl, // use `photo` not imageUrl
-  ...(HospitalStatus ? { HospitalStatus } : {}), // only include if defined
-});
+  // Build update object dynamically
+  const updateData: any = {
+    name,
+    address,
+    phone,
+    mail,
+    photo: imageUrl,
+  };
 
+  if (HospitalStatus) {
+    updateData.HospitalStatus = HospitalStatus;
+  }
+
+  return this.hospitalService.update(+id, updateData);
 }
+
 }
 

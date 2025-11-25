@@ -193,11 +193,8 @@ export class HospitalService {
 async update(id: number, data: any) {
   try {
     const existingHospital = await this.prisma.hospital.findUnique({ where: { id } });
-    if (!existingHospital) {
-      return { error: "Hospital not found", status: "failed" };
-    }
+    if (!existingHospital) return { error: "Hospital not found", status: "failed" };
 
-    // Build update object dynamically
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.address !== undefined) updateData.address = data.address;
@@ -216,7 +213,6 @@ async update(id: number, data: any) {
     return { error: error.message, status: "failed" };
   }
 }
-
 
   async remove(id: number) {
     try {
