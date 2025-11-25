@@ -33,9 +33,13 @@ export class HospitalService {
     // Create new hospital
     const hospital = await this.prisma.hospital.create({
       data: {
-        ...data,
+       id: hospitalId,
+        name: data.name,
+        address: data.address,  
+        HospitalStatus: data.HospitalStatus,
+        phone: data.phone,
+        mail: data.mail,
         photo: data.imageUrl,
-      
       },
     });
 
