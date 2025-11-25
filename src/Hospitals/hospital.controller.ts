@@ -1,5 +1,4 @@
-
-import { HospitalService } from "./hospital.service";
+import { HospitalService } from './hospital.service';
 
 import {
   Controller,
@@ -18,8 +17,7 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import * as fs from 'fs';
 
-
-@Controller("hospitals")
+@Controller('hospitals')
 export class HospitalController {
   constructor(private readonly hospitalService: HospitalService) {}
 
@@ -28,36 +26,36 @@ export class HospitalController {
   // create(@Body() data: any) {
   //   const {id, name, address, photo, HospitalStatus, phone, mail,link } = data;
   //   console.log('hospital',data);
-    
+
   //   return this.hospitalService.create({id, name, address, photo, HospitalStatus, phone, mail,link });
   // }
 
-  @Get("all")
+  @Get('all')
   findAll() {
     return this.hospitalService.findAll();
   }
 
-  @Get("getById/:id/:patient_Id")
-  findOne(@Param("id") id: string, @Param("patient_Id") patient_Id: string) {
-    return this.hospitalService.findOne(+id,patient_Id);
+  @Get('getById/:id/:patient_Id')
+  findOne(@Param('id') id: string, @Param('patient_Id') patient_Id: string) {
+    return this.hospitalService.findOne(+id, patient_Id);
   }
 
-   @Get("getById/:id")
-  findOneH(@Param("id") id: string) {
+  @Get('getById/:id')
+  findOneH(@Param('id') id: string) {
     return this.hospitalService.findOneH(+id);
   }
 
-  @Patch("updateByIdStatus/:id")
-  update(@Param("id") id: string, @Body() data: any) {
+  @Patch('updateByIdStatus/:id')
+  update(@Param('id') id: string, @Body() data: any) {
     return this.hospitalService.updateS(+id, data);
   }
 
-  @Delete("deleteById/:id")
-  remove(@Param("id") id: string) {
+  @Delete('deleteById/:id')
+  remove(@Param('id') id: string) {
     return this.hospitalService.remove(+id);
   }
 
-   @Post('create')
+  @Post('create')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -84,7 +82,7 @@ export class HospitalController {
   )
   async uploadFile(
     @UploadedFile() file: any,
-    @Body('hospitalId') hospitalId: string,
+    @Body('hospitalId') hospitalId: number,
     @Body('name') name: string,
     @Body('address') address: string,
     @Body('HospitalStatus') HospitalStatus: string,
@@ -96,74 +94,78 @@ export class HospitalController {
 
     const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
 
- return this.hospitalService.create({hospitalId, name, address, imageUrl, HospitalStatus, phone, mail });
-
+    return this.hospitalService.create({
+      hospitalId,
+      name,
+      address,
+      imageUrl,
+      HospitalStatus,
+      phone,
+      mail,
+    });
   }
 
+  // update with file =================================================
 
+  @Patch('updateById/:id')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, callback) => {
+          const hospitalId = req.params.id;
 
- @Patch("updateById/:id")
-@UseInterceptors(
-  FileInterceptor("file", {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        const hospitalId = req.params.id;
+          const uploadPath = join('/var/www/hospital_images', hospitalId);
 
-        const uploadPath = join("/var/www/hospital_images", hospitalId);
+          if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+          }
 
-        if (!fs.existsSync(uploadPath)) {
-          fs.mkdirSync(uploadPath, { recursive: true });
-        }
-
-        callback(null, uploadPath);
-      },
-      filename: (req, file, callback) => {
-        const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, uniqueName + ext);
-      },
+          callback(null, uploadPath);
+        },
+        filename: (req, file, callback) => {
+          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          callback(null, uniqueName + ext);
+        },
+      }),
     }),
-  })
-)
-async updateWithFile(
-  @Param("id") id: number,
-  @UploadedFile() file: any,
-  @Body("name") name: string,
-  @Body("address") address: string,
-  @Body("HospitalStatus") HospitalStatus: string,
-  @Body("phone") phone: string,
-  @Body("mail") mail: string,
-  @Body("oldImage") oldImage: string
-) {
-  let imageUrl = oldImage;
+  )
+  async updateWithFile(
+    @Param('id') id: number,
+    @UploadedFile() file: any,
+    @Body('name') name: string,
+    @Body('address') address: string,
+    @Body('HospitalStatus') HospitalStatus: string,
+    @Body('phone') phone: string,
+    @Body('mail') mail: string,
+    @Body('oldImage') oldImage: string,
+  ) {
+    let imageUrl = oldImage;
 
-  // Replace image only if new file is uploaded
-  if (file) {
-    imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${id}/${file.filename}`;
-   
+    // Replace image only if new file is uploaded
+    if (file) {
+      imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${id}/${file.filename}`;
 
-    // Delete old image if exists
-    if (oldImage) {
-
-      const oldLocalPath = oldImage.replace(
-        "https://hospitalservers.ramchintech.com",
-        "/var/www"
-      );
-      if (fs.existsSync(oldLocalPath)) {
-        fs.unlinkSync(oldLocalPath);
+      // Delete old image if exists
+      if (oldImage) {
+        const oldLocalPath = oldImage.replace(
+          'https://hospitalservers.ramchintech.com',
+          '/var/www',
+        );
+        if (fs.existsSync(oldLocalPath)) {
+          fs.unlinkSync(oldLocalPath);
+        }
       }
     }
+
+    return this.hospitalService.update(+id, {
+      id: +id,
+      name,
+      address,
+      HospitalStatus,
+      phone,
+      mail,
+      imageUrl,
+    });
   }
-
-  return this.hospitalService.update(+id, {
-    id: +id,
-    name,
-    address,
-    HospitalStatus,
-    phone,
-    mail,
-    imageUrl,
-  });
 }
-}
-

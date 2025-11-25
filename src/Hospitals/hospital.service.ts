@@ -33,7 +33,7 @@ export class HospitalService {
     // Create new hospital
     const hospital = await this.prisma.hospital.create({
       data: {
-       id: hospitalId,
+       id: Number(hospitalId),
         name: data.name,
         address: data.address,  
         HospitalStatus: data.HospitalStatus,
