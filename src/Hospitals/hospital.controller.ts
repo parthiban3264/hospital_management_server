@@ -158,7 +158,7 @@ async updateWithFile(
     HospitalStatus,
     phone,
     mail,
-    imageUrl,
+    photo:imageUrl,
   });
 }
 }

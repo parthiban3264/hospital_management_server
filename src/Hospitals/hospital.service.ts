@@ -180,7 +180,7 @@ export class HospitalService {
         HospitalStatus: data.HospitalStatus,
         phone: data.phone,
         mail: data.mail,
-        photo: data.imageUrl,
+        photo: data.photo,
       }
     });
 
