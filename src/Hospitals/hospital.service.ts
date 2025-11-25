@@ -12,7 +12,7 @@ export class HospitalService {
   try {
     // Valida
     // te ID
-    const hospitalId = Number(data.id);
+    const hospitalId = Number(data.hospitalId);
     if (isNaN(hospitalId)) {
       return { error: "Hospital ID must be a number", status: "failed" };
     }
