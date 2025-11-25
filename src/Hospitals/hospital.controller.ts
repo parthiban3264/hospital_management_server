@@ -49,8 +49,6 @@ export class HospitalController {
 
   @Patch("updateByIdStatus/:id")
   update(@Param("id") id: string, @Body() data: any) {
-    console.log(data);
-    
     return this.hospitalService.updateS(+id, data);
   }
 
@@ -86,7 +84,7 @@ export class HospitalController {
   )
   async uploadFile(
     @UploadedFile() file: any,
-    @Body('id') id: number,
+    @Body('hospitalId') id: number,
     @Body('name') name: string,
     @Body('address') address: string,
     @Body('HospitalStatus') HospitalStatus: string,
@@ -101,6 +99,8 @@ export class HospitalController {
  return this.hospitalService.create({id, name, address, imageUrl, HospitalStatus, phone, mail });
 
   }
+
+
 
  @Patch("updateById/:id")
 @UseInterceptors(
