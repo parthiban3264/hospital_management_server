@@ -24,7 +24,7 @@ enum PatientStatus {
 }
 
 model Hospital {
-  id                    Int                          @id @default(autoincrement())
+  id                    Int       @id//@default(autoincrement())   @unique          //  @default(autoincrement())
   name                  String
   address               String
   photo                 String @default("https://img.freepik.com/premium-vector/hospital-logo-design-vector-illustration-white-background_272204-8968.jpg?w=2000")

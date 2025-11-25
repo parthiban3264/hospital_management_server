@@ -159,9 +159,7 @@ export class UserService {
   const { hospital_Id, user_Id, password } = data;
 
   const user = await this.prisma.user.findFirst({
-    where: { hospital_Id, user_Id,role:{
-      not: 'PATIENT'
-    } },
+    where: { hospital_Id, user_Id, },
     include: { Admin: true,Hospital:true }, // 👈 includes Admin relation
 
   });
