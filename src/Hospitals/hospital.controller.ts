@@ -147,7 +147,6 @@ async updateWithFile(
         "https://hospitalservers.ramchintech.com",
         "/var/www"
       );
-return oldLocalPath;
       if (fs.existsSync(oldLocalPath)) {
         fs.unlinkSync(oldLocalPath);
       }

@@ -180,11 +180,11 @@ export class HospitalService {
         HospitalStatus: data.HospitalStatus,
         phone: data.phone,
         mail: data.mail,
-        photo: data.photo,
+        photo: data.imageUrl,
       }
     });
 
-    return { data: hospital, status: "success" };
+    return { data: hospital, status: "success",A:data.imageUrl  };
   } catch (error) {
     return { error: error.message, status: "failed" };
   }
