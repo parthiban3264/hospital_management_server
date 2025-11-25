@@ -138,6 +138,7 @@ async updateWithFile(
   // Replace image only if new file is uploaded
   if (file) {
     imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${id}/${file.filename}`;
+    return imageUrl;
 
     // Delete old image if exists
     if (oldImage) {
