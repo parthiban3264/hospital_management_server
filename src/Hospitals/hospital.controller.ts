@@ -84,7 +84,7 @@ export class HospitalController {
   )
   async uploadFile(
     @UploadedFile() file: any,
-    @Body('hospitalId') hospitalId: number,
+    @Body('hospitalId') id: number,
     @Body('name') name: string,
     @Body('address') address: string,
     @Body('HospitalStatus') HospitalStatus: string,
@@ -92,11 +92,11 @@ export class HospitalController {
     @Body('mail') mail: string,
   ) {
     if (!file) throw new BadRequestException('File is required');
-    if (!hospitalId) throw new BadRequestException('hospitalId is required');
+    if (!id) throw new BadRequestException('hospitalId is required');
 
-    const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
+    const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${id}/${file.filename}`;
 
- return this.hospitalService.create({hospitalId, name, address, imageUrl, HospitalStatus, phone, mail });
+ return this.hospitalService.create({id, name, address, imageUrl, HospitalStatus, phone, mail });
 
   }
 

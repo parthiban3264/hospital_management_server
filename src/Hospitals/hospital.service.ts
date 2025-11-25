@@ -12,7 +12,7 @@ export class HospitalService {
   try {
     // Valida
     // te ID
-    const hospitalId = Number(data.hospitalId);
+    const hospitalId = Number(data.id);
     if (isNaN(hospitalId)) {
       return { error: "Hospital ID must be a number", status: "failed" };
     }
@@ -34,7 +34,6 @@ export class HospitalService {
     const hospital = await this.prisma.hospital.create({
       data: {
         ...data,
-        id: Number(hospitalId), // ensure number type
         photo: data.imageUrl,
       
       },
