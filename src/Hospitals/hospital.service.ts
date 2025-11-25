@@ -11,11 +11,11 @@ export class HospitalService {
  async create(data: any) {
   try {
     // Validate ID
-    if (!data.id) {
+    if (!data.hospitalId) {
       return { error: "Hospital ID is required", status: "failed" };
     }
 
-    const hospitalId = Number(data.id);
+    const hospitalId = Number(data.hospitalId);
     if (isNaN(hospitalId)) {
       return { error: "Hospital ID must be a number", status: "failed" };
     }
@@ -34,6 +34,8 @@ export class HospitalService {
       data: {
         ...data,
         id: hospitalId, // ensure number type
+        photo: data.imageUrl,
+      
       },
     });
 

@@ -24,13 +24,13 @@ export class HospitalController {
   constructor(private readonly hospitalService: HospitalService) {}
 
   // Corrected create endpoint
-  @Post("create")
-  create(@Body() data: any) {
-    const {id, name, address, photo, HospitalStatus, phone, mail,link } = data;
-    console.log('hospital',data);
+  // @Post("create")
+  // create(@Body() data: any) {
+  //   const {id, name, address, photo, HospitalStatus, phone, mail,link } = data;
+  //   console.log('hospital',data);
     
-    return this.hospitalService.create({id, name, address, photo, HospitalStatus, phone, mail,link });
-  }
+  //   return this.hospitalService.create({id, name, address, photo, HospitalStatus, phone, mail,link });
+  // }
 
   @Get("all")
   findAll() {
@@ -47,16 +47,17 @@ export class HospitalController {
     return this.hospitalService.findOneH(+id);
   }
 
-  @Patch("updateById/:id")
-  update(@Param("id") id: string, @Body() data: any) {
-    return this.hospitalService.update(+id, data);
-  }
+  // @Patch("updateById/:id")
+  // update(@Param("id") id: string, @Body() data: any) {
+  //   return this.hospitalService.update(+id, data);
+  // }
 
   @Delete("deleteById/:id")
   remove(@Param("id") id: string) {
     return this.hospitalService.remove(+id);
   }
-   @Post('upload')
+
+   @Post('create')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -95,82 +96,77 @@ export class HospitalController {
 
     const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
 
+ return this.hospitalService.create({hospitalId, name, address, imageUrl, HospitalStatus, phone, mail });
 
-    // // Save to DB
-    // await this.prisma.imageAndVideos.create({
-    //   data: {
-    //     school_id: parseInt(schoolId),
-    //     link: imageUrl,
-    //     type: 'IMAGE',
-    //     title,
-    //     description,
-    //     date: parsedDate,
-    //   },
-    // });
-
-    return { url: imageUrl };
   }
 
-  // // 🔹 GET /upload/:schoolId (Fetch all images & videos)
-  // @Get(':schoolId')
-  // async getMediaBySchool(@Param('schoolId') schoolId: string) {
-  //   const records = await this.prisma.imageAndVideos.findMany({
-  //     where: { school_id: parseInt(schoolId) },
-  //     orderBy: { date: 'desc' },
-  //   });
+  @Patch('updateById/:id')
+@UseInterceptors(
+  FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, callback) => {
+        const hospitalId = req.body.hospitalId;
+        if (!hospitalId) {
+          return callback(new Error('Missing hospitalId'), '');
+        }
 
-  //   const images = records
-  //     .filter((r) => r.type === 'IMAGE')
-  //     .map((r) => ({
-  //       id: r.id,
-  //       link: r.link,
-  //       title: r.title,
-  //       description: r.description,
-  //       date: r.date,
-  //     }));
+        const uploadPath = join('/var/www/hospital_images', hospitalId);
 
-  //   const videos = records
-  //     .filter((r) => r.type === 'VIDEO')
-  //     .map((r) => ({
-  //       id: r.id,
-  //       link: r.link,
-  //       title: r.title,
-  //       description: r.description,
-  //       date: r.date,
-  //     }));
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
 
-  //   return { images, videos };
-  // }
+        callback(null, uploadPath);
+      },
+      filename: (req, file, callback) => {
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        callback(null, uniqueName + ext);
+      },
+    }),
+  }),
+)
+async updateWithFile(
+  @Param("id") id: string,
+  @UploadedFile() file: any,
+  // @Body("hospitalId") hospitalId: string,
+  @Body("name") name: string,
+  @Body("address") address: string,
+  @Body("HospitalStatus") HospitalStatus: string,
+  @Body("phone") phone: string,
+  @Body("mail") mail: string,
+  @Body("oldImage") oldImage: string,  // pass old image to delete
+) {
+  if (!id) throw new BadRequestException("hospitalId is required");
 
-  // 🔹 DELETE /upload/:schoolId/:filename (Delete image from FS & DB)
-  @Delete(':schoolId/:filename')
-  async deleteImage(
-    @Param('schoolId') schoolId: string,
-    @Param('filename') filename: string,
-  ) {
-    const filePath = join('/var/www/images', schoolId, filename);
+  let imageUrl = oldImage;
 
-    // Delete from filesystem if exists
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+  // If new file uploaded, replace old file
+  if (file) {
+    imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${id}/${file.filename}`;
+
+    // Delete old image if exists
+    if (oldImage) {
+      const oldLocalPath = oldImage.replace(
+        "https://hospitalservers.ramchintech.com",
+        "/var/www"
+      );
+
+      if (fs.existsSync(oldLocalPath)) {
+        fs.unlinkSync(oldLocalPath);
+      }
     }
-
-    // const imageUrl = https://smartschoolserver.ramchintech.com/images/${schoolId}/${filename};
-    // await this.prisma.imageAndVideos.deleteMany({
-    //   where: { link: imageUrl },
-    // });
-
-    return { message: 'Image deleted successfully' };
   }
 
-  // // 🔹 DELETE /upload/video/:id
-  // @Delete('video/:id')
-  // async deleteVideo(@Param('id') id: string) {
-  //   await this.prisma.imageAndVideos.delete({
-  //     where: { id: parseInt(id) },
-  //   });
+  return this.hospitalService.update(+id, {
+    name,
+    address,
+    HospitalStatus,
+    phone,
+    mail,
+    imageUrl,
+  });
+}
 
-  //   return { message: 'Video deleted successfully' };
-  // }
 }
 
