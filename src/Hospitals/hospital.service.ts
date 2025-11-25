@@ -10,15 +10,15 @@ export class HospitalService {
 
  async create(data: any) {
   try {
-    // Validate ID
-    if (!data.hospitalId) {
-  
-      return { error: "Hospital ID is required",hospitalId:data.hospitalId, status: "failed" };
-    }
-
+    // Valida
+    // te ID
     const hospitalId = Number(data.hospitalId);
     if (isNaN(hospitalId)) {
       return { error: "Hospital ID must be a number", status: "failed" };
+    }
+    if (!hospitalId) {
+  
+      return { error: "Hospital ID is required",hospitalId:hospitalId, status: "failed" };
     }
 
     // Check duplicate
