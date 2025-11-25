@@ -15,7 +15,7 @@ export class HospitalService {
    
     if (!data.hospitalId) {
   
-      return { error: "Hospital ID is required",hospitalId:hospitalId, status: "failed" };
+      return { error: "Hospital ID is required",hospitalId:data.hospitalId, status: "failed" };
     }
  const hospitalId = Number(data.hospitalId);
     if (isNaN(hospitalId)) {
