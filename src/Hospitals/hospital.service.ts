@@ -184,7 +184,20 @@ export class HospitalService {
       }
     });
 
-    return { data: hospital, status: "success",A:data.imageUrl  };
+    return { data: hospital, status: "success"  };
+  } catch (error) {
+    return { error: error.message, status: "failed" };
+  }
+}
+ async updateS(id: number, data: any) {
+  try {
+    const hospital = await this.prisma.hospital.update({
+      where: { id },
+      data
+    }
+    );
+
+    return { data: hospital, status: "success",  };
   } catch (error) {
     return { error: error.message, status: "failed" };
   }
@@ -199,4 +212,5 @@ export class HospitalService {
       return { error: error.message, status: "failed" };
     }
   }
+  
 }

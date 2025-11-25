@@ -49,7 +49,7 @@ export class HospitalController {
 
   @Patch("updateByIdStatus/:id")
   update(@Param("id") id: string, @Body() data: any) {
-    return this.hospitalService.update(+id, data);
+    return this.hospitalService.updateS(+id, data);
   }
 
   @Delete("deleteById/:id")
