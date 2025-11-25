@@ -55,55 +55,108 @@ export class HospitalController {
     return this.hospitalService.remove(+id);
   }
 
+  // @Post('create')
+  // @UseInterceptors(
+  //   FileInterceptor('file', {
+  //     storage: diskStorage({
+  //       destination: (req, file, callback) => {
+  //         const hospitalId = req.body.hospitalId;
+  //         if (!hospitalId) {
+  //           return callback(new Error('Missing hospitalId'), '');
+  //         }
+
+  //         const uploadPath = join('/var/www/hospital_images', hospitalId);
+  //         if (!fs.existsSync(uploadPath)) {
+  //           fs.mkdirSync(uploadPath, { recursive: true });
+  //         }
+
+  //         callback(null, uploadPath);
+  //       },
+  //       filename: (req, file, callback) => {
+  //         const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+  //         const ext = extname(file.originalname);
+  //         callback(null, uniqueName + ext);
+  //       },
+  //     }),
+  //   }),
+  // )
+  // async uploadFile(
+  //   @UploadedFile() file: any,
+  //   @Body('hospitalId') hospitalId: number,
+  //   @Body('name') name: string,
+  //   @Body('address') address: string,
+  //   @Body('HospitalStatus') HospitalStatus: string,
+  //   @Body('phone') phone: string,
+  //   @Body('mail') mail: string,
+  // ) {
+  //   if (!file) throw new BadRequestException('File is required');
+  //   if (!hospitalId) throw new BadRequestException('hospitalId is required');
+
+  //   const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
+
+  //   return this.hospitalService.create({
+  //     hospitalId,
+  //     name,
+  //     address,
+  //     imageUrl,
+  //     HospitalStatus,
+  //     phone,
+  //     mail,
+  //   });
+  // }
+
   @Post('create')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (req, file, callback) => {
-          const hospitalId = req.body.hospitalId;
-          if (!hospitalId) {
-            return callback(new Error('Missing hospitalId'), '');
-          }
+@UseInterceptors(
+  FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, callback) => {
+        const hospitalId = req.body.hospitalId;
+        if (!hospitalId) return callback(new Error('Missing hospitalId'), '');
 
-          const uploadPath = join('/var/www/hospital_images', hospitalId);
-          if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-          }
+        const uploadPath = join('/var/www/hospital_images', hospitalId);
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
 
-          callback(null, uploadPath);
-        },
-        filename: (req, file, callback) => {
-          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, uniqueName + ext);
-        },
-      }),
+        callback(null, uploadPath);
+      },
+      filename: (req, file, callback) => {
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        callback(null, uniqueName + extname(file.originalname));
+      },
     }),
-  )
-  async uploadFile(
-    @UploadedFile() file: any,
-    @Body('hospitalId') hospitalId: number,
-    @Body('name') name: string,
-    @Body('address') address: string,
-    @Body('HospitalStatus') HospitalStatus: string,
-    @Body('phone') phone: string,
-    @Body('mail') mail: string,
-  ) {
-    if (!file) throw new BadRequestException('File is required');
-    if (!hospitalId) throw new BadRequestException('hospitalId is required');
+  }),
+)
+async uploadFile(
+  @UploadedFile() file: any,
+  @Body('hospitalId') hospitalId: string,   // FIXED
+  @Body('name') name: string,
+  @Body('address') address: string,
+  @Body('HospitalStatus') HospitalStatus: string,
+  @Body('phone') phone: string,
+  @Body('mail') mail: string,
+) {
+  if (!hospitalId) throw new BadRequestException('hospitalId is required');
+  if (!file) throw new BadRequestException('File is required');
 
-    const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
-
-    return this.hospitalService.create({
-      hospitalId,
-      name,
-      address,
-      imageUrl,
-      HospitalStatus,
-      phone,
-      mail,
-    });
+  const numericId = Number(hospitalId);
+  if (isNaN(numericId)) {
+    throw new BadRequestException('hospitalId must be a number');
   }
+
+  const imageUrl = `https://hospitalservers.ramchintech.com/hospital_images/${hospitalId}/${file.filename}`;
+
+  return this.hospitalService.create({
+    hospitalId: numericId,
+    name,
+    address,
+    imageUrl,
+    HospitalStatus,
+    phone,
+    mail,
+  });
+}
+
 
   // update with file =================================================
 
