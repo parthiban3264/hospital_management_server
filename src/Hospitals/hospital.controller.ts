@@ -47,10 +47,10 @@ export class HospitalController {
     return this.hospitalService.findOneH(+id);
   }
 
-  // @Patch("updateById/:id")
-  // update(@Param("id") id: string, @Body() data: any) {
-  //   return this.hospitalService.update(+id, data);
-  // }
+  @Patch("updateByIdStatus/:id")
+  update(@Param("id") id: string, @Body() data: any) {
+    return this.hospitalService.update(+id, data);
+  }
 
   @Delete("deleteById/:id")
   remove(@Param("id") id: string) {
