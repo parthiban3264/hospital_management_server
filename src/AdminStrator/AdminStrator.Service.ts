@@ -115,7 +115,7 @@ export class AdminStratorService {
   // Fetch all admins with their User info
   async findAll() {
     const admins = await this.prisma.adminStrator.findMany({
-      include: { User: true },
+      // include: { User: true },
     });
     return {
       status: 'success',
@@ -128,7 +128,7 @@ export class AdminStratorService {
   async findOneByUserId(Id: number) {
     const admin = await this.prisma.adminStrator.findUnique({
       where: { id: Id },
-      include: { User: true },
+      // include: { User: true },
     });
 
     if (!admin)
