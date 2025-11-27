@@ -115,7 +115,7 @@ export class TestingAndScanningPatientController {
       destination: (req, file, callback) => {
         const id = req.params.id;
 
-        const uploadPath = join("/var/www/testing_scanning", id);
+        const uploadPath = join("/var/www/scan_images", id);
 
         if (!fs.existsSync(uploadPath)) {
           fs.mkdirSync(uploadPath, { recursive: true });
@@ -141,7 +141,7 @@ async updateTestingScanning(
   if (files && files.length > 0) {
     imageUrls = files.map(
       (file) =>
-        `https://hospitalservers.ramchintech.com/testing_scanning/${id}/${file.filename}`
+        `https://hospitalservers.ramchintech.com/scan_images/${id}/${file.filename}`
     );
   }
 
