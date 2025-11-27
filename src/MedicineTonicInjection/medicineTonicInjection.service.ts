@@ -191,3 +191,4 @@ export class MedicineTonicInjectionService {
     throw new HttpException("Invalid type provided", HttpStatus.BAD_REQUEST);
   }
 }
+

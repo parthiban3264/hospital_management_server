@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { scan } from 'rxjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -91,6 +92,7 @@ export class TestingAndScanningPatientService {
           amount: data.amount,
           reason: data.reason,
           paymentStatus: data.paymentStatus,
+          scanImages: data.scanImages,
           result: data.result,
           createdAt: data.createdAt,
           payment_Id: payment.id, // link to the same payment
@@ -323,6 +325,7 @@ const doctors = await this.prisma.admin.findMany({
         title: test.title,
         results: rec.result,
         type: test.type,
+        scanImages: rec.scanImages ?? null,
         options: mergedOptions,
       };
     });
@@ -403,16 +406,28 @@ const doctors = await this.prisma.admin.findMany({
   }
 
   async update(id: number, data: any) {
-    try {
-      const record = await this.prisma.testingAndScanningPatient.updateMany({
-        where: { id },
-        data,
-      });
-      return { status: 'success', message: 'Record updated', data: record };
-    } catch (error) {
-      return { status: 'failed', error: error.message };
-    }
+  try {
+    const updatedRecord = await this.prisma.testingAndScanningPatient.update({
+      where: { id },
+      data: {
+        ...data,
+        scanImages: data.images || undefined,   // only update if images exist
+      },
+    });
+
+    return {
+      status: 'success',
+      message: 'Record updated successfully',
+      data: updatedRecord,
+    };
+
+  } catch (error) {
+    return {
+      status: 'failed',
+      error: error.message,
+    };
   }
+}
 
   async remove(id: number) {
     try {

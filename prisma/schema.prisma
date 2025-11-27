@@ -453,6 +453,7 @@ model MedicinePatient {
   Patient      Patient       @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Medician     Medician      @relation(fields: [medicine_Id], references: [id])
   Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
+  MedicineProgress MedicineProgress[]
 }
 
 model InjectionPatient {
@@ -481,6 +482,7 @@ model InjectionPatient {
   Patient      Patient       @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Injection    Injection     @relation(fields: [injection_Id], references: [id])
   Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
+  InjectionProgress InjectionProgress[]
 }
 
 model TonicPatient {
@@ -510,6 +512,7 @@ model TonicPatient {
   Patient      Patient       @relation(fields: [patient_Id, hospital_Id], references: [user_Id, hospital_Id])
   Tonic        Tonic         @relation(fields: [tonic_Id], references: [id])
   Consultation Consultation? @relation(fields: [consultation_Id], references: [id])
+  TonicProgress TonicProgress[]
 }
 
 enum Types {
@@ -552,6 +555,7 @@ model TestingAndScanningPatient {
   type                  String?
   status                TestingAndScanningStatus @default(PENDING)
   paymentStatus         Boolean                  @default(false)
+  scanImages            Json?
   amount                Float?
   reason                String?
   result                String?
@@ -611,3 +615,54 @@ model IncomeAndExpense {
   updatedAt   String?
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 }
+
+model MedicineProgress {
+  id                Int     @id @default(autoincrement())
+  medicinePatientId Int
+  date              DateTime
+  morningTaken      Boolean @default(false)
+  afternoonTaken    Boolean @default(false)
+  nightTaken        Boolean @default(false)
+
+  morningEmailSent   Boolean @default(false)
+  afternoonEmailSent Boolean @default(false)
+  nightEmailSent     Boolean @default(false)
+
+  MedicinePatient MedicinePatient @relation(fields: [medicinePatientId], references: [id])
+
+  @@index([medicinePatientId])
+}
+model TonicProgress {
+  id              Int      @id @default(autoincrement())
+  tonicPatientId  Int
+  date            DateTime
+  morningTaken    Boolean  @default(false)
+  afternoonTaken  Boolean  @default(false)
+  nightTaken      Boolean  @default(false)
+
+  morningEmailSent    Boolean @default(false)
+  afternoonEmailSent  Boolean @default(false)
+  nightEmailSent      Boolean @default(false)
+
+  TonicPatient   TonicPatient  @relation(fields: [tonicPatientId], references: [id])
+
+  @@index([tonicPatientId])
+}
+
+model InjectionProgress {
+  id               Int      @id @default(autoincrement())
+  injectionPatientId Int
+  date             DateTime
+  morningTaken     Boolean  @default(false)
+  afternoonTaken   Boolean  @default(false)
+  nightTaken       Boolean  @default(false)
+
+  morningEmailSent    Boolean @default(false)
+  afternoonEmailSent  Boolean @default(false)
+  nightEmailSent      Boolean @default(false)
+
+  InjectionPatient InjectionPatient @relation(fields: [injectionPatientId], references: [id])
+
+  @@index([injectionPatientId])
+}
+
