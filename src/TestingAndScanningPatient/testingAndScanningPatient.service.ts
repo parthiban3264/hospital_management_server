@@ -405,29 +405,26 @@ const doctors = await this.prisma.admin.findMany({
     return { status: 'success', message: 'Record fetched', data: record };
   }
 
-  async update(id: number, data: any) {
-  try {
-    const updatedRecord = await this.prisma.testingAndScanningPatient.update({
-      where: { id },
-      data: {
-        ...data,
-        scanImages: data.images || undefined,   // only update if images exist
-      },
-    });
-
-    return {
-      status: 'success',
-      message: 'Record updated successfully',
-      data: updatedRecord,
-    };
-
-  } catch (error) {
-    return {
-      status: 'failed',
-      error: error.message,
-    };
+ async update(id: number, data: any) {
+  if (data.images && typeof data.images === 'string') {
+    data.images = JSON.parse(data.images);
   }
+
+  const updatedRecord = await this.prisma.testingAndScanningPatient.update({
+    where: { id },
+    data: {
+      ...data,
+      scanImages: data.images || undefined,
+    },
+  });
+
+  return {
+    status: 'success',
+    message: 'Record updated successfully',
+    data: updatedRecord,
+  };
 }
+
 
   async remove(id: number) {
     try {
