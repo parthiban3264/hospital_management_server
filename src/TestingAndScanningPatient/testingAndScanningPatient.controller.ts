@@ -115,7 +115,7 @@ export class TestingAndScanningPatientController {
       destination: (req, file, callback) => {
         const id = req.params.id;
 
-        const uploadPath = join("/var/www/scan_images", id);
+        const uploadPath = join("/var/www/scan", id);
 
         if (!fs.existsSync(uploadPath)) {
           fs.mkdirSync(uploadPath, { recursive: true });

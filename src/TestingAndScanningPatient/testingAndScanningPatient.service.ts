@@ -426,28 +426,59 @@ const doctors = await this.prisma.admin.findMany({
 // }
 
 async update(id: number, data: any) {
+  try {
+    console.log("🔥RAW DATA:", data);
 
-  if (data.images && typeof data.images === "string") {
-    data.images = JSON.parse(data.images);
+    // ---- Parse selectedOptionResults JSON ----
+    if (data.selectedOptionResults) {
+      if (typeof data.selectedOptionResults === "string") {
+        try {
+          data.selectedOptionResults = JSON.parse(data.selectedOptionResults);
+        } catch (e) {
+          console.log("❌ selectedOptionResults parse failed");
+        }
+      }
+    }
+
+    // ---- Parse images JSON (if string) ----
+    if (data.images) {
+      if (typeof data.images === "string") {
+        try {
+          data.images = JSON.parse(data.images);
+        } catch (e) {
+          console.log("❌ images parse failed");
+        }
+      }
+    }
+
+    console.log("🟢 Parsed DATA:", data);
+
+    const updatedRecord = await this.prisma.testingAndScanningPatient.update({
+      where: { id },
+      data: {
+        result: data.result,
+        status: data.status,
+        updatedAt: data.updatedAt,
+        staff_Id: data.staff_Id,
+
+        // Save JSON fields safely
+        selectedOptionResults: data.selectedOptionResults ?? undefined,
+        scanImages: data.images ?? undefined,
+      },
+    });
+
+    return {
+      status: "success",
+      message: "Record updated successfully",
+      data: updatedRecord,
+    };
+  } catch (error) {
+    console.log("❌ SERVER ERROR:", error);
+    return {
+      status: "failed",
+      error: error.message,
+    };
   }
-
-  if (data.selectedOptionResults && typeof data.selectedOptionResults === "string") {
-    data.selectedOptionResults = JSON.parse(data.selectedOptionResults);
-  }
-
-  const updatedRecord = await this.prisma.testingAndScanningPatient.update({
-    where: { id },
-    data: {
-      ...data,
-      scanImages: data.images || undefined,
-    },
-  });
-
-  return {
-    status: "success",
-    message: "Record updated successfully",
-    data: updatedRecord,
-  };
 }
 
 
