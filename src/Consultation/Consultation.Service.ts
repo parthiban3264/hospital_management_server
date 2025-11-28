@@ -198,6 +198,7 @@ export class ConsultationService {
           .map(t => ({
             title: t.title,
             type: t.type,
+            scanImages: t.scanImages,
             results: t.result,
             selectedOptions: (Array.isArray(t.selectedOptions) ? t.selectedOptions : []).map(option => {
               const key = String(option).toLowerCase();
