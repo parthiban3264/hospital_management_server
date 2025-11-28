@@ -405,9 +405,34 @@ const doctors = await this.prisma.admin.findMany({
     return { status: 'success', message: 'Record fetched', data: record };
   }
 
- async update(id: number, data: any) {
-  if (data.images && typeof data.images === 'string') {
+//  async update(id: number, data: any) {
+//   if (data.images && typeof data.images === 'string') {
+//     data.images = JSON.parse(data.images);
+//   }
+
+//   const updatedRecord = await this.prisma.testingAndScanningPatient.update({
+//     where: { id },
+//     data: {
+//       ...data,
+//       scanImages: data.images || undefined,
+//     },
+//   });
+
+//   return {
+//     status: 'success',
+//     message: 'Record updated successfully',
+//     data: updatedRecord,
+//   };
+// }
+
+async update(id: number, data: any) {
+
+  if (data.images && typeof data.images === "string") {
     data.images = JSON.parse(data.images);
+  }
+
+  if (data.selectedOptionResults && typeof data.selectedOptionResults === "string") {
+    data.selectedOptionResults = JSON.parse(data.selectedOptionResults);
   }
 
   const updatedRecord = await this.prisma.testingAndScanningPatient.update({
@@ -419,8 +444,8 @@ const doctors = await this.prisma.admin.findMany({
   });
 
   return {
-    status: 'success',
-    message: 'Record updated successfully',
+    status: "success",
+    message: "Record updated successfully",
     data: updatedRecord,
   };
 }
