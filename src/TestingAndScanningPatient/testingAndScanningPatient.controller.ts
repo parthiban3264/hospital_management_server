@@ -103,7 +103,7 @@ export class TestingAndScanningPatientController {
 
   @Patch("updateByIdTesting/:id")
   update(@Param("id") id: number, @Body() data: any) {
-    return this.service.update(+id, data);
+    return this.service.updateTeating(+id, data);
   }
 
   //================================================================================
