@@ -242,7 +242,6 @@ async findAllByMedical(hospitalId: number,mode : number) {
       hospital_Id: Number(hospitalId),
       ...extraCondition,
       status: { in: ['ENDPROCESSING', 'ONGOING'] },
-      
     },
     include: {
       Hospital: true,
@@ -267,6 +266,9 @@ async findAllByMedical(hospitalId: number,mode : number) {
       },
       Doctor: true,
     },
+     orderBy: {
+        createdAt: 'asc', 
+      }
   });
 }
 
