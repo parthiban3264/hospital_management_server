@@ -167,6 +167,9 @@ export class UserService {
   if (!user) {
     throw new UnauthorizedException("User not found");
   }
+   if (user.Hospital.HospitalStatus !== "ACTIVE") {
+    throw new UnauthorizedException("Hospital is not active");
+  }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
