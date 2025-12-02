@@ -87,8 +87,16 @@ const tonic = this.prisma.tonic.createMany({ data });
     data: formattedSuggestions,
   };
 }
-  update(id: number, data: any) {
-    return this.prisma.tonic.update({ where: { id }, data });
+  // update(id: number, data: any) {
+  //   return this.prisma.tonic.update({ where: { id }, data });
+  // }
+    async update(id: number, data: any) {
+    try {
+      const tonic = await this.prisma.tonic.update({ where: { id }, data });
+      return { status: "success", message: "tonic updated", data: tonic };
+    } catch (error) {
+      return { status: "failed", error: error.message };
+    }
   }
 
   remove(id: number) {
