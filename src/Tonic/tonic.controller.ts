@@ -32,7 +32,7 @@ export class TonicController {
     return this.tonicService.findByHospitalAndName(Number(hospitalId), name);
   }
 
-  @Patch('updateById:id')
+  @Patch('updateById/:id')
   update(@Param('id') id: string, @Body() data: any) {
     return this.tonicService.update(+id, data);
   }
