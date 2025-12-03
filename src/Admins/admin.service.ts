@@ -127,6 +127,12 @@ export class AdminService {
       include: { Hospital: true, User: true },
     });
   }
+  async findAllByHospitalAdmin(hospital_Id: number) {
+    return this.prisma.admin.findMany({
+      where: { hospital_Id },
+      include: { Hospital: true, User: true },
+    });
+  }
 
   // async findOne(id: number) {
   //   return this.prisma.admin.findUnique({
@@ -146,17 +152,17 @@ export class AdminService {
     });
   }
 
-  // async update(id: number, data: any) {
-  //   try {
-  //     const admin = await this.prisma.admin.update({
-  //       where: { id },
-  //       data,
-  //     });
-  //     return { status: "success", data: admin };
-  //   } catch (error) {
-  //     return { status: "failed", error: error.message };
-  //   }
-  // }
+  async update(id: number, data: any) {
+    try {
+      const admin = await this.prisma.admin.update({
+        where: { id },
+        data,
+      });
+      return { status: "success", data: admin };
+    } catch (error) {
+      return { status: "failed", error: error.message };
+    }
+  }
 
   async updateByAdmin(hospital_Id: number, user_Id: string, data: any) {
     try {

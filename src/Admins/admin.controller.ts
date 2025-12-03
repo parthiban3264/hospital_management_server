@@ -52,6 +52,7 @@ async create(@Body() createPatientDto: any) {
   findAll() {
     return this.adminService.findAll();
   }
+  
  @Get("all/:hospital_Id/:role")
 async findAllByHospital(
   @Param('hospital_Id') hospital_Id: string,
@@ -60,7 +61,16 @@ async findAllByHospital(
   return this.adminService.findAllByHospitalAndRole(Number(hospital_Id), role);
 }
 
-
+ @Get("all/:hospital_Id")
+async getAllByHospitalAdmin(
+  @Param('hospital_Id') hospital_Id: string,
+) {
+  return this.adminService.findAllByHospitalAdmin(Number(hospital_Id));
+}
+  @Patch("updateById/:id")
+  update(@Param("id") id: string, @Body() data: any) {
+    return this.adminService.update(+id, data);
+  }
   // @Get("getById/:id")
   // findOne(@Param("id") id: string) {
   //   return this.adminService.findOne(+id);
@@ -79,10 +89,7 @@ async findAllByHospital(
     return { status: 'success', data: admin };
   }
 
-  // @Patch("updateById/:id")
-  // update(@Param("id") id: string, @Body() data: any) {
-  //   return this.adminService.update(+id, data);
-  // }
+
 
    @Patch("update/:hospital_Id/:user_Id")
   updateByHospitalAndUser(
