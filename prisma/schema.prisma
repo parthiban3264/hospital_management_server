@@ -418,7 +418,7 @@ model RoomsAvailable {
 model Fees {
   id          Int      @id @default(autoincrement())
   hospital_Id Int
-  type        Float?
+  type        String?
   amount      Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

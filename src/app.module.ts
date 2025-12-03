@@ -21,6 +21,7 @@ import { ScanAndTestModule } from './TestAndScan/test-scan.module';
 import { DrawerModule } from './Drawer/drawer.module';
 import { IncomeAndExpenseModule } from './IncomeExpense/incomeExpense.module';
 import {AdminStratorModule  } from './AdminStrator/adminstrator.module';
+import { FeesModule } from './Fees/fees.module';
 @Module({
   imports: [HospitalModule,
     UserModule,
@@ -41,6 +42,7 @@ import {AdminStratorModule  } from './AdminStrator/adminstrator.module';
     ScanAndTestModule,
     DrawerModule,
     IncomeAndExpenseModule,
+    FeesModule,
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],
