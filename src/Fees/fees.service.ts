@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 export class FeesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: Prisma.FeesCreateInput) {
+  async create(data: any) {
     return this.prisma.fees.create({ data });
   }
 

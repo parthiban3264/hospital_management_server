@@ -30,7 +30,7 @@ export class FeesController {
     return this.feesService.update(+id, body);
   }
 
-  @Delete('delecteById:id')
+  @Delete('delecteById/:id')
   remove(@Param('id') id: string) {
     return this.feesService.remove(+id);
   }
