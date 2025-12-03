@@ -37,6 +37,7 @@ export class MedicineTonicInjectionController {
     @Body() body: any
   ) {
     try {
+      console.log('Updating record:', { type, id, body });
       return await this.service.updateRecord(type, Number(id), body);
     } catch (error) {
       console.error("❌ Error updating record:", error);

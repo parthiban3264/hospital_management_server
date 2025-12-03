@@ -130,9 +130,11 @@ export class MedicineTonicInjectionService {
 
   // ✅ UPDATE by type and id
   async updateRecord(type: "medicine" | "tonic" | "injection", id: number, data: any) {
+    console.log('data',data,id,type);
+    
     const updatedData = {
       ...data,
-      updatedAt: new Date().toISOString(),
+      // updatedAt: new Date().toISOString(),
     };
 
     if (type === "medicine") {
