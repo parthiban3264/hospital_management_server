@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { FeesService } from './fees.service';
+import { log } from 'console';
 
 @Controller('fees')
 export class FeesController {
@@ -7,6 +8,7 @@ export class FeesController {
 
   @Post('create')
   create(@Body() body: any) {
+    log('fees body', body);
     return this.feesService.create(body);
   }
 
@@ -30,7 +32,7 @@ export class FeesController {
     return this.feesService.update(+id, body);
   }
 
-  @Delete('delecteById/:id')
+  @Delete('deleteById/:id')
   remove(@Param('id') id: string) {
     return this.feesService.remove(+id);
   }
