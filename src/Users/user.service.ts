@@ -158,70 +158,151 @@ export class UserService {
   //   };
   // }
 
-  async login(data: any) {
-    const { hospital_Id, user_Id, password } = data;
+//   async login(data: any) {
+//     const { hospital_Id, user_Id, password } = data;
 
-    const user = await this.prisma.user.findFirst({
-      where: { hospital_Id, user_Id },
-      include: { Admin: true, Hospital: true }, // 👈 includes Admin relation
-    });
+//     const user = await this.prisma.user.findFirst({
+//       where: { hospital_Id, user_Id },
+//       include: { Admin: true, Hospital: true }, // 👈 includes Admin relation
+//     });
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-   if (user.isLoggedIn) {
-      throw new UnauthorizedException('User already logged in elsewhere');
-    }
-    if (user.Hospital.HospitalStatus !== 'ACTIVE') {
-      throw new UnauthorizedException('Hospital is not active');
-    }
+//     if (!user) {
+//       throw new UnauthorizedException('User not found');
+//     }
+//    if (user.isLoggedIn) {
+//       throw new UnauthorizedException('User already logged in elsewhere');
+//     }
+//     if (user.Hospital.HospitalStatus !== 'ACTIVE') {
+//       throw new UnauthorizedException('Hospital is not active');
+//     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
-    }
-//  // ✅ Set user as logged in
-//   await this.prisma.user.update({
+//     const isPasswordValid = await bcrypt.compare(password, user.password);
+//     if (!isPasswordValid) {
+//       throw new UnauthorizedException('Invalid password');
+//     }
+// //  // ✅ Set user as logged in
+// //   await this.prisma.user.update({
+// //     where: { id: user.id },
+// //     data: { isLoggedIn: true },
+// //   });
+
+//     const payload = {
+//       sub: user.id,
+//       role: user.role,
+//       hospitalId: user.hospital_Id,
+//       userId: user.user_Id,
+//     };
+
+//     const token = this.jwtService.sign(payload);
+
+//     await this.prisma.user.update({
 //     where: { id: user.id },
-//     data: { isLoggedIn: true },
+//     data: {
+//       isLoggedIn: true,
+//       sessionToken: token,
+//     },
 //   });
 
-    const payload = {
-      sub: user.id,
-      role: user.role,
-      hospitalId: user.hospital_Id,
-      userId: user.user_Id,
-    };
+//     // ✅ Flatten Admin relation for convenience
+//     const adminData = user.Admin?.[0]
+//       ? { designation: user.Admin[0].designation }
+//       : null;
 
-    const token = this.jwtService.sign(payload);
+//     // ✅ Remove password before sending user info
+//     const { password: _, ...safeUser } = user;
 
-    await this.prisma.user.update({
+//     return {
+//       success: true,
+//       data: {
+//         access_token: token,
+//         user: {
+//           ...safeUser,
+//           admin: adminData, // 👈 what Flutter will read as user["admin"]["designation"]
+//         },
+//       },
+//     };
+//   }
+async login(data: any) {
+  const { hospital_Id, user_Id, password } = data;
+
+  const user = await this.prisma.user.findFirst({
+    where: { hospital_Id, user_Id },
+    include: { Admin: true, Hospital: true },
+  });
+
+  if (!user) throw new UnauthorizedException("User not found");
+
+  // ------------------------------------
+  // 1️⃣ CHECK IF SESSION EXISTS
+  // ------------------------------------
+  if (user.sessionToken) {
+    try {
+      // Validate old token
+      this.jwtService.verify(user.sessionToken);
+
+      // Token valid = user is logged in elsewhere
+      throw new UnauthorizedException(
+        "User already logged in another device"
+      );
+
+    } catch (err) {
+      // Token expired → AUTO RESET SESSION
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          isLoggedIn: false,
+          sessionToken: null,
+        },
+      });
+      console.log("Expired session auto-reset ✔");
+    }
+  }
+
+  // ------------------------------------
+  // 2️⃣ CHECK PASSWORD
+  // ------------------------------------
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) throw new UnauthorizedException("Invalid password");
+
+  // ------------------------------------
+  // 3️⃣ GENERATE NEW TOKEN
+  // ------------------------------------
+  const payload = {
+    sub: user.id,
+    role: user.role,
+    hospitalId: user.hospital_Id,
+    userId: user.user_Id,
+  };
+
+  const newToken = this.jwtService.sign(payload);
+
+  // Save new session
+  await this.prisma.user.update({
     where: { id: user.id },
     data: {
       isLoggedIn: true,
-      sessionToken: token,
+      sessionToken: newToken,
     },
   });
 
-    // ✅ Flatten Admin relation for convenience
-    const adminData = user.Admin?.[0]
-      ? { designation: user.Admin[0].designation }
-      : null;
+  const adminData = user.Admin?.[0]
+    ? { designation: user.Admin[0].designation }
+    : null;
 
-    // ✅ Remove password before sending user info
-    const { password: _, ...safeUser } = user;
+  const { password: _, ...safeUser } = user;
 
-    return {
-      success: true,
-      data: {
-        access_token: token,
-        user: {
-          ...safeUser,
-          admin: adminData, // 👈 what Flutter will read as user["admin"]["designation"]
-        },
+  return {
+    success: true,
+    data: {
+      access_token: newToken,
+      user: {
+        ...safeUser,
+        admin: adminData,
       },
-    };
-  }
+    },
+  };
+}
+
 
   // user.service.ts
 // user.service.ts
