@@ -91,12 +91,12 @@ export class UserController {
   }
  
   // -------------------- LOGOUT --------------------
-  @UseGuards(AuthGuard('jwt'))
-  @Post('logout')
-  async logout(@Req() req) {
-    log('Logout request received:', req.user);
+   
+  @Post('logout/:id')
+  async logout(@Param("id") id: string) {
+    log('Logout request received:', id);
     // req.user is set by JWT AuthGuard
-    const userId = req.user.sub; 
+    const userId = id; 
     return this.userService.logout(userId);
   }
 //  @Post('force-logout')

@@ -216,14 +216,26 @@ export class UserService {
   }
 
   // user.service.ts
-async logout(userId: number) {
+// user.service.ts
+async logout(userId: string) {
+  // first, find the numeric ID from user_Id
+  const user = await this.prisma.user.findFirst({
+    where: { user_Id: userId },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
   await this.prisma.user.update({
-    where: { id: userId },
+    where: { id: user.id }, // ✅ numeric PK is unique
     data: { isLoggedIn: false },
   });
 
-  return { success: true, message: "Logged out successfully" };
+  return { success: true, message: 'Logged out successfully' };
 }
+
+
 
   //================================================NEW LOGIN===================================================
 
