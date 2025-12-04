@@ -29,6 +29,7 @@ export class FeesController {
 
   @Patch('updateById/:id')
   update(@Param('id') id: string, @Body() body: any) {
+    log(body,id);
     return this.feesService.update(+id, body);
   }
 

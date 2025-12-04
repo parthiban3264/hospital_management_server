@@ -37,9 +37,14 @@ export class FeesService {
   }
 
   async update(id: number, data: any) {
+    console.log('Updating fees with data:', data);
     return this.prisma.fees.update({
       where: { id },
-      data,
+      data :{
+         hospital_Id: Number(data.hospital_Id),
+      type: data.type,
+      amount: Number(data.amount),
+      },
     });
   }
 
