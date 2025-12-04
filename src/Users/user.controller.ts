@@ -51,6 +51,8 @@ import {
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { JwtAuthGuard } from "../jwt/jwt-auth.guard";
+import { log } from "console";
+import { AuthGuard } from "@nestjs/passport";
 
 @Controller("users")
 export class UserController {
@@ -89,8 +91,10 @@ export class UserController {
   }
  
   // -------------------- LOGOUT --------------------
+  @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   async logout(@Req() req) {
+    log('Logout request received:', req.user);
     // req.user is set by JWT AuthGuard
     const userId = req.user.sub; 
     return this.userService.logout(userId);
