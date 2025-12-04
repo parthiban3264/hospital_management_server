@@ -47,6 +47,7 @@ import {
   Post,
   UseGuards,
   Request,
+  Req,
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { JwtAuthGuard } from "../jwt/jwt-auth.guard";
@@ -86,6 +87,20 @@ export class UserController {
     console.log("Login attempt:", data);
     return this.userService.login(data);
   }
+ 
+  // -------------------- LOGOUT --------------------
+  @Post('logout')
+  async logout(@Req() req) {
+    // req.user is set by JWT AuthGuard
+    const userId = req.user.sub; 
+    return this.userService.logout(userId);
+  }
+//  @Post('force-logout')
+//   forceLogout(@Body() data: any) {
+//     return this.userService.forceLogout(data);
+//   }
+
+
 
   // -------------------- PROTECTED ROUTE EXAMPLE --------------------
   @UseGuards(JwtAuthGuard)

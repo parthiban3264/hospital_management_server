@@ -32,7 +32,6 @@
 //   return this.prisma.user.findUnique({ where: { id } });
 // }
 
-
 //   async update(id: number, data: any) {
 //     try {
 //       let updateData = { ...data };
@@ -63,35 +62,37 @@
 //   }
 // }
 
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-import * as bcrypt from "bcrypt";
-import { JwtService } from "@nestjs/jwt";
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async create(data: any) {
-    console.log(typeof(data.user_Id));
-    
-  try {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    console.log(hashedPassword);
-    
-    const user = await this.prisma.user.create({
-      data: {
-        ...data,
-        user_Id: (data.user_Id.toString()), // ✅ convert to string
-        password: hashedPassword,
-      },
-    });
-    return { status: "success", data: user };
-  } catch (error) {
-    return { status: "failed", error: error.message };
-  }
-}
+    console.log(typeof data.user_Id);
 
+    try {
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      console.log(hashedPassword);
+
+      const user = await this.prisma.user.create({
+        data: {
+          ...data,
+          user_Id: data.user_Id.toString(), // ✅ convert to string
+          password: hashedPassword,
+        },
+      });
+      return { status: 'success', data: user };
+    } catch (error) {
+      return { status: 'failed', error: error.message };
+    }
+  }
 
   async findAll() {
     return this.prisma.user.findMany();
@@ -111,22 +112,23 @@ export class UserService {
         where: { id },
         data: updateData,
       });
-      return { status: "success", data: user };
+      return { status: 'success', data: user };
     } catch (error) {
-      return { status: "failed", error: error.message };
+      return { status: 'failed', error: error.message };
     }
   }
 
   async remove(id: number) {
     try {
       await this.prisma.user.delete({ where: { id } });
-      return { status: "success", message: "User deleted" };
+      return { status: 'success', message: 'User deleted' };
     } catch (error) {
-      return { status: "failed", error: error.message };
+      return { status: 'failed', error: error.message };
     }
   }
 
   // -------------------- LOGIN --------------------
+
   // async login(data: any) {
   //   const { hospital_Id, user_Id, password } = data;
 
@@ -155,54 +157,156 @@ export class UserService {
   //     access_token: this.jwtService.sign(payload),
   //   };
   // }
+
   async login(data: any) {
-  const { hospital_Id, user_Id, password } = data;
+    const { hospital_Id, user_Id, password } = data;
 
-  const user = await this.prisma.user.findFirst({
-    where: { hospital_Id, user_Id, },
-    include: { Admin: true,Hospital:true }, // 👈 includes Admin relation
+    const user = await this.prisma.user.findFirst({
+      where: { hospital_Id, user_Id },
+      include: { Admin: true, Hospital: true }, // 👈 includes Admin relation
+    });
 
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    if (user.isLoggedIn) {
+    throw new UnauthorizedException("This user is already logged in");
+  }
+    if (user.Hospital.HospitalStatus !== 'ACTIVE') {
+      throw new UnauthorizedException('Hospital is not active');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid password');
+    }
+ // ✅ Set user as logged in
+  await this.prisma.user.update({
+    where: { id: user.id },
+    data: { isLoggedIn: true },
   });
 
-  if (!user) {
-    throw new UnauthorizedException("User not found");
-  }
-   if (user.Hospital.HospitalStatus !== "ACTIVE") {
-    throw new UnauthorizedException("Hospital is not active");
-  }
+    const payload = {
+      sub: user.id,
+      role: user.role,
+      hospitalId: user.hospital_Id,
+      userId: user.user_Id,
+    };
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new UnauthorizedException("Invalid password");
-  }
+    const token = this.jwtService.sign(payload);
 
-  const payload = {
-    sub: user.id,
-    role: user.role,
-    hospitalId: user.hospital_Id,
-    userId: user.user_Id,
-  };
+    // ✅ Flatten Admin relation for convenience
+    const adminData = user.Admin?.[0]
+      ? { designation: user.Admin[0].designation }
+      : null;
 
-  const token = this.jwtService.sign(payload);
+    // ✅ Remove password before sending user info
+    const { password: _, ...safeUser } = user;
 
-  // ✅ Flatten Admin relation for convenience
-  const adminData = user.Admin?.[0]
-    ? { designation: user.Admin[0].designation }
-    : null;
-
-  // ✅ Remove password before sending user info
-  const { password: _, ...safeUser } = user;
-
-  return {
-    success: true,
-    data: {
-      access_token: token,
-      user: {
-        ...safeUser,
-        admin: adminData, // 👈 what Flutter will read as user["admin"]["designation"]
+    return {
+      success: true,
+      data: {
+        access_token: token,
+        user: {
+          ...safeUser,
+          admin: adminData, // 👈 what Flutter will read as user["admin"]["designation"]
+        },
       },
-    },
-  };
+    };
+  }
+
+  // user.service.ts
+async logout(userId: number) {
+  await this.prisma.user.update({
+    where: { id: userId },
+    data: { isLoggedIn: false },
+  });
+
+  return { success: true, message: "Logged out successfully" };
 }
+
+  //================================================NEW LOGIN===================================================
+
+//   async login(data: any) {
+//   const { hospital_Id, user_Id, password } = data;
+
+//   const user = await this.prisma.user.findFirst({
+//     where: { hospital_Id, user_Id },
+//     include: { Admin: true, Hospital: true },
+//   });
+
+//   if (!user) throw new UnauthorizedException('User not found');
+
+//   if (user.Hospital.HospitalStatus !== 'ACTIVE') {
+//     throw new UnauthorizedException('Hospital is not active');
+//   }
+
+//   const isPasswordValid = await bcrypt.compare(password, user.password);
+//   if (!isPasswordValid) {
+//     throw new UnauthorizedException('Invalid password');
+//   }
+
+//   // 👇 if user is already logged in
+//   if (user.sessionToken) {
+//     return {
+//       success: true,
+//       alreadyLoggedIn: true,   // 👈 Flutter will show popup
+//       message: "Already logged in on another device",
+//     };
+//   }
+
+//   // 👇 normal login
+//   const newSessionToken = crypto.randomUUID();
+
+//   await this.prisma.user.update({
+//     where: { id: user.id },
+//     data: { sessionToken: newSessionToken },
+//   });
+
+//   const payload = {
+//     sub: user.id,
+//     role: user.role,
+//     hospitalId: user.hospital_Id,
+//     userId: user.user_Id,
+//     sessionToken: newSessionToken,
+//   };
+
+//   const token = this.jwtService.sign(payload);
+
+//   const adminData = user.Admin?.[0]
+//     ? { designation: user.Admin[0].designation }
+//     : null;
+
+//   const { password: _, ...safeUser } = user;
+
+//   return {
+//     success: true,
+//     alreadyLoggedIn: false,
+//     data: {
+//       access_token: token,
+//       session_token: newSessionToken,
+//       user: { ...safeUser, admin: adminData },
+//     },
+//   };
+// }
+
+// async forceLogout(data: any) {
+//     const { hospital_Id, user_Id } = data;
+
+//     await this.prisma.user.updateMany({
+//       where: {
+//         hospital_Id: Number(hospital_Id),
+//         user_Id: user_Id,
+//       },
+//       data: {
+//         sessionToken: null, // removes old login device
+//       },
+//     });
+
+//     return {
+//       success: true,
+//       message: "Old device session cleared successfully",
+//     };
+//   }
 
 }

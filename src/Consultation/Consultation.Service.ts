@@ -44,6 +44,24 @@ export class ConsultationService {
       },
     });
 
+    const registrationFee = await this.prisma.fees.findFirst({
+    where: {
+      hospital_Id:  Number(data.hospital_Id),
+      type: 'REGISTRATIONFEE',
+    },
+  });
+
+  const appointmentFee = await this.prisma.fees.findFirst({
+    where: {
+      hospital_Id:  Number(data.hospital_Id),
+      type: 'APPOINTMENTFEE',
+    },
+  });
+   const feeAmount =
+      registrationFee?.amount ??
+      appointmentFee?.amount ??
+      0; //
+
     // Step 2️⃣ - Create payment linked to consultation
     const payment = await this.prisma.payment.create({
       data: {
@@ -52,7 +70,7 @@ export class ConsultationService {
         consultation_Id: consultation.id, // ✅ works now
         reason: data.title ?? 'Registration Fee',
         status: 'PENDING',
-        amount: data.amount ?? 500,
+        amount: feeAmount,
         type: 'REGISTRATIONFEE',
         createdAt: data.createdAt || new Date().toISOString(),
       },

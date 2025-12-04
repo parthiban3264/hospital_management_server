@@ -62,6 +62,8 @@ model User {
   user_Id     String
   password    String
   role        String
+  sessionToken String?
+  isLoggedIn  Boolean @default(false)
   Admin       Admin[]
   Patient     Patient[]
   Hospital    Hospital  @relation(fields: [hospital_Id], references: [id])
