@@ -91,7 +91,7 @@ export class UserController {
   }
  
   // -------------------- LOGOUT --------------------
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   async logout(@Req() req) {
     log('Logout request received:', req.user);
