@@ -62,7 +62,7 @@
 //   }
 // }
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -169,9 +169,9 @@ export class UserService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    if (user.isLoggedIn) {
-    throw new UnauthorizedException("This user is already logged in");
-  }
+   if (user.isLoggedIn) {
+      throw new UnauthorizedException('User already logged in elsewhere');
+    }
     if (user.Hospital.HospitalStatus !== 'ACTIVE') {
       throw new UnauthorizedException('Hospital is not active');
     }
@@ -180,11 +180,11 @@ export class UserService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password');
     }
- // ✅ Set user as logged in
-  await this.prisma.user.update({
-    where: { id: user.id },
-    data: { isLoggedIn: true },
-  });
+//  // ✅ Set user as logged in
+//   await this.prisma.user.update({
+//     where: { id: user.id },
+//     data: { isLoggedIn: true },
+//   });
 
     const payload = {
       sub: user.id,
@@ -194,6 +194,14 @@ export class UserService {
     };
 
     const token = this.jwtService.sign(payload);
+
+    await this.prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isLoggedIn: true,
+      sessionToken: token,
+    },
+  });
 
     // ✅ Flatten Admin relation for convenience
     const adminData = user.Admin?.[0]
@@ -217,23 +225,35 @@ export class UserService {
 
   // user.service.ts
 // user.service.ts
-async logout(userId: string) {
-  // first, find the numeric ID from user_Id
-  const user = await this.prisma.user.findFirst({
-    where: { user_Id: userId },
-  });
+// async logout(userId: string) {
+//   // first, find the numeric ID from user_Id
+//   const user = await this.prisma.user.findFirst({
+//     where: { user_Id: userId },
+//   });
 
-  if (!user) {
-    throw new Error('User not found');
+//   if (!user) {
+//     throw new Error('User not found');
+//   }
+
+//   await this.prisma.user.update({
+//     where: { id: user.id }, // ✅ numeric PK is unique
+//     data: { isLoggedIn: false },
+//   });
+
+//   return { success: true, message: 'Logged out successfully' };
+// }
+
+ async logout(userId: string) {
+    const user = await this.prisma.user.findFirst({ where: { user_Id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { isLoggedIn: false, sessionToken: null },
+    });
+
+    return { success: true, message: 'Logged out successfully' };
   }
-
-  await this.prisma.user.update({
-    where: { id: user.id }, // ✅ numeric PK is unique
-    data: { isLoggedIn: false },
-  });
-
-  return { success: true, message: 'Logged out successfully' };
-}
 
 
 

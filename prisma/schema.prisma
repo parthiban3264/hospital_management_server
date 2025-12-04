@@ -62,7 +62,7 @@ model User {
   user_Id     String
   password    String
   role        String
-  sessionToken String?
+  sessionToken String? @db.Text 
   isLoggedIn  Boolean @default(false)
   Admin       Admin[]
   Patient     Patient[]
