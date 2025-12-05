@@ -62,6 +62,7 @@ model User {
   user_Id     String
   password    String
   role        String
+  device_Id   String?    @db.Text
   sessionToken String? @db.Text 
   isLoggedIn  Boolean @default(false)
   Admin       Admin[]
@@ -498,7 +499,7 @@ model TonicPatient {
   consultation_Id Int?
   reason          String?
   quantity        Int
-  reduceQuantity   Int?
+  reduceQuantity   Float?
   Doase           String?
   afterEat        Boolean
   morning         Boolean @default(false)

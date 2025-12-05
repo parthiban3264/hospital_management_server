@@ -70,6 +70,7 @@ export class MedicineTonicInjectionService {
 
       // ✅ 3️⃣ Medicines
       if (data.medicines?.length) {
+        console.log('tonics data',data.medicines);
         const medData = data.medicines.map((m) => ({
           ...m,
           hospital_Id,
@@ -85,6 +86,8 @@ export class MedicineTonicInjectionService {
 
       // ✅ 4️⃣ Tonics
       if (data.tonics?.length) {
+        console.log('tonics data',data.tonics);
+        
         const tonicData = data.tonics.map((t) => ({
           ...t,
           hospital_Id,

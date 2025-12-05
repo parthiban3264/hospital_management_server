@@ -223,7 +223,7 @@ export class UserService {
 //     };
 //   }
 async login(data: any) {
-  const { hospital_Id, user_Id, password } = data;
+  const { hospital_Id, user_Id, password, device_Id } = data;
 
   const user = await this.prisma.user.findFirst({
     where: { hospital_Id, user_Id },
@@ -235,23 +235,27 @@ async login(data: any) {
   // ------------------------------------
   // 1️⃣ CHECK IF SESSION EXISTS
   // ------------------------------------
-  if (user.sessionToken) {
-    try {
-      // Validate old token
-      this.jwtService.verify(user.sessionToken);
+  if (user.sessionToken && user.device_Id) {
+    const decoded = this.jwtService.decode(user.sessionToken) as any;
+    const now = Math.floor(Date.now() / 1000);
 
-      // Token valid = user is logged in elsewhere
+    const isTokenValid = decoded?.exp && decoded.exp > now;
+
+    // Check if another device is using the session
+    if (isTokenValid && user.device_Id !== device_Id) {
       throw new UnauthorizedException(
-        "User already logged in another device"
+        "User already logged in on another device"
       );
+    }
 
-    } catch (err) {
-      // Token expired → AUTO RESET SESSION
+    // If token expired → reset session
+    if (!isTokenValid) {
       await this.prisma.user.update({
         where: { id: user.id },
         data: {
           isLoggedIn: false,
           sessionToken: null,
+          device_Id: null,
         },
       });
       console.log("Expired session auto-reset ✔");
@@ -274,14 +278,19 @@ async login(data: any) {
     userId: user.user_Id,
   };
 
-  const newToken = this.jwtService.sign(payload);
+  const newToken = this.jwtService.sign(payload, {
+    expiresIn: "1d",
+  });
 
-  // Save new session
+  // ------------------------------------
+  // 4️⃣ SAVE NEW SESSION WITH DEVICE ID
+  // ------------------------------------
   await this.prisma.user.update({
     where: { id: user.id },
     data: {
       isLoggedIn: true,
       sessionToken: newToken,
+      device_Id: device_Id, // Save current device
     },
   });
 
@@ -302,6 +311,7 @@ async login(data: any) {
     },
   };
 }
+
 
 
   // user.service.ts

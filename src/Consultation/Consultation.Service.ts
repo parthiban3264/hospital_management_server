@@ -259,7 +259,8 @@ async findAllByMedical(hospitalId: number,mode : number) {
     where: { 
       hospital_Id: Number(hospitalId),
       ...extraCondition,
-      status: { in: ['ENDPROCESSING', 'ONGOING'] },
+      // queueStatus: 'COMPLETED',
+      status: { in: ['ENDPROCESSING', 'ONGOING',] },
     },
     include: {
       Hospital: true,
@@ -271,11 +272,13 @@ async findAllByMedical(hospitalId: number,mode : number) {
         },
       },
       InjectionPatient: {
-        include: {
-          Injection: true, 
-          Payment: true, 
-        },
-      },
+
+  include: {
+    Injection: true,
+    Payment: true,
+  },
+},
+
       TonicPatient: {
         include: {
           Tonic: true,
