@@ -164,6 +164,7 @@ enum QueueStatus {
   ONGOING
   DRQUEUE
   COMPLETED
+  CANCELLED
 }
 
 model Consultation {
