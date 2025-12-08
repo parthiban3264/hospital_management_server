@@ -193,8 +193,8 @@ async updateTestingScanning(
       // 👉 If file is larger than 2MB → compress it
       if (file.size > 2 * 1024 * 1024) {
         await sharp(originalPath)
-          .resize(1600)  // keeps quality but reduces size drastically
-          .jpeg({ quality: 70 })
+          .resize({ width: 1600 }) // resize proportionally
+          .jpeg({ quality: 70 }) // compress
           .toFile(compressedPath);
 
         // Delete original large file

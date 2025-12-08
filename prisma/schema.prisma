@@ -175,6 +175,7 @@ model Consultation {
   purpose         String
   symptoms        Boolean     @default(false)
   notes           Json?
+  cancelReason   String?
   // diagnosis         String?
   treatment       Boolean     @default(false)
   height          Float?
