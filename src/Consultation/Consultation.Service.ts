@@ -108,7 +108,7 @@ export class ConsultationService {
 
   async findAllByHospitalOverview(hospitalId: number) {
     return this.prisma.consultation.findMany({
-      where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING']} }, //,'COMPLETED' assuming hospitalId is numeric
+      where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING','CANCELLED']} }, //,'COMPLETED' assuming hospitalId is numeric
       include: {
         Hospital: true,
         Patient: {
