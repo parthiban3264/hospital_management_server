@@ -75,6 +75,7 @@ async findPendingPaidByHospital(hospitalId: number) {
     where: {
       hospital_Id: Number(hospitalId),
       status: "PAID",
+      type:'REGISTRATIONFEE',
 
       Consultation: {
         status: "PENDING",
