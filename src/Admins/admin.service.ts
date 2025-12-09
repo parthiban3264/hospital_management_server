@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import * as bcrypt from 'bcrypt';
+import { log } from "console";
 
 @Injectable()
 export class AdminService {
@@ -52,6 +53,7 @@ export class AdminService {
           phone: data.phone,
           email: data.email,
           role: data.role,
+          doctorAmount: data.doctorAmount || 0,
           specialist: data.specialist,
           address: data.address,
           photo: data.photo,
@@ -153,13 +155,19 @@ export class AdminService {
   }
 
   async update(id: number, data: any) {
+    console.log('data',data);
+    
     try {
       const admin = await this.prisma.admin.update({
         where: { id },
-        data,
+        data : {
+          doctorAmount: data.amount,
+        },
       });
+      log('Updated Admin:', admin);
       return { status: "success", data: admin };
     } catch (error) {
+      console.error("Update Error:", error);
       return { status: "failed", error: error.message };
     }
   }

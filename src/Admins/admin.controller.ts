@@ -69,6 +69,8 @@ async getAllByHospitalAdmin(
 }
   @Patch("updateById/:id")
   update(@Param("id") id: string, @Body() data: any) {
+    console.log('updateId',data ,id);
+    
     return this.adminService.update(+id, data);
   }
   // @Get("getById/:id")

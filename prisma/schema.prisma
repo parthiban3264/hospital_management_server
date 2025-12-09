@@ -79,6 +79,7 @@ model Admin {
   name         String
   designation  String?
   role         String // e.g., Doctor, Nurse, Admin
+  doctorAmount Float?      @default(0)
   specialist   String?
   phone        String
   email        String

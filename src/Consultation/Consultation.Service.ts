@@ -44,23 +44,52 @@ export class ConsultationService {
       },
     });
 
-    const registrationFee = await this.prisma.fees.findFirst({
-    where: {
-      hospital_Id:  Number(data.hospital_Id),
-      type: 'REGISTRATIONFEE',
-    },
-  });
+    // ---- Fetch Fees ----
+const registrationFee = await this.prisma.fees.findFirst({
+  where: {
+    hospital_Id: Number(data.hospital_Id),
+    type: 'REGISTRATIONFEE',
+  },
+});
 
-  const appointmentFee = await this.prisma.fees.findFirst({
-    where: {
-      hospital_Id:  Number(data.hospital_Id),
-      type: 'APPOINTMENTFEE',
-    },
-  });
-   const feeAmount =
-      registrationFee?.amount ??
-      appointmentFee?.amount ??
-      0; //
+const appointmentFee = await this.prisma.fees.findFirst({
+  where: {
+    hospital_Id: Number(data.hospital_Id),
+    type: 'APPOINTMENTFEE',
+  },
+});
+
+// ---- Fetch Doctor Amount ----
+const doctorData = await this.prisma.admin.findFirst({
+  where: {
+    hospital_Id: Number(data.hospital_Id),
+    user_Id: data.doctor_Id,
+  },
+});
+
+const doctorAmount = doctorData?.doctorAmount ?? 0;
+
+// ---- Extract Fee Amounts ----
+const regAmount = registrationFee?.amount ?? 0;
+const appointAmount = appointmentFee?.amount ?? 0;
+
+// ---- Fee Logic ----
+// Priority:
+// 1. If appointment fee > 0 → use appointment fee
+// 2. Else if registration fee > 0 → use registration fee
+// 3. Else → 0
+let baseFee = 0;
+
+if (regAmount > 0) {
+  baseFee = regAmount;
+} else if (appointAmount > 0) {
+  baseFee = appointAmount;
+} else {
+  baseFee = 0;
+}
+
+// ---- Final total ----
+const totalFeeAmount = baseFee + doctorAmount;
 
     // Step 2️⃣ - Create payment linked to consultation
     const payment = await this.prisma.payment.create({
@@ -70,7 +99,7 @@ export class ConsultationService {
         consultation_Id: consultation.id, // ✅ works now
         reason: data.title ?? 'Registration Fee',
         status: 'PENDING',
-        amount: feeAmount,
+        amount: totalFeeAmount,
         type: 'REGISTRATIONFEE',
         createdAt: data.createdAt || new Date().toISOString(),
       },
@@ -108,7 +137,7 @@ export class ConsultationService {
 
   async findAllByHospitalOverview(hospitalId: number) {
     return this.prisma.consultation.findMany({
-      where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING','CANCELLED']} }, //,'COMPLETED' assuming hospitalId is numeric
+      where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING','CANCELLED','COMPLETED']} }, //,'COMPLETED' assuming hospitalId is numeric
       include: {
         Hospital: true,
         Patient: {
@@ -117,7 +146,11 @@ export class ConsultationService {
           },
         },
         Doctor: true,
+        
       },
+      orderBy: {
+      createdAt: "asc",
+    },
     });
   }
 
@@ -144,6 +177,9 @@ export class ConsultationService {
       },
       Doctor: { select: { user_Id:true,name: true, specialist: true } },
       TeatingAndScanningPatient: true,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
   });
 
@@ -260,7 +296,7 @@ async findAllByMedical(hospitalId: number,mode : number) {
       hospital_Id: Number(hospitalId),
       ...extraCondition,
       // queueStatus: 'COMPLETED',
-      status: { in: ['ENDPROCESSING', 'ONGOING',] },
+      status: { in: ['ENDPROCESSING', 'ONGOING','COMPLETED'] },
     },
     include: {
       Hospital: true,
