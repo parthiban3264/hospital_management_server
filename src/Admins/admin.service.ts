@@ -161,6 +161,7 @@ export class AdminService {
       const admin = await this.prisma.admin.update({
         where: { id },
         data : {
+          status: data.status,
           doctorAmount: data.amount,
         },
       });
