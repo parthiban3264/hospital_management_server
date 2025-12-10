@@ -172,6 +172,8 @@ const totalFeeAmount = baseFee + doctorAmount;
           dob: true,
           bldGrp: true,
           address: true,
+          createdAt: true,
+          updatedAt: true,
           // TestingAndScanning: true,
         },
       },
@@ -238,13 +240,15 @@ const totalFeeAmount = baseFee + doctorAmount;
       scanningTesting: c.scanningTesting,
       paymentStatus: c.paymentStatus,
       Patient: {
-        // patient_Id: patient.user_Id,
+        patient_Id: patient.user_Id,
         name: patient.name,
         dob: patient.dob,
         phone:typeof patient.phone === 'object' && patient.phone ? (patient.phone as any).mobile ?? '-' : '-',
         gender: patient.gender,
         bldGrp: patient.bldGrp,
         address: patient.address ?? {},
+        createdAt: patient.createdAt,
+        updatedAt: patient.updatedAt,
     
       },
       TeatingAndScanningPatient: (TeatingAndScanningPatient || [])
