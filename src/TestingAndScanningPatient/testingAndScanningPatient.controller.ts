@@ -109,58 +109,13 @@ export class TestingAndScanningPatientController {
 
   //================================================================================
 
-  @Patch("updateByIdScanning/:id")
-@UseInterceptors(
-  FilesInterceptor("files", 6, {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        const id = req.params.id;
-
-        const uploadPath = join("/var/www/scan_images", id);
-
-        if (!fs.existsSync(uploadPath)) {
-          fs.mkdirSync(uploadPath, { recursive: true });
-        }
-
-        callback(null, uploadPath);
-      },
-      filename: (req, file, callback) => {
-        const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        callback(null, unique + extname(file.originalname));
-      },
-    }),
-  })
-)
-async updateTestingScanning(
-  @Param("id") id: number,
-  @UploadedFiles() files: Express.Multer.File[],
-  @Body() data: any
-) {
-  // If images uploaded, add to payload
-  let imageUrls = [];
-
-  if (files && files.length > 0) {
-    imageUrls = files.map(
-      (file) =>
-        `https://hospitalservers.ramchintech.com/scan_images/${id}/${file.filename}`
-    );
-  }
-
-  const payload = {
-    ...data,
-    ...(imageUrls.length > 0 && { images: imageUrls }) // only add if files exist
-  };
-
-  return this.service.update(+id, payload);
-}
-
-//// new code for updating scanning with image upload
-// @Patch("updateByIdScanning/:id")
+//   @Patch("updateByIdScanning/:id")
 // @UseInterceptors(
 //   FilesInterceptor("files", 6, {
 //     storage: diskStorage({
 //       destination: (req, file, callback) => {
 //         const id = req.params.id;
+
 //         const uploadPath = join("/var/www/scan_images", id);
 
 //         if (!fs.existsSync(uploadPath)) {
@@ -181,45 +136,90 @@ async updateTestingScanning(
 //   @UploadedFiles() files: Express.Multer.File[],
 //   @Body() data: any
 // ) {
+//   // If images uploaded, add to payload
 //   let imageUrls = [];
 
 //   if (files && files.length > 0) {
-//     for (const file of files) {
-//       const folder = `/var/www/scan_images/${id}`;
-//       const originalPath = file.path;
-//       const compressedFilename = "COMP_" + file.filename;
-//       const compressedPath = join(folder, compressedFilename);
-
-//       // 👉 If file is larger than 2MB → compress it
-//       if (file.size > 2 * 1024 * 1024) {
-//         await sharp(originalPath)
-//           .resize({ width: 1600 }) // resize proportionally
-//           .jpeg({ quality: 70 }) // compress
-//           .toFile(compressedPath);
-
-//         // Delete original large file
-//         fs.unlinkSync(originalPath);
-
-//         // Save the compressed file URL
-//         imageUrls.push(
-//           `https://hospitalservers.ramchintech.com/scan_images/${id}/${compressedFilename}`
-//         );
-//       } else {
-//         // File is already small → keep original
-//         imageUrls.push(
-//           `https://hospitalservers.ramchintech.com/scan_images/${id}/${file.filename}`
-//         );
-//       }
-//     }
+//     imageUrls = files.map(
+//       (file) =>
+//         `https://hospitalservers.ramchintech.com/scan_images/${id}/${file.filename}`
+//     );
 //   }
 
 //   const payload = {
 //     ...data,
-//     ...(imageUrls.length > 0 && { images: imageUrls }),
+//     ...(imageUrls.length > 0 && { images: imageUrls }) // only add if files exist
 //   };
 
 //   return this.service.update(+id, payload);
 // }
+
+// new code for updating scanning with image upload
+@Patch("updateByIdScanning/:id")
+@UseInterceptors(
+  FilesInterceptor("files", 6, {
+    storage: diskStorage({
+      destination: (req, file, callback) => {
+        const id = req.params.id;
+        const uploadPath = join("/var/www/scan_images", id);
+
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+
+        callback(null, uploadPath);
+      },
+      filename: (req, file, callback) => {
+        const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        callback(null, unique + extname(file.originalname));
+      },
+    }),
+  })
+)
+async updateTestingScanning(
+  @Param("id") id: number,
+  @UploadedFiles() files: Express.Multer.File[],
+  @Body() data: any
+) {
+  let imageUrls = [];
+
+  if (files && files.length > 0) {
+    for (const file of files) {
+      const folder = `/var/www/scan_images/${id}`;
+      const originalPath = file.path;
+      const compressedFilename = "COMP_" + file.filename;
+      const compressedPath = join(folder, compressedFilename);
+
+      // 👉 If file is larger than 2MB → compress it
+      if (file.size > 2 * 1024 * 1024) {
+        await sharp(originalPath)
+          .resize({ width: 1600 }) // resize proportionally
+          .jpeg({ quality: 70 }) // compress
+          .toFile(compressedPath);
+
+        // Delete original large file
+        fs.unlinkSync(originalPath);
+
+        // Save the compressed file URL
+        imageUrls.push(
+          `https://hospitalservers.ramchintech.com/scan_images/${id}/${compressedFilename}`
+        );
+      } else {
+        // File is already small → keep original
+        imageUrls.push(
+          `https://hospitalservers.ramchintech.com/scan_images/${id}/${file.filename}`
+        );
+      }
+    }
+  }
+
+  const payload = {
+    ...data,
+    ...(imageUrls.length > 0 && { images: imageUrls }),
+  };
+
+  return this.service.update(+id, payload);
+}
   //================================================================================
 
   @Delete("deleteById/:id")
