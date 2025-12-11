@@ -13,11 +13,14 @@ export class AdminService {
 
     let user_Id;
 
-if (data.user_Id?.trim()) {
+if (!data.user_Id || data.user_Id.trim() === "") {
+  // user_Id is empty → use phone (remove +91)
   user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
 } else {
+  // user_Id has value → use it
   user_Id = data.user_Id;
 }
+
 
 console.log('User ID:', user_Id, 'Phone:', data.phone);
 
