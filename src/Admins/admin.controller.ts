@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, NotFoundException, Param, Patch, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, HttpException, HttpStatus, NotFoundException, Param, Patch, Post } from "@nestjs/common";
 import { AdminService } from "./admin.service";
 
 @Controller("admins")
@@ -109,4 +109,13 @@ async getAllByHospitalAdmin(
   remove(@Param("id") id: string) {
     return this.adminService.remove(+id);
   }
+
+  // @Patch("ResetPassword/:id")
+  // resetPassword(@Param("id") id: string ,@Body() newPassword: string) {
+  //   return this.adminService.resetPassword(+id,newPassword);
+  // }
+  
 }
+
+
+

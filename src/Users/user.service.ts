@@ -66,6 +66,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { log } from 'console';
 
 @Injectable()
 export class UserService {
@@ -431,5 +432,61 @@ async login(data: any) {
 //       message: "Old device session cleared successfully",
 //     };
 //   }
+
+// ---------------------------
+  // VERIFY OLD PASSWORD
+  // ---------------------------
+  async verifyOldPassword(id: number, oldPassword: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) throw new NotFoundException('Admin not found');
+
+     const result =  await bcrypt.compare(oldPassword, user.password);
+     log('Password verification result:', result);
+     return result;
+  }
+
+  // ---------------------------
+  // UPDATE PASSWORD
+  // ---------------------------
+  async updatePassword(id: number, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) throw new NotFoundException('user not found');
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+
+    return {
+    success: true,               // ✅ add this
+    message: 'Password updated successfully',
+    userId: id,
+  };
+  }
+
+
+
+async getByUserId(userId: string, hospital_Id: number) {
+    console.log('🔍 Searching for user:', userId, 'hospital:', hospital_Id);
+
+    const user = await this.prisma.user.findFirst({
+      where: { user_Id: userId, hospital_Id },
+      select: { id: true },
+    });
+
+    console.log('Result from DB:', user);
+
+    if (!user) {
+      throw new NotFoundException(`User with userId ${userId} not found`);
+    }
+
+    // ✅ wrap in `data` for consistent frontend parsing
+    return { data: user };
+  }
+
 
 }

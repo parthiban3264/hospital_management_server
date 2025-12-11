@@ -48,6 +48,7 @@ import {
   UseGuards,
   Request,
   Req,
+  BadRequestException,
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { JwtAuthGuard } from "../jwt/jwt-auth.guard";
@@ -112,4 +113,36 @@ export class UserController {
   getProfile(@Request() req) {
     return { message: "Protected data", user: req.user };
   }
+
+  @Post('CheckOldPassword/:id')
+async checkOldPassword(@Param('id') id: string, @Body() body: any) {
+  const { oldPassword } = body;
+
+  if (!oldPassword) throw new BadRequestException('Old password required');
+
+  const valid = await this.userService.verifyOldPassword(+id, oldPassword);
+
+  // ✅ return JSON with boolean
+  return { result: valid };
+}
+
+
+  @Patch('ChangePassword/:id')
+  async changePassword(@Param('id') id: string, @Body() body: any) {
+    const { newPassword } = body;
+    if (!newPassword || newPassword.length < 4)
+      throw new BadRequestException('New password is required');
+
+    return this.userService.updatePassword(+id, newPassword);
+  }
+
+@Get('GetByUserId/:userId/:hospital_Id')
+  async getByUserId(
+    @Param('userId') userId: string,
+    @Param('hospital_Id') hospital_Id: string,
+  ) {
+    // ✅ Must return the service result
+    return await this.userService.getByUserId(userId, Number(hospital_Id));
+  }
+
 }

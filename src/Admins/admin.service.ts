@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { log } from 'console';
@@ -210,4 +210,6 @@ console.log('User ID:', user_Id, 'Phone:', data.phone);
       return { status: 'failed', error: error.message };
     }
   }
+
+  
 }
