@@ -305,6 +305,7 @@ export class TestingAndScanningPatientController {
 
     return this.service.update(+id, payload);
   }
+  
   @Delete("deleteById/:id")
   remove(@Param("id") id: number) {
     return this.service.remove(+id);

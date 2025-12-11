@@ -1,121 +1,125 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { log } from "console";
+import { log } from 'console';
 
 @Injectable()
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
   async createAdminWithUser(data: any) {
-  const defaultPassword = `abc123`;
-  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    const defaultPassword = `abc123`;
+    const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  // Clean user ID
-  const user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
+    let user_Id;
 
-  console.log("User ID:", user_Id, "Phone:", data.phone);
-
-  try {
-    // 👉 Step 1: Check if user exists in SAME hospital
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        user_Id: user_Id,
-        hospital_Id: data.hospital_Id,
-      },
-    });
-
-    if (existingUser) {
-      return {
-        success: false,
-        message:
-          "User already exists in this hospital. Please use another phone number.",
-      };
-    }
-
-    // 👉 Step 2: Create user + admin inside a transaction
-    const [user, admin] = await this.prisma.$transaction([
-      this.prisma.user.create({
-        data: {
-          hospital_Id: data.hospital_Id,
-          user_Id: user_Id,
-          password: hashedPassword,
-          role: data.role,
-        },
-      }),
-
-      this.prisma.admin.create({
-        data: {
-          hospital_Id: data.hospital_Id,
-          user_Id: user_Id,
-          name: data.name,
-          designation: data.designation,
-          phone: data.phone,
-          email: data.email,
-          role: data.role,
-          doctorAmount: data.doctorAmount || 0,
-          specialist: data.specialist,
-          address: data.address,
-          photo: data.photo,
-          status: data.status,
-          gender: data.gender,
-        },
-      }),
-    ]);
-
-    return { success: true, user, admin, defaultPassword };
-
-  } catch (error: any) {
-    // 👉 Prisma unique constraint error
-    if (error.code === "P2002") {
-      return {
-        success: false,
-        message:
-          "This phone number is already registered. Please use another.",
-      };
-    }
-
-    // 👉 Other errors
-    return {
-      success: false,
-      message: "Failed to create user. Please try again.",
-      details: error.message,
-    };
-  }
+if (data.user_Id?.trim()) {
+  user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
+} else {
+  user_Id = data.user_Id;
 }
 
+console.log('User ID:', user_Id, 'Phone:', data.phone);
 
 
-// async create(data: any) {
-//   try {
-//     const admin = await this.prisma.admin.create({
-//       data: {
-//         hospital_Id: data.hospital_Id, // must exist in Hospital table
-//         user_Id: data.user_Id,         // must exist in User table
-//         name: data.name,
-//         designation: data.designation,
-//         phone: data.phone,
-//         email: data.email,
-//         address: data.address,
-//         photo: data.photo,
-//         status: data.status,
-//         gender: data.gender,
-//       },
-//     });
+    
 
-//     return {
-//       status: "success",
-//       message: "Admin created successfully",
-//       data: admin,
-//     };
-//   } catch (error) {
-//     return {
-//       status: "failed",
-//       error: error.message,
-//     };
-//   }
-// }
+    try {
+      // 👉 Step 1: Check if user exists in SAME hospital
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          user_Id: user_Id,
+          hospital_Id: data.hospital_Id,
+        },
+      });
 
+      if (existingUser) {
+        return {
+          success: false,
+          message:
+            'User already exists in this hospital. Please use another phone number.',
+        };
+      }
+
+      // 👉 Step 2: Create user + admin inside a transaction
+      const [user, admin] = await this.prisma.$transaction([
+        this.prisma.user.create({
+          data: {
+            hospital_Id: data.hospital_Id,
+            user_Id: user_Id,
+            password: hashedPassword,
+            role: data.role,
+          },
+        }),
+
+        this.prisma.admin.create({
+          data: {
+            hospital_Id: data.hospital_Id,
+            user_Id: user_Id,
+            name: data.name,
+            designation: data.designation,
+            phone: data.phone,
+            email: data.email,
+            role: data.role,
+            doctorAmount: data.doctorAmount || 0,
+            specialist: data.specialist,
+            address: data.address,
+            photo: data.photo,
+            status: data.status,
+            gender: data.gender,
+          },
+        }),
+      ]);
+
+      return { success: true, user, admin, defaultPassword };
+    } catch (error: any) {
+      // 👉 Prisma unique constraint error
+      if (error.code === 'P2002') {
+        return {
+          success: false,
+          message:
+            'This phone number is already registered. Please use another.',
+        };
+      }
+
+      // 👉 Other errors
+      return {
+        success: false,
+        message: 'Failed to create user. Please try again.',
+        details: error.message,
+      };
+    }
+  }
+
+  // async create(data: any) {
+  //   try {
+  //     const admin = await this.prisma.admin.create({
+  //       data: {
+  //         hospital_Id: data.hospital_Id, // must exist in Hospital table
+  //         user_Id: data.user_Id,         // must exist in User table
+  //         name: data.name,
+  //         designation: data.designation,
+  //         phone: data.phone,
+  //         email: data.email,
+  //         address: data.address,
+  //         photo: data.photo,
+  //         status: data.status,
+  //         gender: data.gender,
+  //       },
+  //     });
+
+  //     return {
+  //       status: "success",
+  //       message: "Admin created successfully",
+  //       data: admin,
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       status: "failed",
+  //       error: error.message,
+  //     };
+  //   }
+  // }
 
   async findAll() {
     return this.prisma.admin.findMany({
@@ -155,21 +159,21 @@ export class AdminService {
   }
 
   async update(id: number, data: any) {
-    console.log('data',data);
-    
+    console.log('data', data);
+
     try {
       const admin = await this.prisma.admin.update({
         where: { id },
-        data : {
+        data: {
           status: data.status,
           doctorAmount: data.amount,
         },
       });
       log('Updated Admin:', admin);
-      return { status: "success", data: admin };
+      return { status: 'success', data: admin };
     } catch (error) {
-      console.error("Update Error:", error);
-      return { status: "failed", error: error.message };
+      console.error('Update Error:', error);
+      return { status: 'failed', error: error.message };
     }
   }
 
@@ -188,19 +192,19 @@ export class AdminService {
         },
       });
 
-      return { status: "success", data: admin };
+      return { status: 'success', data: admin };
     } catch (error) {
-      console.error("Update Error:", error);
-      return { status: "failed", message: error.message };
+      console.error('Update Error:', error);
+      return { status: 'failed', message: error.message };
     }
   }
 
   async remove(id: number) {
     try {
       await this.prisma.admin.delete({ where: { id } });
-      return { status: "success", message: "Admin deleted" };
+      return { status: 'success', message: 'Admin deleted' };
     } catch (error) {
-      return { status: "failed", error: error.message };
+      return { status: 'failed', error: error.message };
     }
   }
 }

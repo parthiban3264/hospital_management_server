@@ -54,6 +54,7 @@ model Hospital {
   ScanAndTests          ScanAndTest[]
   Drawers               Drawer[]
   IncomeAndExpenses     IncomeAndExpense[]
+  cosmetics             cosmetic[]
 }
 
 model User {
@@ -270,6 +271,18 @@ model Injection {
   MedicineAndInjection MedicineAndInjection[] @relation("Injection_MedicineAndInjection")
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
   InjectionPatients    InjectionPatient[]
+}
+
+model cosmetic{
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  name       String
+  type        String? // consider enum if limited set
+  unit        String?
+  stock       Int @default(0)
+  amount      Float
+  staff_Id    Int
+  Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 }
 
 model TestingAndScanningHospital {
