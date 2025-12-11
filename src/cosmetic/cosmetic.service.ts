@@ -5,12 +5,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class CosmeticService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: any) {
-    return this.prisma.cosmetic.create({ data });
+  create(data: any[]) {
+    return this.prisma.cosmetic.createMany({ data });
   }
 
-  findAll() {
+  findAll(hospital_Id: number) {
     return this.prisma.cosmetic.findMany({
+      where: { hospital_Id },
       include: { Hospital: true },
     });
   }

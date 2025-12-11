@@ -5,27 +5,29 @@ import { CosmeticService } from './cosmetic.service';
 export class CosmeticController {
   constructor(private readonly cosmeticService: CosmeticService) {}
 
-  @Post()
-  create(@Body() body: any) {
+  @Post('create')
+  create(@Body() body: any[]) {
+    console.log('work');
+    
     return this.cosmeticService.create(body);
   }
 
-  @Get()
-  findAll() {
-    return this.cosmeticService.findAll();
+  @Get('getAll/:hospital_Id')
+  findAll(@Param('hospital_Id') hospital_Id: string) {
+    return this.cosmeticService.findAll(Number(hospital_Id));
   }
 
-  @Get(':id')
+  @Get('getById/:id')
   findOne(@Param('id') id: string) {
     return this.cosmeticService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Patch('updateById/:id')
   update(@Param('id') id: string, @Body() body: any) {
     return this.cosmeticService.update(+id, body);
   }
 
-  @Delete(':id')
+  @Delete('deleteById/:id')
   remove(@Param('id') id: string) {
     return this.cosmeticService.remove(+id);
   }
