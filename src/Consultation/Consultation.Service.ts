@@ -6,7 +6,8 @@ import { log } from 'console';
 
 @Injectable()
 export class ConsultationService {
-  constructor(private prisma: PrismaService,
+  constructor(
+    private prisma: PrismaService,
     private gateway: ConsultationGateway,
   ) {}
 
@@ -22,103 +23,111 @@ export class ConsultationService {
   // }
 
   async create(data: any) {
-  try {
-    console.log('Creating consultation with data:', data);
+    try {
+      console.log('Creating consultation with data:', data);
 
-    // Step 1️⃣ - Create consultation
-    const consultation = await this.prisma.consultation.create({
-      data: {
-        hospital_Id: Number(data.hospital_Id),
-        patient_Id: data.patient_Id,
-        doctor_Id: data.doctor_Id,
-        purpose: data.purpose,
-        symptoms: data.symptoms,
-        bp: data.bp,
-        weight: data.weight,
-        height: data.height,
-        sugar: data.sugar,
-        temperature: data.temperature,
-        notes: data.notes ? JSON.parse(data.notes) : null,
-        paymentStatus: data.paymentStatus === true,
-        createdAt: data.createdAt || new Date().toISOString(),
-      },
-    });
+      // ---- Fetch Fees ----
+      const registrationFee = await this.prisma.fees.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          type: 'REGISTRATIONFEE',
+        },
+      });
 
-    // ---- Fetch Fees ----
-const registrationFee = await this.prisma.fees.findFirst({
-  where: {
-    hospital_Id: Number(data.hospital_Id),
-    type: 'REGISTRATIONFEE',
-  },
-});
+      const appointmentFee = await this.prisma.fees.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          type: 'APPOINTMENTFEE',
+        },
+      });
 
-const appointmentFee = await this.prisma.fees.findFirst({
-  where: {
-    hospital_Id: Number(data.hospital_Id),
-    type: 'APPOINTMENTFEE',
-  },
-});
+      // ---- Fetch Doctor Amount ----
+      const doctorData = await this.prisma.admin.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          user_Id: data.doctor_Id,
+        },
+      });
 
-// ---- Fetch Doctor Amount ----
-const doctorData = await this.prisma.admin.findFirst({
-  where: {
-    hospital_Id: Number(data.hospital_Id),
-    user_Id: data.doctor_Id,
-  },
-});
+      const doctorAmount = doctorData?.doctorAmount ?? 0;
 
-const doctorAmount = doctorData?.doctorAmount ?? 0;
+      // ---- Extract Fee Amounts ----
+      const regAmount = registrationFee?.amount ?? 0;
+      const appointAmount = appointmentFee?.amount ?? 0;
 
-// ---- Extract Fee Amounts ----
-const regAmount = registrationFee?.amount ?? 0;
-const appointAmount = appointmentFee?.amount ?? 0;
+      // ---- If both fees missing, show message ----
+      if (!regAmount && !appointAmount) {
+        return {
+          status: 'failed',
+          message:
+            '⚠️ Registration Fee or Appointment Fee is not set! Please assign Registration Fees after register.',
+        };
+      }
 
-// ---- Fee Logic ----
-// Priority:
-// 1. If appointment fee > 0 → use appointment fee
-// 2. Else if registration fee > 0 → use registration fee
-// 3. Else → 0
-let baseFee = 0;
+      // Step 1️⃣ - Create consultation
+      const consultation = await this.prisma.consultation.create({
+        data: {
+          hospital_Id: Number(data.hospital_Id),
+          patient_Id: data.patient_Id,
+          doctor_Id: data.doctor_Id,
+          purpose: data.purpose,
+          symptoms: data.symptoms,
+          bp: data.bp,
+          weight: data.weight,
+          height: data.height,
+          sugar: data.sugar,
+          temperature: data.temperature,
+          notes: data.notes ? JSON.parse(data.notes) : null,
+          paymentStatus: data.paymentStatus === true,
+          createdAt: data.createdAt || new Date().toISOString(),
+        },
+      });
 
-if (regAmount > 0) {
-  baseFee = regAmount;
-} else if (appointAmount > 0) {
-  baseFee = appointAmount;
-} else {
-  baseFee = 0;
-}
+      // ---- Fee Logic ----
+      // Priority:
+      // 1. If appointment fee > 0 → use appointment fee
+      // 2. Else if registration fee > 0 → use registration fee
+      // 3. Else → 0
+      let baseFee = 0;
 
-// ---- Final total ----
-const totalFeeAmount = baseFee + doctorAmount;
+      if (regAmount > 0) {
+        baseFee = regAmount;
+      } else if (appointAmount > 0) {
+        baseFee = appointAmount;
+      } else {
+        baseFee = 0;
+      }
 
-    // Step 2️⃣ - Create payment linked to consultation
-    const payment = await this.prisma.payment.create({
-      data: {
-        hospital_Id: Number(data.hospital_Id),
-        patient_Id: data.patient_Id,
-        consultation_Id: consultation.id, // ✅ works now
-        reason: data.title ?? 'Registration Fee',
-        status: 'PENDING',
-        amount: totalFeeAmount,
-        type: 'REGISTRATIONFEE',
-        createdAt: data.createdAt || new Date().toISOString(),
-      },
-    });
+      // ---- Final total ----
+      const totalFeeAmount = baseFee + doctorAmount;
 
-    // Step 3️⃣ - Return response
-    return {
-      status: 'success',
-      data: {
-        consultationId: consultation.id,
-        paymentId: payment.id,
-      },
-    };
-  } catch (e) {
-    console.error(e);
-    return { status: 'failed', error: e.message };
+      // Step 2️⃣ - Create payment linked to consultation
+      const payment = await this.prisma.payment.create({
+        data: {
+          hospital_Id: Number(data.hospital_Id),
+          patient_Id: data.patient_Id,
+          consultation_Id: consultation.id, // ✅ works now
+          reason: data.title ?? 'Registration Fee',
+          status: 'PENDING',
+          amount: totalFeeAmount,
+          type: 'REGISTRATIONFEE',
+          createdAt: data.createdAt || new Date().toISOString(),
+        },
+      });
+
+      // Step 3️⃣ - Return response
+      return {
+        status: 'success',
+        data: {
+          consultationId: consultation.id,
+          paymentId: payment.id,
+        },
+      };
+    } catch (e) {
+      console.error(e);
+      return { status: 'failed', error: e.message };
+    }
   }
-}
-
 
   async findAll() {
     const consultations = await this.prisma.consultation.findMany({
@@ -137,7 +146,12 @@ const totalFeeAmount = baseFee + doctorAmount;
 
   async findAllByHospitalOverview(hospitalId: number) {
     return this.prisma.consultation.findMany({
-      where: { hospital_Id: Number(hospitalId),status: {in: ['PENDING','ENDPROCESSING','ONGOING','CANCELLED','COMPLETED']} }, //,'COMPLETED' assuming hospitalId is numeric
+      where: {
+        hospital_Id: Number(hospitalId),
+        status: {
+          in: ['PENDING', 'ENDPROCESSING', 'ONGOING', 'CANCELLED', 'COMPLETED'],
+        },
+      }, //,'COMPLETED' assuming hospitalId is numeric
       include: {
         Hospital: true,
         Patient: {
@@ -146,193 +160,219 @@ const totalFeeAmount = baseFee + doctorAmount;
           },
         },
         Doctor: true,
-        
       },
       orderBy: {
-      createdAt: "asc",
-    },
+        createdAt: 'asc',
+      },
     });
   }
 
   async findAllByHospitalDrQueue(hospitalId: number) {
-  // Step 1️⃣: Fetch consultations
-  const consultations = await this.prisma.consultation.findMany({
-    where: { 
-      hospital_Id: Number(hospitalId),
-      status: { in: ['PENDING', 'ENDPROCESSING', 'ONGOING'] } 
-    },
-    include: {
-      Hospital: { select: {id:true, name: true } },
-      Patient: {
-        select: {
-          user_Id: true,
-          name: true,
-          gender: true,
-          phone: true,
-          dob: true,
-          bldGrp: true,
-          address: true,
-          createdAt: true,
-          updatedAt: true,
-          // TestingAndScanning: true,
+    // Step 1️⃣: Fetch consultations
+    const consultations = await this.prisma.consultation.findMany({
+      where: {
+        hospital_Id: Number(hospitalId),
+        status: { in: ['PENDING', 'ENDPROCESSING', 'ONGOING'] },
+      },
+      include: {
+        Hospital: { select: { id: true, name: true } },
+        Patient: {
+          select: {
+            user_Id: true,
+            name: true,
+            gender: true,
+            phone: true,
+            dob: true,
+            bldGrp: true,
+            address: true,
+            createdAt: true,
+            updatedAt: true,
+            // TestingAndScanning: true,
+          },
         },
+        Doctor: { select: { user_Id: true, name: true, specialist: true } },
+        TeatingAndScanningPatient: true,
       },
-      Doctor: { select: { user_Id:true,name: true, specialist: true } },
-      TeatingAndScanningPatient: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-  // Step 2️⃣: Fetch unit/reference info
-  const unitRefs = await this.prisma.scanAndTestUnitReferance.findMany({
-    select: { optionName: true, unit: true, referance: true },
-  });
+    // Step 2️⃣: Fetch unit/reference info
+    const unitRefs = await this.prisma.scanAndTestUnitReferance.findMany({
+      select: { optionName: true, unit: true, referance: true },
+    });
 
-  // Step 3️⃣: Helper functions
-  const calculateAgeInMonths = (dob: string | Date | null) => {
-    if (!dob) return 0;
-    const birth = new Date(dob);
-    const now = new Date();
-    return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
-  };
+    // Step 3️⃣: Helper functions
+    const calculateAgeInMonths = (dob: string | Date | null) => {
+      if (!dob) return 0;
+      const birth = new Date(dob);
+      const now = new Date();
+      return (
+        (now.getFullYear() - birth.getFullYear()) * 12 +
+        (now.getMonth() - birth.getMonth())
+      );
+    };
 
-  const getReferenceForPatient = (refJson: any, ageMonths: number, gender: string) => {
-    if (!refJson) return 'N/A';
-    let parsed;
-    try {
-      parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
-    } catch {
-      return 'N/A';
-    }
-    const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
-    for (const key of Object.keys(parsed)) {
-      const [minStr, maxStr, g] = key.split('_');
-      const min = parseInt(minStr, 10);
-      const max = parseInt(maxStr, 10);
-      if (ageMonths >= min && ageMonths <= max && g.toLowerCase() === genderKey) {
-        return parsed[key];
+    const getReferenceForPatient = (
+      refJson: any,
+      ageMonths: number,
+      gender: string,
+    ) => {
+      if (!refJson) return 'N/A';
+      let parsed;
+      try {
+        parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
+      } catch {
+        return 'N/A';
       }
-    }
-    return 'N/A';
-  };
+      const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
+      for (const key of Object.keys(parsed)) {
+        const [minStr, maxStr, g] = key.split('_');
+        const min = parseInt(minStr, 10);
+        const max = parseInt(maxStr, 10);
+        if (
+          ageMonths >= min &&
+          ageMonths <= max &&
+          g.toLowerCase() === genderKey
+        ) {
+          return parsed[key];
+        }
+      }
+      return 'N/A';
+    };
 
-  // Step 4️⃣: Transform TestingAndScanning data
+    // Step 4️⃣: Transform TestingAndScanning data
 
-  const formatted = consultations.map(c => {
-    const patient = c.Patient;
-    const TeatingAndScanningPatient = c.TeatingAndScanningPatient;
-    const ageMonths = calculateAgeInMonths(patient.dob);
+    const formatted = consultations.map((c) => {
+      const patient = c.Patient;
+      const TeatingAndScanningPatient = c.TeatingAndScanningPatient;
+      const ageMonths = calculateAgeInMonths(patient.dob);
 
-    return {
-      id: c.id,
-      patient_Id: c.patient_Id,
-      hospital_Id: c.hospital_Id,
-      purpose: c.purpose,
-      status: c.status,
-      queueStatus: c.queueStatus,
-      symptoms: c.symptoms,
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-      medicineTonic: c.medicineTonic,
-      Injection: c.Injection,
-      scanningTesting: c.scanningTesting,
-      paymentStatus: c.paymentStatus,
-      Patient: {
-        patient_Id: patient.user_Id,
-        name: patient.name,
-        dob: patient.dob,
-        phone:typeof patient.phone === 'object' && patient.phone ? (patient.phone as any).mobile ?? '-' : '-',
-        gender: patient.gender,
-        bldGrp: patient.bldGrp,
-        address: patient.address ?? {},
-        createdAt: patient.createdAt,
-        updatedAt: patient.updatedAt,
-    
-      },
-      TeatingAndScanningPatient: (TeatingAndScanningPatient || [])
-          .filter(t => t.status === 'COMPLETED' && t.consultation_Id === c.id)
-          .map(t => ({
+      return {
+        id: c.id,
+        patient_Id: c.patient_Id,
+        hospital_Id: c.hospital_Id,
+        purpose: c.purpose,
+        status: c.status,
+        queueStatus: c.queueStatus,
+        symptoms: c.symptoms,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        medicineTonic: c.medicineTonic,
+        Injection: c.Injection,
+        scanningTesting: c.scanningTesting,
+        paymentStatus: c.paymentStatus,
+        Patient: {
+          patient_Id: patient.user_Id,
+          name: patient.name,
+          dob: patient.dob,
+          phone:
+            typeof patient.phone === 'object' && patient.phone
+              ? ((patient.phone as any).mobile ?? '-')
+              : '-',
+          gender: patient.gender,
+          bldGrp: patient.bldGrp,
+          address: patient.address ?? {},
+          createdAt: patient.createdAt,
+          updatedAt: patient.updatedAt,
+        },
+        TeatingAndScanningPatient: (TeatingAndScanningPatient || [])
+          .filter((t) => t.status === 'COMPLETED' && t.consultation_Id === c.id)
+          .map((t) => ({
             title: t.title,
             type: t.type,
             scanImages: t.scanImages,
             results: t.result,
-            selectedOptions: (Array.isArray(t.selectedOptions) ? t.selectedOptions : []).map(option => {
+            selectedOptions: (Array.isArray(t.selectedOptions)
+              ? t.selectedOptions
+              : []
+            ).map((option) => {
               const key = String(option).toLowerCase();
-              const unitInfo = unitRefs.find(u => u.optionName?.toLowerCase() === key);
+              const unitInfo = unitRefs.find(
+                (u) => u.optionName?.toLowerCase() === key,
+              );
               const reference = unitInfo?.referance
-                ? getReferenceForPatient(unitInfo.referance, ageMonths, patient.gender)
+                ? getReferenceForPatient(
+                    unitInfo.referance,
+                    ageMonths,
+                    patient.gender,
+                  )
                 : 'N/A';
 
               return {
                 name: String(option),
                 selectedOption: String(option),
-                result: ((t.selectedOptionResults as Record<string, any>) || {})[String(option)] || '',
+                result:
+                  ((t.selectedOptionResults as Record<string, any>) || {})[
+                    String(option)
+                  ] || '',
                 unit: unitInfo?.unit || '',
                 reference,
               };
             }),
           })),
-      Doctor: {doctorId:c.Doctor.user_Id, name: c.Doctor.name, specialist: c.Doctor.specialist },
-      Hospital: { name: c.Hospital.name },
+        Doctor: {
+          doctorId: c.Doctor.user_Id,
+          name: c.Doctor.name,
+          specialist: c.Doctor.specialist,
+        },
+        Hospital: { name: c.Hospital.name },
+      };
+    });
+
+    return {
+      status: 'success',
+      message: 'Consultations with completed tests fetched',
+      data: formatted,
     };
-  });
+  }
 
-  return {
-    status: 'success',
-    message: 'Consultations with completed tests fetched',
-    data: formatted,
-  };
-}
-
-async findAllByMedical(hospitalId: number,mode : number) {
-  console.log('Mode in service:', mode);
-  const extraCondition =
-    mode == 0
-      ? { medicineTonic: true }
-      : mode == 1
-      ? { Injection: true,medicineTonic: false }
-      : {};
-      log('Extra Condition:', extraCondition);
-  return this.prisma.consultation.findMany({
-    where: { 
-      hospital_Id: Number(hospitalId),
-      ...extraCondition,
-      // queueStatus: 'COMPLETED',
-      status: { in: ['ENDPROCESSING', 'ONGOING','COMPLETED'] },
-    },
-    include: {
-      Hospital: true,
-      Patient: true,
-      MedicinePatient: {
-        include: {
-          Medician: true, 
-          Payment: true,
-        },
+  async findAllByMedical(hospitalId: number, mode: number) {
+    console.log('Mode in service:', mode);
+    const extraCondition =
+      mode == 0
+        ? { medicineTonic: true }
+        : mode == 1
+          ? { Injection: true, medicineTonic: false }
+          : {};
+    log('Extra Condition:', extraCondition);
+    return this.prisma.consultation.findMany({
+      where: {
+        hospital_Id: Number(hospitalId),
+        ...extraCondition,
+        // queueStatus: 'COMPLETED',
+        status: { in: ['ENDPROCESSING', 'ONGOING', 'COMPLETED'] },
       },
-      InjectionPatient: {
-
-  include: {
-    Injection: true,
-    Payment: true,
-  },
-},
-
-      TonicPatient: {
-        include: {
-          Tonic: true,
-          Payment: true,
+      include: {
+        Hospital: true,
+        Patient: true,
+        MedicinePatient: {
+          include: {
+            Medician: true,
+            Payment: true,
+          },
         },
-      },
-      Doctor: true,
-    },
-     orderBy: {
-        createdAt: 'asc', 
-      }
-  });
-}
+        InjectionPatient: {
+          include: {
+            Injection: true,
+            Payment: true,
+          },
+        },
 
+        TonicPatient: {
+          include: {
+            Tonic: true,
+            Payment: true,
+          },
+        },
+        Doctor: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
 
   async findByHospitalDoctor(hospitalId: number, doctorId: string) {
     return this.prisma.consultation.findMany({
@@ -374,15 +414,15 @@ async findAllByMedical(hospitalId: number,mode : number) {
       return { status: 'failed', error: error.message };
     }
   }
-async updateQueueStatus(id: number, queueStatus: QueueStatus) {
-  const updated = await this.prisma.consultation.update({
-    where: { id },
-    data: { queueStatus },
-  });
+  async updateQueueStatus(id: number, queueStatus: QueueStatus) {
+    const updated = await this.prisma.consultation.update({
+      where: { id },
+      data: { queueStatus },
+    });
 
-  this.gateway.sendQueueStatusUpdate(updated.id, updated.queueStatus);
-  return updated;
-}
+    this.gateway.sendQueueStatusUpdate(updated.id, updated.queueStatus);
+    return updated;
+  }
 
   //   async update(id: number, data: any) {
   //   try {

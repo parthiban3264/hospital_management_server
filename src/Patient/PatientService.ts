@@ -7,42 +7,82 @@ export class PatientService {
   constructor(private prisma: PrismaService) {}
 
   async createPatientWithUser(data: any) {
-  const defaultPassword = `abc123`;
-  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    const defaultPassword = `abc123`;
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-  // Normalize user ID (phone)
-  const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
-
-  // ✅ Use a callback transaction since we need sequential logic
-  const result = await this.prisma.$transaction(async (tx) => {
-    // 1️⃣ Create User
-    const user = await tx.user.create({
-      data: {
-        hospital_Id: data.hospital_Id,
-        user_Id: user_Id,
-        password: hashedPassword,
-        role: 'PATIENT',
+    // ---- Fetch Fees ----
+    const registrationFee = await this.prisma.fees.findFirst({
+      where: {
+        hospital_Id: Number(data.hospital_Id),
+        type: 'REGISTRATIONFEE',
       },
     });
 
-    // 2️⃣ Create Patient
-    const patient = await tx.patient.create({
-      data: {
-        ...data,
-        phone: data.phone,
-        hospital_Id: data.hospital_Id,
-        createdAt: data.createdAt || new Date().toISOString(),
-        user_Id: user_Id,
+    const appointmentFee = await this.prisma.fees.findFirst({
+      where: {
+        hospital_Id: Number(data.hospital_Id),
+        type: 'APPOINTMENTFEE',
       },
     });
-    // Return all created records
-    return { user, patient, };
-  });
 
-  // Return result along with default password
-  return { ...result, defaultPassword };
-}
+    // ---- Fetch Doctor Amount ----
+    const doctorData = await this.prisma.admin.findFirst({
+      where: {
+        hospital_Id: Number(data.hospital_Id),
+        user_Id: data.doctor_Id,
+      },
+    });
 
+    const doctorAmount = doctorData?.doctorAmount ?? 0;
+
+    // ---- Extract Fee Amounts ----
+    const regAmount = registrationFee?.amount ?? 0;
+    const appointAmount = appointmentFee?.amount ?? 0;
+
+    // ---- If both fees missing, show message ----
+    if (
+      (!regAmount && !appointAmount) ||
+      (regAmount == 0 && appointAmount == 0)
+    ) {
+      return {
+        status: 'failed',
+        message:
+          '⚠️ Registration Fee or Appointment Fee is not set! Please assign Registration Fees after register.',
+      };
+    }
+
+    // Normalize user ID (phone)
+    const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
+
+    // ✅ Use a callback transaction since we need sequential logic
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 1️⃣ Create User
+      const user = await tx.user.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          user_Id: user_Id,
+          password: hashedPassword,
+          role: 'PATIENT',
+        },
+      });
+
+      // 2️⃣ Create Patient
+      const patient = await tx.patient.create({
+        data: {
+          ...data,
+          phone: data.phone,
+          hospital_Id: data.hospital_Id,
+          createdAt: data.createdAt || new Date().toISOString(),
+          user_Id: user_Id,
+        },
+      });
+      // Return all created records
+      return { user, patient };
+    });
+
+    // Return result along with default password
+    return { ...result, defaultPassword };
+  }
 
   async findAll() {
     const patients = await this.prisma.patient.findMany({
@@ -68,10 +108,10 @@ export class PatientService {
         },
       },
       include: {
-        Consultation: {select: {id: true, patient_Id: true, status:true },},
+        Consultation: { select: { id: true, patient_Id: true, status: true } },
         // Payments: true,
-        Hospital: {select: {id:true ,name: true,}},
-        User: {select: {id:true, user_Id: true, role: true,},} 
+        Hospital: { select: { id: true, name: true } },
+        User: { select: { id: true, user_Id: true, role: true } },
       },
     });
 
@@ -88,7 +128,7 @@ export class PatientService {
     };
   }
 
-    async findCheckUserId(hospital_Id: number, user_Id: string) {
+  async findCheckUserId(hospital_Id: number, user_Id: string) {
     const patient = await this.prisma.patient.findUnique({
       where: {
         hospital_Id_user_Id: {
@@ -97,7 +137,7 @@ export class PatientService {
         },
       },
       include: {
-        Consultation: {select: {id: true, patient_Id: true, status:true },},
+        Consultation: { select: { id: true, patient_Id: true, status: true } },
         Hospital: true,
         User: true,
       },
@@ -151,5 +191,3 @@ export class PatientService {
     };
   }
 }
-
-

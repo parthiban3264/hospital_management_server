@@ -25,6 +25,7 @@ export class FeesService {
   }
 
   async findByHospital(hospitalId: number) {
+    log('Finding fees for hospital ID:', hospitalId);
     return this.prisma.fees.findMany({
       where: { hospital_Id: hospitalId },
     });
