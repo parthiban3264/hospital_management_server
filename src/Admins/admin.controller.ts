@@ -109,11 +109,6 @@ async getAllByHospitalAdmin(
   remove(@Param("id") id: string) {
     return this.adminService.remove(+id);
   }
-
-  // @Patch("ResetPassword/:id")
-  // resetPassword(@Param("id") id: string ,@Body() newPassword: string) {
-  //   return this.adminService.resetPassword(+id,newPassword);
-  // }
   
 }
 

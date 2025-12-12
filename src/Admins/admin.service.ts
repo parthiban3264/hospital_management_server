@@ -13,19 +13,15 @@ export class AdminService {
 
     let user_Id;
 
-if (!data.user_Id || data.user_Id.trim() === "") {
-  // user_Id is empty → use phone (remove +91)
-  user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
-} else {
-  // user_Id has value → use it
-  user_Id = data.user_Id;
-}
+    if (!data.user_Id || data.user_Id.trim() === '') {
+      // user_Id is empty → use phone (remove +91)
+      user_Id = data.phone.replace(/^(\+?91[\s-]*)?/, '').trim();
+    } else {
+      // user_Id has value → use it
+      user_Id = data.user_Id;
+    }
 
-
-console.log('User ID:', user_Id, 'Phone:', data.phone);
-
-
-    
+    console.log('User ID:', user_Id, 'Phone:', data.phone);
 
     try {
       // 👉 Step 1: Check if user exists in SAME hospital
@@ -170,6 +166,7 @@ console.log('User ID:', user_Id, 'Phone:', data.phone);
         data: {
           status: data.status,
           doctorAmount: data.amount,
+          permissions: data.permissions,
         },
       });
       log('Updated Admin:', admin);
@@ -211,5 +208,33 @@ console.log('User ID:', user_Id, 'Phone:', data.phone);
     }
   }
 
-  
+   // 🔹 New method: fetch permissions IDs + keys
+  // async getStaffPermissions(hospitalId: number, userId: string) {
+  //   // Find the staff/admin
+  //   const staff = await this.prisma.admin.findUnique({
+  //     where: { userId },
+  //     select: { id: true, role: true, permissions: true },
+  //   });
+
+  //   if (!staff) return null;
+
+  //   // If ADMIN role, return all permission IDs + keys
+  //   if (staff.role.toUpperCase() === 'ADMIN') {
+  //     const allPermissions = await this.prisma.ButtonPermission.findMany({
+  //       select: { id: true, key: true },
+  //     });
+  //     return allPermissions;
+  //   }
+
+  //   // Medical Staff → fetch only permissions assigned in array
+  //   if (staff.permissions && Array.isArray(staff.permissions)) {
+  //     const permissions = await this.prisma.ButtonPermission.findMany({
+  //       where: { id: { in: staff.permissions } },
+  //       select: { id: true, key: true },
+  //     });
+  //     return permissions;
+  //   }
+
+  //   return [];
+  // }
 }

@@ -55,6 +55,7 @@ model Hospital {
   Drawers               Drawer[]
   IncomeAndExpenses     IncomeAndExpense[]
   cosmetics             cosmetic[]
+  ButtonPermissions     ButtonPermission[]
 }
 
 model User {
@@ -82,6 +83,7 @@ model Admin {
   role         String // e.g., Doctor, Nurse, Admin
   doctorAmount Float?      @default(0)
   specialist   String?
+  permissions  Json?    // store [1,2,3] etc for Medical Staff; keep NULL for ADMIN
   phone        String
   email        String
   address      String
@@ -97,6 +99,15 @@ model Admin {
   User         User           @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
 
   @@unique([hospital_Id, user_Id])
+}
+
+model ButtonPermission {
+  id          Int     @id @default(autoincrement())
+  hospital_Id Int
+  key         String  @unique         
+  designation String?                // optional template (Doctor, Nurse, etc.)
+  defaultIds  Json?                  // optional default permission IDs for designation
+  Hospital     Hospital       @relation(fields: [hospital_Id], references: [id])
 }
 
 model AdminStrator {

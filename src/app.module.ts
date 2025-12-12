@@ -23,6 +23,7 @@ import { IncomeAndExpenseModule } from './IncomeExpense/incomeExpense.module';
 import {AdminStratorModule  } from './AdminStrator/adminstrator.module';
 import { FeesModule } from './Fees/fees.module';
 import { CosmeticModule } from './cosmetic/cosmetic.module';
+import { ButtonPermissionModule } from './Button_Permission/button-permission.module';
 @Module({
   imports: [HospitalModule,
     UserModule,
@@ -45,6 +46,7 @@ import { CosmeticModule } from './cosmetic/cosmetic.module';
     IncomeAndExpenseModule,
     FeesModule,
     CosmeticModule,
+    ButtonPermissionModule,
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],
