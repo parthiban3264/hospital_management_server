@@ -225,10 +225,10 @@ async findOne(id: number, patient_Id: string) {
           },
         },
 
-        Consultation: { where: { patient_Id } },
+        Consultation: { where: { patient_Id:Number(patient_Id) } },
 
         TestingAndScannings: {
-          where: { patient_Id },
+          where: { patient_Id:Number(patient_Id) },
           include: {
             Hospital: {
               select: {
@@ -257,13 +257,13 @@ async findOne(id: number, patient_Id: string) {
           },
         },
 
-        Payments: { where: { patient_Id } },
+        Payments: { where: { patient_Id:Number(patient_Id)  } },
 
-        MedicinePatients: { where: { patient_Id }, include: { Medician: true } },
+        MedicinePatients: { where: { patient_Id:Number(patient_Id)  }, include: { Medician: true } },
 
-        InjectionPatients: { where: { patient_Id }, include: { Injection: true } },
+        InjectionPatients: { where: { patient_Id:Number(patient_Id)  }, include: { Injection: true } },
 
-        TonicPatients: { where: { patient_Id }, include: { Tonic: true } },
+        TonicPatients: { where: { patient_Id:Number(patient_Id)  }, include: { Tonic: true } },
       },
     });
 

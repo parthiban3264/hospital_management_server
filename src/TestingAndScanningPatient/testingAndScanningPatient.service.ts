@@ -175,6 +175,7 @@ export class TestingAndScanningPatientService {
         },
         Patient: {
           select: {
+            id: true,
             user_Id: true,
             name: true,
             dob: true,
@@ -272,6 +273,7 @@ export class TestingAndScanningPatientService {
         ScanAndTests: [],
       };
       const patient = rec.Patient ?? {
+        id:0,
         name: '',
         user_Id: '',
         gender: '',
@@ -383,6 +385,7 @@ export class TestingAndScanningPatientService {
         // result: rec.result,
         createdAt: rec.createdAt,
         Patient: {
+          id:patient.id,
           name: patient.name ?? 'N/A',
           gender,
           bldGrp: (patient as any).bldGrp ?? 'N/A',

@@ -81,7 +81,7 @@ export class MedicineAndInjectionService {
       const record = await this.prisma.medicineAndInjection.create({
         data: {
           hospital_Id: Number(data.hospital_Id),
-          patient_Id: String(data.patient_Id),
+          patient_Id: Number(data.patient_Id),
           doctor_Id: data.doctor_Id ?? [],
           staff_Id: data.staff_Id ?? [],
 

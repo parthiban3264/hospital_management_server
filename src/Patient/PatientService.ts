@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { log } from 'console';
 
 @Injectable()
 export class PatientService {
@@ -50,6 +51,7 @@ export class PatientService {
           '⚠️ Registration Fee or Appointment Fee is not set! Please assign Registration Fees after register.',
       };
     }
+console.log('user Data',data);
 
     // Normalize user ID (phone)
     const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
@@ -57,25 +59,33 @@ export class PatientService {
     // ✅ Use a callback transaction since we need sequential logic
     const result = await this.prisma.$transaction(async (tx) => {
       // 1️⃣ Create User
-      const user = await tx.user.create({
-        data: {
-          hospital_Id: data.hospital_Id,
-          user_Id: user_Id,
-          password: hashedPassword,
-          role: 'PATIENT',
-        },
-      });
+      // const user = await tx.user.create({
+      //   data: {
+      //     hospital_Id: data.hospital_Id,
+      //     user_Id: data.id,
+      //     password: hashedPassword,
+      //     role: 'PATIENT',
+      //   },
+      // });
 
       // 2️⃣ Create Patient
       const patient = await tx.patient.create({
         data: {
           ...data,
-          phone: data.phone,
           hospital_Id: data.hospital_Id,
+          phone: data.phone,
           createdAt: data.createdAt || new Date().toISOString(),
           user_Id: user_Id,
         },
       });
+      const user = await tx.user.create({
+      data: {
+        hospital_Id: data.hospital_Id,
+        user_Id: patient.id.toString(), // ✅ LOGIN ID
+        password: hashedPassword,
+        role: 'PATIENT',
+      },
+    });
       // Return all created records
       return { user, patient };
     });
@@ -102,14 +112,14 @@ export class PatientService {
   async findOneByUserId(hospital_Id: number, user_Id: string) {
     const patient = await this.prisma.patient.findUnique({
       where: {
-        hospital_Id_user_Id: {
+        
           hospital_Id,
-          user_Id,
-        },
+          id:Number(user_Id),
+        
       },
       include: {
         Consultation: { select: { id: true, patient_Id: true, status: true } },
-        // Payments: true,
+         Payments: true,
         Hospital: { select: { id: true, name: true } },
         User: { select: { id: true, user_Id: true, role: true } },
       },
@@ -128,41 +138,38 @@ export class PatientService {
     };
   }
 
-  async findCheckUserId(hospital_Id: number, user_Id: string) {
-    const patient = await this.prisma.patient.findUnique({
-      where: {
-        hospital_Id_user_Id: {
-          hospital_Id,
-          user_Id,
-        },
-      },
-      include: {
-        Consultation: { select: { id: true, patient_Id: true, status: true } },
-        Hospital: true,
-        User: true,
-      },
-    });
+async findCheckUserId(hospital_Id: number, user_Id: string) {
+  const patients = await this.prisma.patient.findMany({
+    where: {
+      hospital_Id,
+      user_Id,
+    },
+    include: {
+      Consultation: { select: { id: true, patient_Id: true, status: true } },
+      Hospital: true,
+      User: true,
+    },
+  });
 
-    if (!patient) {
-      throw new NotFoundException(
-        `Patient with user_Id ${user_Id} in hospital ${hospital_Id} not found`,
-      );
-    }
-
-    return {
-      status: 'success',
-      message: 'Patient fetched successfully',
-      data: patient,
-    };
+  if (patients.length === 0) {
+    throw new NotFoundException(
+      `Patient with user_Id ${user_Id} in hospital ${hospital_Id} not found`,
+    );
   }
+log('Patients found: %o', patients);
+  return {
+    status: 'success',
+    message: 'Patients fetched successfully',
+    data: patients, // return all matching patients
+  };
+}
 
   async updateByUserId(hospital_Id: number, user_Id: string, data: any) {
     const patient = await this.prisma.patient.update({
       where: {
-        hospital_Id_user_Id: {
           hospital_Id,
-          user_Id,
-        },
+          id:Number(user_Id),
+    
       },
       data,
     });
@@ -177,10 +184,8 @@ export class PatientService {
   async deleteByUserId(hospital_Id: number, user_Id: string) {
     const patient = await this.prisma.patient.delete({
       where: {
-        hospital_Id_user_Id: {
           hospital_Id,
-          user_Id,
-        },
+          id:Number(user_Id)
       },
     });
 

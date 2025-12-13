@@ -35,7 +35,7 @@ export class MedicineTonicInjectionService {
       let payment = await tx.payment.findFirst({
         where: {
           hospital_Id,
-          patient_Id,
+          patient_Id:Number(patient_Id),
           type: Type.MEDICINETONICINJECTIONFEES,
           status: PaymentStatus.PENDING,
         },
@@ -53,7 +53,7 @@ export class MedicineTonicInjectionService {
         payment = await tx.payment.create({
           data: {
             hospital_Id,
-            patient_Id,
+            patient_Id:Number(patient_Id),
             reason: 'Prescription Fees',
             consultation_Id: data.consultation_Id,
             type: Type.MEDICINETONICINJECTIONFEES,
@@ -74,7 +74,7 @@ export class MedicineTonicInjectionService {
         const medData = data.medicines.map((m) => ({
           ...m,
           hospital_Id,
-          patient_Id,
+          patient_Id:Number(patient_Id),
           doctor_Id,
           payment_Id: payment.id,
           createdAt: createdAtValue,
@@ -91,7 +91,7 @@ export class MedicineTonicInjectionService {
         const tonicData = data.tonics.map((t) => ({
           ...t,
           hospital_Id,
-          patient_Id,
+          patient_Id:Number(patient_Id),
           doctor_Id,
           payment_Id: payment.id,
           createdAt: createdAtValue,
@@ -106,7 +106,7 @@ export class MedicineTonicInjectionService {
         const injData = data.injections.map((i) => ({
           ...i,
           hospital_Id,
-          patient_Id,
+          patient_Id:Number(patient_Id),
           doctor_Id,
           payment_Id: payment.id,
           createdAt: createdAtValue,
