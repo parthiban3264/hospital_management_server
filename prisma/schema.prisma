@@ -290,6 +290,7 @@ model cosmetic {
   name        String
   type        String? // consider enum if limited set
   unit        String?
+  imageUrl      String? @db.Text
   stock       Int      @default(0)
   amount      Float
   staff_Id    Int
