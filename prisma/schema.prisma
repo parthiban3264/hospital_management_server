@@ -241,10 +241,10 @@ model Medician {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   medicianName         String
-  medicianCode         String?
+  medicianCode         String? @unique
   stock                Int?
   amount               Float
-  expiryDate           String?
+  expiryDate           String? 
   manifacturingDate    String?
   staff_Id             Json? // Array/object
   MedicineAndInjection MedicineAndInjection[] @relation("MedicineAndInjection_Medician")
@@ -257,7 +257,7 @@ model Tonic {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   tonicName            String
-  tonicCode            String?
+  tonicCode            String? @unique
   stock                Json? // Quantity 250ml=stack=50, 500ml etc. 100ml=50
   amount               Json?
   staff_Id             Json? // Array/object
@@ -272,7 +272,7 @@ model Injection {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   injectionName        String
-  injectionCode        String?
+  injectionCode        String? @unique
   stock                Json?
   unit                 String? // ✅ Added: mg, mL
   amount               Json?
