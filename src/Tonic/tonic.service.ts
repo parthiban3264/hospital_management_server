@@ -1,13 +1,16 @@
 import { Injectable,NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { log } from 'console';
 
 @Injectable()
 export class TonicService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: any) {
+  async create(data: any){
     try{
-const tonic = this.prisma.tonic.createMany({ data });
+      log('data in tonic service',data);
+const tonic = await this.prisma.tonic.createMany({ data });
+log('created tonic',tonic);
     return { status: 'success', message: 'Tonic created', data: tonic };
     }catch(error){
       return { status: 'failed', error: error.message };
@@ -19,7 +22,7 @@ const tonic = this.prisma.tonic.createMany({ data });
     return this.prisma.tonic.findMany();
   }
 
-  findByHospital(hospital_Id: number) {
+  async findByHospital(hospital_Id: number) {
     return this.prisma.tonic.findMany({ where: { hospital_Id } });
   }
   async finfindAllByhospitaldAll(hospitalId: number) {

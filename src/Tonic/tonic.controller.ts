@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
 import { TonicService } from './tonic.service';
+import { log } from 'console';
 
 @Controller('tonics')
 export class TonicController {
@@ -7,6 +8,7 @@ export class TonicController {
 
   @Post('create')
   create(@Body() data: any) {
+    log('data in tonic controller',data);
     return this.tonicService.create(data);
   }
    @Get('all/:hospitalId')
