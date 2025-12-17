@@ -127,9 +127,9 @@ export class AdminService {
   }
 
   async findAllByHospitalAndRole(hospital_Id: number, role: string) {
-    const lowerRole = role.toLowerCase();
+  
     return this.prisma.admin.findMany({
-      where: { hospital_Id, role:lowerRole },
+      where: { hospital_Id, role },
       include: { Hospital: true, User: true },
     });
   }
