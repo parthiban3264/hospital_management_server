@@ -156,6 +156,24 @@ export class AdminService {
       include: { Hospital: true, User: true },
     });
   }
+  
+async checkUserIdExists(
+  hospital_Id: number,
+  userId: string,
+): Promise<boolean> {
+  const admin = await this.prisma.admin.findUnique({
+    where: {
+      hospital_Id_user_Id: {
+        hospital_Id,
+        user_Id: userId,
+      },
+    },
+    select: { id: true }, // minimal payload
+  });
+
+  return !!admin;
+}
+
 
   async update(id: number, data: any) {
     console.log('data', data);

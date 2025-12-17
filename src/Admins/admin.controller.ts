@@ -91,6 +91,12 @@ async getAllByHospitalAdmin(
     return { status: 'success', data: admin };
   }
 
+@Get('check-user-id/:hospital_Id/:userId')
+  async checkUserId(@Param('hospital_Id') hospital_Id: string,@Param('userId') userId: string) {
+    const exists = await this.adminService.checkUserIdExists(Number(hospital_Id),userId);
+    return { exists };
+  }
+
 
 
    @Patch("update/:hospital_Id/:user_Id")

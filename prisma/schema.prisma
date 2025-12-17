@@ -707,3 +707,15 @@ model InjectionProgress {
 
   @@index([injectionPatientId])
 }
+
+model Tickets{
+  id Int @id @default(autoincrement())
+  hospital_Id Int
+  admin_Id String
+  title String
+  description String
+  status Status
+  createdAt String
+  updatedAt String?
+  Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
+}
