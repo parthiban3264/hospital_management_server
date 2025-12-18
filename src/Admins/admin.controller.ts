@@ -243,20 +243,32 @@ export class AdminController {
 //   return { status: 'success', photo: finalUrl, data: result.data };
 // }
 
+
 @Put('updateProfilePhoto/:hospital_Id/:user_Id')
 @UseInterceptors(
   FileInterceptor('photo', {
     limits: { fileSize: 5 * 1024 * 1024 },
     storage: diskStorage({
       destination: (req, file, cb) => {
+        log('DESTINATION PARAMS:', req.params);
         const uploadPath = join('/var/www/profile_images', req.params.user_Id);
+
+        // Ensure directory exists
         if (!fs.existsSync(uploadPath)) {
           fs.mkdirSync(uploadPath, { recursive: true });
         }
+
+        // 🔥 DELETE OLD IMAGE FIRST
+        const oldImagePath = join(uploadPath, 'profile.jpg');
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+
         cb(null, uploadPath);
       },
       filename: (req, file, cb) => {
-        cb(null, 'profile.jpg'); // overwrite
+        // Save new image with same name
+        cb(null, 'profile.jpg');
       },
     }),
   }),
@@ -266,6 +278,7 @@ async updateProfilePhoto(
   @Param('user_Id') user_Id: string,
   @UploadedFile() file: Express.Multer.File,
 ) {
+  console.log('CONTROLLER FILE:', file);
   if (!file) {
     throw new BadRequestException('No image uploaded');
   }
@@ -279,9 +292,11 @@ async updateProfilePhoto(
     finalUrl,
   );
 
-  return { status: 'success', photo: finalUrl };
+  return {
+    status: 'success',
+    photo: finalUrl,
+  };
 }
-
 
 
   @Delete('deleteById/:id')
