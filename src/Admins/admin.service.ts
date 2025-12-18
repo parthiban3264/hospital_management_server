@@ -248,22 +248,20 @@ async checkUserIdExists(
   filename: string,
 ) {
   try {
-    const photoUrl = filename;
+    const photoUrl = filename; // the file path or URL
     const admin = await this.prisma.admin.update({
       where: {
-        hospital_Id_user_Id: {
+        hospital_Id_user_Id: {  // composite unique key
           hospital_Id,
           user_Id,
         },
       },
-      data: {
-        photo: photoUrl,
-      },
+      data: { photo: photoUrl },
     });
 
     return {
       status: 'success',
-      photo: photoUrl, // ✅ returned to Flutter
+      photo: photoUrl, // returned to Flutter
       data: admin,
     };
   } catch (error) {
