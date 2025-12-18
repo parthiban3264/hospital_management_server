@@ -152,7 +152,7 @@ if (role !== 'ADMIN') {
   async findAllByHospitalAndRole(hospital_Id: number, role: string) {
   
     return this.prisma.admin.findMany({
-      where: { hospital_Id, role },
+      where: { hospital_Id, role ,status: 'ACTIVE'},
       include: { Hospital: true, User: true },
     });
   }
