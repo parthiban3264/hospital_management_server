@@ -256,6 +256,12 @@ export class AdminController {
           fs.mkdirSync(uploadPath, { recursive: true });
         }
 
+        // 🔥 Delete old profile image before saving new one
+        const oldImagePath = join(uploadPath, 'profile.jpg');
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+
         cb(null, uploadPath);
       },
       filename: (req, file, cb) => {
@@ -264,7 +270,6 @@ export class AdminController {
     }),
   }),
 )
-
 async updateProfilePhoto(
   @Param('hospital_Id') hospital_Id: string,
   @Param('user_Id') user_Id: string,
@@ -273,19 +278,6 @@ async updateProfilePhoto(
   if (!file) {
     throw new BadRequestException('No image uploaded');
   }
-
-  const imagePath = join(
-    '/var/www/profile_images',
-    user_Id,
-    'profile.jpg',
-  );
-
-  // 🔥 Force delete old file if exists
-  if (fs.existsSync(imagePath)) {
-    fs.unlinkSync(imagePath);
-  }
-
-  // Multer already saved new file AFTER this point
 
   const finalUrl =
     `https://hospitalservers.ramchintech.com/profile_images/${user_Id}/profile.jpg`;
