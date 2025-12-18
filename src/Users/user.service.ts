@@ -335,8 +335,9 @@ async login(data: any) {
 //   return { success: true, message: 'Logged out successfully' };
 // }
 
- async logout(userId: string) {
-    const user = await this.prisma.user.findFirst({ where: { user_Id: userId } });
+ async logout(userId: string,hospital_Id:number) {
+  log('Logging out userId:', userId);
+    const user = await this.prisma.user.findFirst({ where: { user_Id: userId, hospital_Id } });
     if (!user) throw new NotFoundException('User not found');
 
     await this.prisma.user.update({

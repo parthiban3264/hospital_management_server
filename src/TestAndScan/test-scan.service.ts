@@ -97,7 +97,7 @@ export class TestAndScanService {
   // ✅ GET ALL TESTS BY HOSPITAL + TYPE
   async findAll(hospital_Id: number, type: Types) {
     return this.prisma.scanAndTest.findMany({
-      where: { hospital_Id, type },
+      where: { type },
     });
   }
 

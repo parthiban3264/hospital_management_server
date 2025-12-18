@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { log } from 'console';
+import e from 'express';
 
 @Injectable()
 export class AdminService {
@@ -22,6 +23,27 @@ export class AdminService {
     }
 
     console.log('User ID:', user_Id, 'Phone:', data.phone);
+
+   let permissions: number[] = [];
+
+const role = data.role?.toString().toUpperCase();
+
+const rolePermissionMap: Record<string, number[]> = {
+  DOCTOR: [6, 8],
+
+  NURSE: [1, 2, 14, 15],
+
+  CASHIER: [12],
+
+  'LAB TECHNICIAN': [3, 4, 7, 9, 10, 11, 16, 17],
+
+  'MEDICAL STAFF': [5],
+};
+
+// ❌ Do NOT assign permissions to Admin / Super Admin
+if (role !== 'ADMIN') {
+  permissions = rolePermissionMap[role] ?? [];
+}
 
     try {
       // 👉 Step 1: Check if user exists in SAME hospital
@@ -60,6 +82,7 @@ export class AdminService {
             phone: data.phone,
             email: data.email,
             role: data.role,
+            permissions: permissions,
             doctorAmount: data.doctorAmount || 0,
             specialist: data.specialist,
             address: data.address,
