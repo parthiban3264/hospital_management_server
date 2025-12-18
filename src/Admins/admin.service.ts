@@ -241,6 +241,41 @@ async checkUserIdExists(
     }
   }
 
+  async saveAdminPhoto(
+  hospital_Id: number,
+  user_Id: string,
+  filename: string,
+) {
+  try {
+    const photoUrl = `${process.env.BASE_URL}/uploads/admins/${filename}`;
+
+    const admin = await this.prisma.admin.update({
+      where: {
+        hospital_Id_user_Id: {
+          hospital_Id,
+          user_Id,
+        },
+      },
+      data: {
+        photo: photoUrl,
+      },
+    });
+
+    return {
+      status: 'success',
+      photo: photoUrl, // ✅ returned to Flutter
+      data: admin,
+    };
+  } catch (error) {
+    console.error('Upload Error:', error);
+    return {
+      status: 'failed',
+      message: 'Failed to upload profile image',
+    };
+  }
+}
+
+
   async remove(id: number) {
     try {
       await this.prisma.admin.delete({ where: { id } });

@@ -1,5 +1,10 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpException, HttpStatus, NotFoundException, Param, Patch, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, HttpException, HttpStatus, NotFoundException, Param, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { AdminService } from "./admin.service";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+import { extname, join } from "path";
+import * as fs from 'fs';import { log } from "console";
+
 
 @Controller("admins")
 export class AdminController {
@@ -112,6 +117,94 @@ async getAllByHospitalAdmin(
       data
     );
   }
+
+  //  @Post('upload_photo/:hospital_Id/:user_Id')
+  // @UseInterceptors(
+  //   FileInterceptor('photo', {
+  //     storage: diskStorage({
+  //       destination: './uploads/admins',
+  //       filename: (req, file, cb) => {
+  //         const uniqueName =
+  //           Date.now() + '-' + Math.round(Math.random() * 1e9);
+  //         cb(null, uniqueName + extname(file.originalname));
+  //       },
+  //     }),
+  //     fileFilter: (req, file, cb) => {
+  //       if (!file.mimetype.startsWith('image/')) {
+  //         cb(new Error('Only image files allowed'), false);
+  //       }
+  //       cb(null, true);
+  //     },
+  //   }),
+  // )
+  // async uploadAdminPhoto(
+  //   @Param('hospital_Id') hospital_Id: string,
+  //   @Param('user_Id') user_Id: string,
+  //   @UploadedFile() file: Express.Multer.File,
+  // ) {
+  //   log('Upload request received for admin:', file);
+  //   if (!file) {
+  //     return { status: 'failed', message: 'No image uploaded' };
+  //   }
+
+  //   return this.adminService.saveAdminPhoto(
+  //     +hospital_Id,
+  //     user_Id,
+  //     file.filename,
+  //   );
+  // }
+
+  @Patch('updateProfilePhoto/:hospital_Id/:user_Id')
+@UseInterceptors(
+  FileInterceptor('photo', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const { hospital_Id, user_Id } = req.params;
+        const uploadPath = join('/var/www/profile_images',user_Id);
+
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, unique + extname(file.originalname));
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.startsWith('image/')) {
+        cb(new Error('Only image files allowed'), false);
+      } else {
+        cb(null, true);
+      }
+    },
+  }),
+)
+async updateProfilePhoto(
+  @Param('hospital_Id') hospital_Id: string,
+  @Param('user_Id') user_Id: string,
+  @UploadedFile() file: Express.Multer.File,
+  @Body() data: any,
+) {
+  if (!file) {
+    return { status: 'failed', message: 'No image uploaded' };
+  }
+
+  const finalUrl = `https://hospitalservers.ramchintech.com/profile_images/${user_Id}/${file.filename}`;
+
+  // Include other optional data
+  const payload = {
+    ...data,
+    photo: finalUrl,
+  };
+
+  // Call service to update DB
+  return this.adminService.updateByAdmin(+hospital_Id, user_Id, payload);
+}
+
+  
   @Delete("deleteById/:id")
   remove(@Param("id") id: string) {
     return this.adminService.remove(+id);
