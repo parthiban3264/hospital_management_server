@@ -201,7 +201,7 @@ async updateProfilePhoto(
   };
 
   // Call service to update DB
-  return this.adminService.updateByAdmin(+hospital_Id, user_Id, payload);
+  return this.adminService.saveAdminPhoto(+hospital_Id, user_Id, payload);
 }
 
   

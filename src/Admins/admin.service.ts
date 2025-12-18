@@ -220,6 +220,7 @@ async checkUserIdExists(
   }
 
   async updateByAdmin(hospital_Id: number, user_Id: string, data: any) {
+    log('updateByAdmin data', data);
     try {
       const admin = await this.prisma.admin.update({
         where: {
@@ -247,8 +248,7 @@ async checkUserIdExists(
   filename: string,
 ) {
   try {
-    const photoUrl = `${process.env.BASE_URL}/uploads/admins/${filename}`;
-
+    const photoUrl = filename;
     const admin = await this.prisma.admin.update({
       where: {
         hospital_Id_user_Id: {
