@@ -80,7 +80,7 @@ export class TestAndScanService {
           type: item.type,
           options: item.options,
           amount: item.amount ?? null,
-          crearedAt: item.createdAt,
+          createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         })),
       });
