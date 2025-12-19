@@ -82,6 +82,7 @@ if (role !== 'ADMIN') {
             phone: data.phone,
             email: data.email,
             role: data.role,
+            assignDoctorId: data.assignDoctorId,
             permissions: permissions,
             doctorAmount: data.doctorAmount || 0,
             specialist: data.specialist,
