@@ -80,8 +80,8 @@ export class TestAndScanService {
           type: item.type,
           options: item.options,
           amount: item.amount ?? null,
-          crearedAt: item.createdAt ?? new Date().toISOString(),
-          updatedAt: item.updatedAt ?? new Date().toISOString(),
+          crearedAt: item.createdAt,
+          updatedAt: item.updatedAt,
         })),
       });
 

@@ -63,6 +63,7 @@ import {
 } from '@nestjs/common';
 import { TestAndScanService } from './test-scan.service';
 import { Types } from '@prisma/client';
+import { log } from 'console';
 
 @Controller('scan_test')
 export class ScanAndTestController {
@@ -71,6 +72,7 @@ export class ScanAndTestController {
   // ✅ CREATE MULTIPLE TESTS
   @Post('create')
   create(@Body() body: any) {
+    log('Create body received:', body);
     return this.testScanService.create(body);
   }
 
