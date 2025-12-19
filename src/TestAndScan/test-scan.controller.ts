@@ -101,13 +101,13 @@ export class ScanAndTestController {
   }
 
   // ✅ UPDATE TEST
-  @Patch(':id')
+  @Patch('updateById/:id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
     return this.testScanService.update(id, body);
   }
 
   // ✅ DELETE TEST
-  @Delete(':id')
+  @Delete('deleteById/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.testScanService.remove(id);
   }
