@@ -210,6 +210,7 @@ async checkUserIdExists(
           status: data.status,
           doctorAmount: data.amount,
           permissions: data.permissions,
+          assignDoctorId: data.assignDoctorId,
         },
       });
       log('Updated Admin:', admin);
