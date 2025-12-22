@@ -57,6 +57,7 @@ model Hospital {
   cosmetics             cosmetic[]
   ButtonPermissions     ButtonPermission[]
   Tickets               Tickets[]
+  ScanAndTest           ScanAndTests[]
 }
 
 model User {
@@ -259,7 +260,7 @@ model Tonic {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   tonicName            String
-  tonicCode            String?                @unique
+  tonicCode            String? //@unique
   stock                Json? // Quantity 250ml=stack=50, 500ml etc. 100ml=50
   amount               Json?
   staff_Id             Json? // Array/object
@@ -274,7 +275,7 @@ model Injection {
   id                   Int                    @id @default(autoincrement())
   hospital_Id          Int
   injectionName        String
-  injectionCode        String?                @unique
+  injectionCode        String? // @unique
   stock                Json?
   unit                 String? // ✅ Added: mg, mL
   amount               Json?
@@ -624,51 +625,81 @@ model ScanAndTest {
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 }
 
-model ScanAndTests {
-  id         Int      @id @default(autoincrement())
-  hospitalId Int
-  title      String
-  type       Types
-  amount     Float?
-  createdAt  String?
-  updatedAt  String?
+// model ScanAndTests {
+//   id         Int     @id @default(autoincrement())
+//   hospitalId Int
+//   title      String
+//   type       Types
+//   amount     Float?
+//   createdAt  String?
+//   updatedAt  String?
 
-  hospital Hospital            @relation(fields: [hospitalId], references: [id])
+//   hospital Hospital            @relation(fields: [hospitalId], references: [id])
+//   options  ScanAndTestOption[]
+// }
+
+model ScanAndTests {
+  id          Int     @id @default(autoincrement())
+  hospital_Id Int
+  title       String
+  type        Types
+  amount      Float?
+  createdAt   String?
+  updatedAt   String?
+
+  hospital Hospital            @relation(fields: [hospital_Id], references: [id])
   options  ScanAndTestOption[]
+
+  @@unique([hospital_Id, title, type])
+  @@index([hospital_Id])
 }
 
 model ScanAndTestOption {
   id         Int    @id @default(autoincrement())
   scanTestId Int
-  optionName String @unique
+  optionName String
   price      Float?
 
-  scanTest ScanAndTest              @relation(fields: [scanTestId], references: [id])
+  scanTest ScanAndTests             @relation(fields: [scanTestId], references: [id])
   unitRef  ScanAndTestUnitReference @relation(fields: [optionName], references: [optionName])
 
   @@unique([scanTestId, optionName])
   @@index([scanTestId])
+  @@index([optionName])
 }
 
+// model ScanAndTestUnitReference {
+//   id         Int      @id @default(autoincrement())
+//   optionName String   @unique
+//   unit       String
+//   reference  Json
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   options ScanAndTestOption[]
+// }
+
 model ScanAndTestUnitReference {
-  id         Int      @id @default(autoincrement())
-  optionName String   @unique
-  unit       String
-  reference  Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  optionName  String   @unique
+  optionTitle String
+  type        String?
+  unit        String
+  reference   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   options ScanAndTestOption[]
 }
 
 model ScanAndTestUnitReferance {
-  id         Int      @id @default(autoincrement())
-  optionName String   @unique // e.g. "Hemoglobin", "ALT", "Creatinine"
-  optionTitle String   // e.g. "Hemoglobin (Hb)", "Alanine Aminotransferase (ALT)", "Creatinine"
-  unit       String // e.g. "g/dL", "mg/dL", "U/L"
-  referance  Json // JSON of ranges (age/gender/pregnancy keys)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  optionName  String   @unique // e.g. "Hemoglobin", "ALT", "Creatinine"
+  optionTitle String // e.g. "Hemoglobin (Hb)", "Alanine Aminotransferase (ALT)", "Creatinine"
+  unit        String // e.g. "g/dL", "mg/dL", "U/L"
+  referance   Json // JSON of ranges (age/gender/pregnancy keys)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Drawer {

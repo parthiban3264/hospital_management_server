@@ -24,6 +24,7 @@ import {AdminStratorModule  } from './AdminStrator/adminstrator.module';
 import { FeesModule } from './Fees/fees.module';
 import { CosmeticModule } from './cosmetic/cosmetic.module';
 import { ButtonPermissionModule } from './Button_Permission/button-permission.module';
+import { ScanAndTestsModule } from './TestAndScans/test.scans.module';
 @Module({
   imports: [HospitalModule,
     UserModule,
@@ -47,6 +48,7 @@ import { ButtonPermissionModule } from './Button_Permission/button-permission.mo
     FeesModule,
     CosmeticModule,
     ButtonPermissionModule,
+    ScanAndTestsModule
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],

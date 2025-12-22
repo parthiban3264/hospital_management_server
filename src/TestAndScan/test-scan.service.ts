@@ -160,6 +160,7 @@ export class TestAndScanService {
             optionName: item.optionName,
             unit: item.unit,
             referance: item.referance,
+            optionTitle: '', // Placeholder, adjust as needed
             createdAt: now,
             updatedAt: now,
           },
