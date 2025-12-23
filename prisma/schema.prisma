@@ -84,6 +84,7 @@ model Admin {
   designation    String?
   role           String // e.g., Doctor, Nurse, Admin
   accessDoctorRole Boolean @default(false) // e.g., General Physician, Cardiologist, etc.
+  accessAdminRole Boolean @default(false) // e.g., Super Admin, Finance Admin, etc.
   doctorAmount   Float?         @default(0)
   specialist     String?
   assignDoctorId String? // for Nurse/Staff to assign Doctor
