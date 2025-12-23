@@ -109,7 +109,7 @@ async findPaidByHospitalAccounts(hospitalId: number) {
     include: {
       Hospital: {select: {id:true ,name: true,address:true,},},
       Patient: {select: { id:true,hospital_Id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,},},
-      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,} },
+      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,consultationFee : true} },
       TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true,amount:true },},
       MedicinePatient: {select: { id: true, medicine_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
       TonicPatient: {select: { id: true, tonic_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
