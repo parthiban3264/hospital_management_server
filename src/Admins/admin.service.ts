@@ -150,13 +150,40 @@ if (role !== 'ADMIN') {
     });
   }
 
-  async findAllByHospitalAndRole(hospital_Id: number, role: string) {
+  // async findAllByHospitalAndRole(hospital_Id: number, role: string) {
   
-    return this.prisma.admin.findMany({
-      where: { hospital_Id, role},
-      include: { Hospital: true, User: true },
-    });
-  }
+  //   return this.prisma.admin.findMany({
+  //     where: { hospital_Id, role},
+  //     include: { Hospital: true, User: true },
+  //   });
+  // }
+  async findAllByHospitalAndRole(
+  hospital_Id: number,
+  roles: string[],
+) {
+  return this.prisma.admin.findMany({
+    where: {
+      hospital_Id,
+      OR: [
+        // Doctor → always allowed
+        {
+          role: 'DOCTOR',
+        },
+
+        // Admin → only if accessDoctorRole = true
+        {
+          role: 'ADMIN',
+          accessDoctorRole: true,
+        },
+      ],
+    },
+    include: {
+      Hospital: true,
+      User: true,
+    },
+  });
+}
+
   async findAllByHospitalAdmin(hospital_Id: number) {
     return this.prisma.admin.findMany({
       where: { hospital_Id },

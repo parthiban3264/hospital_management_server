@@ -80,7 +80,7 @@ export class AdminController {
   ) {
     return this.adminService.findAllByHospitalAndRole(
       Number(hospital_Id),
-      role,
+      [role , 'ADMIN']
     );
   }
 
