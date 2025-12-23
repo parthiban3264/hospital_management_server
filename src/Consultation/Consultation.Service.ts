@@ -72,6 +72,7 @@ export class ConsultationService {
           doctor_Id: data.doctor_Id,
           purpose: data.purpose,
           symptoms: data.symptoms,
+          consultationFee: data.consultationFee,
           bp: data.bp,
           weight: data.weight,
           height: data.height,
