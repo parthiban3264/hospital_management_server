@@ -239,6 +239,7 @@ async checkUserIdExists(
           permissions: data.permissions,
           assignDoctorId: data.assignDoctorId,
           accessDoctorRole: data.accessDoctorRole,
+          accessAdminRole: data.accessAdminRole,
         },
       });
       log('Updated Admin:', admin);
