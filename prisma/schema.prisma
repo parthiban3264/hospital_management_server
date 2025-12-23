@@ -192,7 +192,7 @@ model Consultation {
   purpose         String
   symptoms        Boolean     @default(false)
   notes           Json?
-  consultationFee Float?
+  consultationFee Float   @default(0)
   cancelReason    String?
   treatment       Boolean     @default(false)
   height          Float?
