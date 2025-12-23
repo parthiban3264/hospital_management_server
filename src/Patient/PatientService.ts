@@ -15,14 +15,14 @@ export class PatientService {
     const registrationFee = await this.prisma.fees.findFirst({
       where: {
         hospital_Id: Number(data.hospital_Id),
-        type: 'REGISTRATIONFEE',
+        type: 'REGISTRATION FEE',
       },
     });
 
     const appointmentFee = await this.prisma.fees.findFirst({
       where: {
         hospital_Id: Number(data.hospital_Id),
-        type: 'APPOINTMENTFEE',
+        type: 'APPOINTMENT FEE',
       },
     });
 
