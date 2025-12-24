@@ -273,7 +273,7 @@ export class TestingAndScanningPatientService {
         ScanAndTests: [],
       };
       const patient = rec.Patient ?? {
-        id:0,
+        id: 0,
         name: '',
         user_Id: '',
         gender: '',
@@ -285,8 +285,8 @@ export class TestingAndScanningPatientService {
       };
       //const hospitalTests = hospital.ScanAndTest ?? [];
       const hospitalTests = Array.isArray((hospital as any).ScanAndTest)
-  ? (hospital as any).ScanAndTest
-  : [];
+        ? (hospital as any).ScanAndTest
+        : [];
 
       const age = calculateAge(patient.dob);
       const gender = patient.gender ?? '';
@@ -325,28 +325,62 @@ export class TestingAndScanningPatientService {
         (t) => t.title?.toUpperCase() === (rec.title ?? '').toUpperCase(),
       );
 
+      // const detailedTests = relatedTests.map((test) => {
+      //   const testOptions = Array.isArray(test.options)
+      //     ? test.options
+      //     : JSON.parse(test.options ?? '[]');
+
+      //   const mergedOptions = testOptions.map((opt: any) => {
+      //     const unitInfo = unitRefs.find(
+      //       (u) =>
+      //         u.optionName?.trim().toLowerCase() ===
+      //         opt.name?.trim().toLowerCase(),
+      //     );
+      //     const reference = unitInfo?.reference
+      //       ? getCorrectReference(unitInfo.reference, age, gender)
+      //       : 'N/A';
+
+      //     return {
+      //       name: opt.name,
+      //       price: opt.price ?? null,
+      //       unit: unitInfo?.unit ?? 'N/A',
+      //       reference,
+      //       selectedOption: selectedOptions[opt.name] ?? 'N/A',
+      //       result: selectedOptionResults[opt.name] ?? 'N/A',
+      //     };
+      //   });
+
+      //   return {
+      //     id: test.id,
+      //     title: test.title,
+      //     results: rec.result,
+      //     type: test.type,
+      //     scanImages: rec.scanImages ?? null,
+      //     options: mergedOptions,
+      //   };
+      // });
+
       const detailedTests = relatedTests.map((test) => {
-        const testOptions = Array.isArray(test.options)
-          ? test.options
-          : JSON.parse(test.options ?? '[]');
+        const testOptions = test.options ?? [];
 
         const mergedOptions = testOptions.map((opt: any) => {
           const unitInfo = unitRefs.find(
             (u) =>
               u.optionName?.trim().toLowerCase() ===
-              opt.name?.trim().toLowerCase(),
+              opt.optionName?.trim().toLowerCase(),
           );
+
           const reference = unitInfo?.reference
             ? getCorrectReference(unitInfo.reference, age, gender)
             : 'N/A';
 
           return {
-            name: opt.name,
+            name: opt.optionName,
             price: opt.price ?? null,
             unit: unitInfo?.unit ?? 'N/A',
             reference,
-            selectedOption: selectedOptions[opt.name] ?? 'N/A',
-            result: selectedOptionResults[opt.name] ?? 'N/A',
+            selectedOption: selectedOptions[opt.optionName] ?? 'N/A',
+            result: selectedOptionResults[opt.optionName] ?? 'N/A',
           };
         });
 
@@ -389,7 +423,7 @@ export class TestingAndScanningPatientService {
         // result: rec.result,
         createdAt: rec.createdAt,
         Patient: {
-          id:patient.id,
+          id: patient.id,
           name: patient.name ?? 'N/A',
           gender,
           bldGrp: (patient as any).bldGrp ?? 'N/A',
