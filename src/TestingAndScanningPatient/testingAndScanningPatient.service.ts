@@ -162,7 +162,7 @@ export class TestingAndScanningPatientService {
             id: true,
             name: true,
             address: true,
-            ScanAndTests: {
+            ScanAndTest: {
               select: {
                 id: true,
                 title: true,
@@ -194,8 +194,8 @@ export class TestingAndScanningPatientService {
     }
 
     // Step 2️⃣: Fetch unit/reference info
-    const unitRefs = await this.prisma.scanAndTestUnitReferance.findMany({
-      select: { optionName: true, unit: true, referance: true },
+    const unitRefs = await this.prisma.scanAndTestUnitReference.findMany({
+      select: { optionName: true, unit: true, reference: true },
     });
 
     // Step 3️⃣: Collect doctor user IDs and fetch names
@@ -283,7 +283,11 @@ export class TestingAndScanningPatientService {
         phone: {},
         Consultation: [],
       };
-      const hospitalTests = hospital.ScanAndTests ?? [];
+      //const hospitalTests = hospital.ScanAndTest ?? [];
+      const hospitalTests = Array.isArray((hospital as any).ScanAndTest)
+  ? (hospital as any).ScanAndTest
+  : [];
+
       const age = calculateAge(patient.dob);
       const gender = patient.gender ?? '';
 
@@ -332,8 +336,8 @@ export class TestingAndScanningPatientService {
               u.optionName?.trim().toLowerCase() ===
               opt.name?.trim().toLowerCase(),
           );
-          const reference = unitInfo?.referance
-            ? getCorrectReference(unitInfo.referance, age, gender)
+          const reference = unitInfo?.reference
+            ? getCorrectReference(unitInfo.reference, age, gender)
             : 'N/A';
 
           return {
