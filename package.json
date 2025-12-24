@@ -34,6 +34,7 @@
     "bcrypt": "^6.0.0",
     "jimp": "^0.16.1",
     "mariadb": "^3.4.5",
+    "multer": "^2.0.2",
     "mysql2": "^3.15.3",
     "nodemailer": "^7.0.11",
     "passport": "^0.7.0",
@@ -41,7 +42,8 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.2",
     "sharp": "^0.34.5",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

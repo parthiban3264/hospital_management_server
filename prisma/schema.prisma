@@ -58,6 +58,9 @@ model Hospital {
   ButtonPermissions     ButtonPermission[]
   Tickets               Tickets[]
   ScanAndTest           ScanAndTests[]
+  Medicine              Medicines[]
+  Tonic                 Tonics[]
+  Injection             Injections[]
 }
 
 model User {
@@ -77,31 +80,31 @@ model User {
 }
 
 model Admin {
-  id             Int            @id @default(autoincrement())
-  hospital_Id    Int
-  user_Id        String
-  name           String
-  designation    String?
-  role           String // e.g., Doctor, Nurse, Admin
-  accessDoctorRole Boolean @default(false) // e.g., General Physician, Cardiologist, etc.
-  accessAdminRole Boolean @default(false) // e.g., Super Admin, Finance Admin, etc.
-  doctorAmount   Float?         @default(0)
-  specialist     String?
-  assignDoctorId String? // for Nurse/Staff to assign Doctor
-  permissions    Json? // store [1,2,3] etc for Medical Staff; keep NULL for ADMIN
-  phone          String
-  email          String
-  address        String
-  photo          String?        @default("https://as2.ftcdn.net/v2/jpg/05/89/93/27/1000_F_589932782_vQAEAZhHnq1QCGu5ikwrYaQD0Mmurm0N.jpg")
-  status         AdminStatus    @default(ACTIVE)
-  gender         String
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  Consultation   Consultation[]
-  Doctor         Treatment[]    @relation("Doctor_Treatment")
-  Staff          Treatment[]    @relation("Staff_Treatment")
-  Hospital       Hospital       @relation(fields: [hospital_Id], references: [id])
-  User           User           @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
+  id               Int            @id @default(autoincrement())
+  hospital_Id      Int
+  user_Id          String
+  name             String
+  designation      String?
+  role             String // e.g., Doctor, Nurse, Admin
+  accessDoctorRole Boolean        @default(false) // e.g., General Physician, Cardiologist, etc.
+  accessAdminRole  Boolean        @default(false) // e.g., Super Admin, Finance Admin, etc.
+  doctorAmount     Float?         @default(0)
+  specialist       String?
+  assignDoctorId   String? // for Nurse/Staff to assign Doctor
+  permissions      Json? // store [1,2,3] etc for Medical Staff; keep NULL for ADMIN
+  phone            String
+  email            String
+  address          String
+  photo            String?        @default("https://as2.ftcdn.net/v2/jpg/05/89/93/27/1000_F_589932782_vQAEAZhHnq1QCGu5ikwrYaQD0Mmurm0N.jpg")
+  status           AdminStatus    @default(ACTIVE)
+  gender           String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  Consultation     Consultation[]
+  Doctor           Treatment[]    @relation("Doctor_Treatment")
+  Staff            Treatment[]    @relation("Staff_Treatment")
+  Hospital         Hospital       @relation(fields: [hospital_Id], references: [id])
+  User             User           @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
 
   @@unique([hospital_Id, user_Id])
 }
@@ -193,7 +196,7 @@ model Consultation {
   purpose         String
   symptoms        Boolean     @default(false)
   notes           Json?
-  consultationFee Float   @default(0)
+  consultationFee Float       @default(0)
   cancelReason    String?
   treatment       Boolean     @default(false)
   height          Float?
@@ -289,6 +292,215 @@ model Injection {
   Hospital             Hospital               @relation(fields: [hospital_Id], references: [id])
   InjectionPatients    InjectionPatient[]
 }
+
+////////////////////////////////////////////Medicines, Tonics, Injections Start/////////////////////////////////////////////////
+
+model Medicines {
+  id                     Int       @id @default(autoincrement())
+  hospitalId             Int
+  name                   String
+  code                   String?
+  stock                  Int       @default(0) // Current stock quantity
+  costPrice              Float // Purchase price per unit
+  MRP                    Float // Maximum Retail Price
+  sellingPrice           Float? // Selling price after discount
+  PTR                    Float? // Price to Retailer
+  HSNCode                String? // GST/HSN code
+  discountPercent        Float? // Discount offered %
+  cgstPercent            Float? // CGST %
+  sgstPercent            Float? // SGST %
+  freeUnits              Int? // Free units in promotional packs
+  producerId             Int? // Link to Manufacturer table
+  importerId             Int? // Link to Supplier table
+  unit                   String? // Unit type, e.g., tablet, ml
+  strength               String? // Strength, e.g., 500mg, 10ml
+  batchNumber            String? // Batch or lot number
+  expiryDate             DateTime? // Expiry date
+  manufacturingDate      DateTime? // Manufacturing date
+  minimumStock           Int? // Alert threshold
+  reorderLevel           Int? // Automatic reorder trigger
+  lastRestockedAt        DateTime? // Track last stock refill
+  isPrescriptionRequired Boolean   @default(false) // Flag if prescription is required
+  isActive               Boolean   @default(true) // Active/Inactive medicine
+  storageCondition       String? // Storage instructions
+  notes                  String? // Additional information for pharmacists
+  barcode                String?   @unique
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  // Relations
+  staffIds             Json? // Array/object of staff handling the medicine
+  Hospital             Hospital              @relation(fields: [hospitalId], references: [id])
+  manufacturer         Manufacturer?         @relation("MedicineManufacturer", fields: [producerId], references: [id])
+  importer             Supplier?             @relation("MedicineSupplier", fields: [importerId], references: [id])
+  medicinePatients     MedicinePatient[]
+  medicineTransactions MedicineTransaction[] // Log of stock in/out
+  //MedicineAndInjection   MedicineAndInjection[]     @relation("MedicineAndInjection_Medicine")
+
+  @@unique([hospitalId, code])
+}
+
+model MedicineTransaction {
+  id          Int       @id @default(autoincrement())
+  medicineId  Int
+  type        String // 'IN', 'OUT', 'GIVEAWAY', 'SALE', 'RETURN'
+  packType    String? // e.g., "10 tablets"
+  quantity    Int
+  description String?
+  staffId     Int?
+  createdAt   DateTime  @default(now())
+  medicine    Medicines @relation(fields: [medicineId], references: [id])
+}
+
+model Tonics {
+  id                     Int       @id @default(autoincrement())
+  hospital_Id            Int
+  name                   String
+  code                   String?
+  stock                  Json? // { "250ml": 50, "500ml": 30 }
+  packSize               Json? // { "250ml": 250, "500ml": 500 } volume per pack
+  freeUnits              Json? // { "250ml": 50, "500ml": 0 } extra ml per pack
+  costPrice              Json?
+  MRP                    Json?
+  PTR                    Json?
+  sellingPrice           Json?
+  discountPercent        Float?
+  HSNCode                String?
+  cgstPercent            Float?
+  sgstPercent            Float?
+  producerId             Int?
+  importerId             Int?
+  batchNumber            String?
+  expiryDate             DateTime?
+  manufacturingDate      DateTime?
+  minimumStock           Json?
+  reorderLevel           Json?
+  isPrescriptionRequired Boolean   @default(false)
+  isActive               Boolean   @default(true)
+  storageCondition       String?
+  notes                  String?
+  staffIds               Json?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now())
+
+  // Relations
+  Hospital          Hospital           @relation(fields: [hospital_Id], references: [id])
+  manufacturer      Manufacturer?      @relation("TonicManufacturer", fields: [producerId], references: [id])
+  importer          Supplier?          @relation("TonicSupplier", fields: [importerId], references: [id])
+  tonicPatients     TonicPatient[]
+  tonicTransactions TonicTransaction[]
+
+  //MedicineAndInjection   MedicineAndInjection[] @relation("Tonic_MedicineAndInjection")
+  @@unique([hospital_Id, code])
+}
+
+model TonicTransaction {
+  id          Int      @id @default(autoincrement())
+  tonicId     Int
+  type        String // 'IN', 'OUT', 'GIVEAWAY', 'SALE', 'RETURN'
+  packType    String? // e.g., "250ml"
+  quantity    Int
+  description String?
+  staffId     Int?
+  createdAt   DateTime @default(now())
+  tonic       Tonics   @relation(fields: [tonicId], references: [id])
+}
+
+// model TonicTransaction {
+//   id        Int      @id @default(autoincrement())
+//   tonicId   Int
+//   type      String   // 'IN', 'OUT', 'GIVEAWAY', 'SALE', 'RETURN'
+//   volume    String   // e.g., '250ml'
+//   quantity  Int
+//   description String?
+//   staffId   Int?
+//   createdAt DateTime @default(now())
+//   tonic     Tonics    @relation(fields: [tonicId], references: [id])
+// }
+
+model Injections {
+  id                     Int       @id @default(autoincrement())
+  hospital_Id            Int
+  name                   String
+  code                   String?
+  stock                  Json? // { "1ml": 50, "2ml": 30 }
+  packSize               Json? // volume per pack
+  freeUnits              Json?
+  costPrice              Json?
+  MRP                    Json?
+  PTR                    Json?
+  sellingPrice           Json?
+  discountPercent        Float?
+  HSNCode                String?
+  cgstPercent            Float?
+  sgstPercent            Float?
+  producerId             Int?
+  importerId             Int?
+  batchNumber            String?
+  expiryDate             DateTime?
+  manufacturingDate      DateTime?
+  minimumStock           Json?
+  reorderLevel           Json?
+  isPrescriptionRequired Boolean   @default(false)
+  isActive               Boolean   @default(true)
+  storageCondition       String?
+  notes                  String?
+  staffIds               Json?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now())
+
+  // Relations
+  Hospital              Hospital               @relation(fields: [hospital_Id], references: [id])
+  manufacturer          Manufacturer?          @relation("InjectionManufacturer", fields: [producerId], references: [id])
+  importer              Supplier?              @relation("InjectionSupplier", fields: [importerId], references: [id])
+  injectionPatients     InjectionPatient[]
+  injectionTransactions InjectionTransaction[]
+  //MedicineAndInjection   MedicineAndInjection[] @relation("Injection_MedicineAndInjection")
+
+  @@unique([hospital_Id, code])
+}
+
+model InjectionTransaction {
+  id          Int        @id @default(autoincrement())
+  injectionId Int
+  type        String // 'IN', 'OUT', 'GIVEAWAY', 'SALE', 'RETURN'
+  packType    String? // e.g., "1ml"
+  quantity    Int
+  description String?
+  staffId     Int?
+  createdAt   DateTime   @default(now())
+  injection   Injections @relation(fields: [injectionId], references: [id])
+}
+
+model Manufacturer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  contact   String?
+  country   String?
+  category  String // 'Medicine', 'Tonic', 'Injection'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  medicines  Medicines[]  @relation("MedicineManufacturer")
+  tonics     Tonics[]     @relation("TonicManufacturer")
+  injections Injections[] @relation("InjectionManufacturer")
+}
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String
+  contact   String?
+  country   String?
+  category  String // 'Medicine', 'Tonic', 'Injection'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  medicines  Medicines[]  @relation("MedicineSupplier")
+  tonics     Tonics[]     @relation("TonicSupplier")
+  injections Injections[] @relation("InjectionSupplier")
+}
+
+///////////////////////////////////////////Medicines, Tonics, Injections End/////////////////////////////////////////////////
 
 model cosmetic {
   id          Int      @id @default(autoincrement())
@@ -497,6 +709,8 @@ model MedicinePatient {
   Medician         Medician           @relation(fields: [medicine_Id], references: [id])
   Consultation     Consultation?      @relation(fields: [consultation_Id], references: [id])
   MedicineProgress MedicineProgress[]
+  medicines        Medicines?         @relation(fields: [medicinesId], references: [id])
+  medicinesId      Int?
 }
 
 model InjectionPatient {
@@ -527,6 +741,8 @@ model InjectionPatient {
   Injection         Injection           @relation(fields: [injection_Id], references: [id])
   Consultation      Consultation?       @relation(fields: [consultation_Id], references: [id])
   InjectionProgress InjectionProgress[]
+  injections        Injections?         @relation(fields: [injectionsId], references: [id])
+  injectionsId      Int?
 }
 
 model TonicPatient {
@@ -559,6 +775,8 @@ model TonicPatient {
   Tonic         Tonic           @relation(fields: [tonic_Id], references: [id])
   Consultation  Consultation?   @relation(fields: [consultation_Id], references: [id])
   TonicProgress TonicProgress[]
+  tonics        Tonics?         @relation(fields: [tonicsId], references: [id])
+  tonicsId      Int?
 }
 
 enum Types {

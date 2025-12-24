@@ -291,7 +291,7 @@ async update(id: number, data: any) {
 
   // ✅ MERGE TEST + UNIT/REFERENCE INFO
   async getTestWithUnitReference(id: number) {
-    const test = await this.prisma.scanAndTest.findUnique({
+    const test = await this.prisma.scanAndTests.findUnique({
       where: { id },
     });
 

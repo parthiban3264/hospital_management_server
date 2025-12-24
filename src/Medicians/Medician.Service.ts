@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
+import * as XLSX from 'xlsx';
 
 @Injectable()
 export class MedicianService {
@@ -104,4 +106,137 @@ async findByName(hospitalId: number, name: string) {
       return { status: "failed", error: error.message };
     }
   }
+///////////////////////////////////////////////////////////new UPlaod excel method//////////////////////////////////////////////////////////
+
+parseExcelDate(value: any): Date {
+  if (typeof value === 'number') {
+    return new Date(Math.round((value - 25569) * 86400 * 1000));
+  }
+  return new Date(value);
+}
+
+
+async importFromExcel(file: Express.Multer.File) {
+  console.log('work1', file);
+  const workbook = XLSX.read(file.buffer);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+
+  const data: Prisma.MedicinesCreateManyInput[] = rows
+    .filter((row: any) => row.name && row.costPrice && row.MRP)
+    .map((row: any) => ({
+      hospitalId: Number(row.hospitalId),
+
+      name: String(row.name).trim(),
+      code: row.code ? String(row.code).trim() : null,
+
+      stock: Number(row.stock ?? 0),
+      costPrice: Number(row.costPrice),
+      MRP: Number(row.MRP),
+
+      sellingPrice: row.sellingPrice != null ? Number(row.sellingPrice) : null,
+      PTR: row.PTR != null ? Number(row.PTR) : null,
+
+      HSNCode: row.HSNCode ? String(row.HSNCode) : null,
+
+      discountPercent:
+        row.discountPercent != null ? Number(row.discountPercent) : null,
+
+      cgstPercent:
+        row.cgstPercent != null ? Number(row.cgstPercent) : null,
+
+      sgstPercent:
+        row.sgstPercent != null ? Number(row.sgstPercent) : null,
+
+      freeUnits:
+        row.freeUnits != null ? Number(row.freeUnits) : null,
+
+      producerId:
+        row.producerId != null ? Number(row.producerId) : null,
+
+      importerId:
+        row.importerId != null ? Number(row.importerId) : null,
+
+      unit: row.unit ? String(row.unit) : null,
+      strength: row.strength ? String(row.strength) : null,
+      batchNumber: row.batchNumber ? String(row.batchNumber) : null,
+
+      expiryDate: row.expiryDate
+        ? this.parseExcelDate(row.expiryDate)
+        : null,
+
+      manufacturingDate: row.manufacturingDate
+        ? this.parseExcelDate(row.manufacturingDate)
+        : null,
+
+      minimumStock:
+        row.minimumStock != null ? Number(row.minimumStock) : null,
+
+      reorderLevel:
+        row.reorderLevel != null ? Number(row.reorderLevel) : null,
+
+      isPrescriptionRequired: row.isPrescriptionRequired === true,
+      isActive: row.isActive !== false,
+
+      storageCondition: row.storageCondition
+        ? String(row.storageCondition)
+        : null,
+
+      notes: row.notes ? String(row.notes) : null,
+    }));
+
+  await this.prisma.medicines.createMany({
+    data,
+    skipDuplicates: true,
+  });
+
+  return {
+    message: 'Excel uploaded successfully',
+    inserted: data.length,
+  };
+}
+
+async generateExcelTemplate(): Promise<Buffer> {
+  const headers = [
+    {
+      hospitalId: '',
+      name: '',
+      code: '',
+      stock: '',
+      costPrice: '',
+      MRP: '',
+      sellingPrice: '',
+      PTR: '',
+      HSNCode: '',
+      discountPercent: '',
+      cgstPercent: '',
+      sgstPercent: '',
+      freeUnits: '',
+      producerId: '',
+      importerId: '',
+      unit: '',
+      strength: '',
+      batchNumber: '',
+      expiryDate: '',
+      manufacturingDate: '',
+      minimumStock: '',
+      reorderLevel: '',
+      isPrescriptionRequired: '',
+      isActive: '',
+      storageCondition: '',
+      notes: '',
+    },
+  ];
+
+  const worksheet = XLSX.utils.json_to_sheet(headers);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Medicines');
+
+  return XLSX.write(workbook, {
+    type: 'buffer',
+    bookType: 'xlsx',
+  });
+}
+
 }
