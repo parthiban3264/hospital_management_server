@@ -264,6 +264,12 @@ export class ConsultationService {
         Injection: c.Injection,
         scanningTesting: c.scanningTesting,
         paymentStatus: c.paymentStatus,
+        height: c.height,
+        weight: c.weight,
+        bp: c.bp,
+        sugar: c.sugar,
+        temperature: c.temperature,
+        notes: c.notes,
         Patient: {
           patient_Id: patient.user_Id,
           name: patient.name,
