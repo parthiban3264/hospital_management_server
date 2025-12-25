@@ -289,6 +289,8 @@ export class ConsultationService {
           .map((t) => ({
             title: t.title,
             type: t.type,
+            staff_Id: t.staff_Id,
+            status: t.status,
             scanImages: t.scanImages,
             results: t.result,
             selectedOptions: (Array.isArray(t.selectedOptions)
