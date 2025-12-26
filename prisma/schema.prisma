@@ -206,6 +206,8 @@ model Consultation {
   PK              Float?
   bp              String?
   sugar           String?
+  emergency       Boolean     @default(false)
+  sugerTest       Boolean     @default(false)
   temperature     Float?
   medicineTonic   Boolean     @default(false)
   Injection       Boolean     @default(false)
