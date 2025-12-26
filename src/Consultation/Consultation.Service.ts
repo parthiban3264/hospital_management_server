@@ -269,6 +269,9 @@ export class ConsultationService {
         bp: c.bp,
         sugar: c.sugar,
         temperature: c.temperature,
+        BMI: c.BMI,
+        SPO2: c.SPO2,
+        PK: c.PK,
         notes: c.notes,
         Patient: {
           patient_Id: patient.user_Id,

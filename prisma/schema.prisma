@@ -201,6 +201,9 @@ model Consultation {
   treatment       Boolean     @default(false)
   height          Float?
   weight          Float?
+  BMI             Float?
+  SPO2            Float?
+  PK              Float?
   bp              String?
   sugar           String?
   temperature     Float?
@@ -332,7 +335,7 @@ model Medicines {
   Hospital               Hospital  @relation(fields: [hospitalId], references: [id])
 manufacturer Manufacturer? @relation("MedicineManufacturer", fields: [producerId], references: [id])
   importer               Supplier?     @relation("MedicineSupplier",fields: [importerId], references: [id])
-  medicinePatients       MedicinePatient[]
+  //medicinePatients       MedicinePatient[]
   medicineTransactions   MedicineTransaction[]      // Log of stock in/out
   //MedicineAndInjection   MedicineAndInjection[]     @relation("MedicineAndInjection_Medicine")
 
@@ -387,7 +390,7 @@ model Tonics {
   Hospital               Hospital  @relation(fields: [hospital_Id], references: [id])
 manufacturer Manufacturer? @relation("TonicManufacturer", fields: [producerId], references: [id])
   importer               Supplier?     @relation("TonicSupplier",fields: [importerId], references: [id])
-  tonicPatients          TonicPatient[]
+  //tonicPatients          TonicPatient[]
   tonicTransactions      TonicTransaction[]  
   //MedicineAndInjection   MedicineAndInjection[] @relation("Tonic_MedicineAndInjection")
    @@unique([hospital_Id, code])
@@ -453,7 +456,7 @@ model Injections {
   Hospital               Hospital  @relation(fields: [hospital_Id], references: [id])
 manufacturer Manufacturer? @relation("InjectionManufacturer", fields: [producerId], references: [id])
 importer Supplier? @relation("InjectionSupplier", fields: [importerId], references: [id])
-  injectionPatients      InjectionPatient[]
+  //injectionPatients      InjectionPatient[]
   injectionTransactions  InjectionTransaction[]  
   //MedicineAndInjection   MedicineAndInjection[] @relation("Injection_MedicineAndInjection")
 
