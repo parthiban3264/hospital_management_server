@@ -226,6 +226,7 @@ export class ConsultationService {
         sugar: data.sugar,
         emergency: data.emergency === true,
         sugerTest: data.sugarTest === true,
+        sugerTestQueue: data.sugerTestQueue === true,
         temperature: data.temperature,
 
         notes: data.notes ? JSON.parse(data.notes) : null,

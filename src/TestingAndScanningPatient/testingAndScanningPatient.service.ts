@@ -420,7 +420,8 @@ export class TestingAndScanningPatientService {
         status: rec.status,
         queueStatus: rec.queueStatus ?? 'N/A',
         scheduleDate: rec.scheduleDate,
-        // result: rec.result,
+        result: rec.result,
+        reason: rec.reason,
         createdAt: rec.createdAt,
         Patient: {
           id: patient.id,
