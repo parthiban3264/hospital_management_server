@@ -194,6 +194,11 @@ model Consultation {
   patient_Id      Int
   doctor_Id       String
   purpose         String
+  
+  // ✅ TOKEN SYSTEM
+  // tokenNo         Int  @default(id+1)
+  // tokenDate       String @default("2025-12-27 11:10 PM")
+
   symptoms        Boolean     @default(false)
   notes           Json?
   consultationFee Float   @default(0)
@@ -229,6 +234,8 @@ model Consultation {
   TonicPatient              TonicPatient[]
   Payment                   Payment[]
   TeatingAndScanningPatient TestingAndScanningPatient[]
+  // @@index([tokenDate])
+  // @@unique([hospital_Id, tokenDate, tokenNo]) // 🔒 critical
 }
 
 model Treatment {

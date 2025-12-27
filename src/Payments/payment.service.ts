@@ -32,7 +32,7 @@ async findPendingPaymentsByHospital(hospitalId: number) {
     where: {
       hospital_Id: Number(hospitalId),
       status: {
-        in: ['PENDING','PAID'], // Only pending or ongoing payments
+        in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
       },
       NOT: {type: 'MEDICINETONICINJECTIONFEES' },
     },
