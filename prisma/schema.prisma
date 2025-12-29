@@ -196,12 +196,15 @@ model Consultation {
   purpose         String
   
   // ✅ TOKEN SYSTEM
-  // tokenNo         Int  @default(id+1)
-  // tokenDate       String @default("2025-12-27 11:10 PM")
+  tokenNo         Int? 
+  tokenDate       DateTime?
 
   symptoms        Boolean     @default(false)
   notes           Json?
+  registrationFee Float   @default(0)
   consultationFee Float   @default(0)
+  emergencyFee    Float   @default(0)
+  sugarTestFee    Float   @default(0)
   cancelReason    String?
   treatment       Boolean     @default(false)
   height          Float?
@@ -234,8 +237,6 @@ model Consultation {
   TonicPatient              TonicPatient[]
   Payment                   Payment[]
   TeatingAndScanningPatient TestingAndScanningPatient[]
-  // @@index([tokenDate])
-  // @@unique([hospital_Id, tokenDate, tokenNo]) // 🔒 critical
 }
 
 model Treatment {
@@ -825,6 +826,8 @@ model TestingAndScanningPatient {
   queueStatus           QueueStatus              @default(PENDING)
   selectedOptions       Json?
   selectedOptionResults Json?
+  unSelectedOptions     Json?
+  selectedOptionAmounts Json?
   type                  String?
   status                TestingAndScanningStatus @default(PENDING)
   paymentStatus         Boolean                  @default(false)

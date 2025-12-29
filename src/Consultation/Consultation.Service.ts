@@ -12,280 +12,458 @@ export class ConsultationService {
     private gateway: ConsultationGateway,
   ) {}
 
+  //   async create(data: any) {
+  //   try {
+  //     console.log('Creating consultation with data:', data);
+
+  //     // -------------------- FETCH FEES -------------------- //
+  //     const registrationFee = await this.prisma.fees.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         type: 'REGISTRATION FEE',
+  //       },
+  //     });
+
+  //     const emergencyFee = await this.prisma.fees.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         type: 'EMERGENCY FEE',
+  //       },
+  //     });
+
+  //     const sugarFee = await this.prisma.fees.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         type: 'SUGAR FEE',
+  //       },
+  //     });
+
+  //     // -------------------- FETCH DOCTOR FEE -------------------- //
+  //     const doctorData = await this.prisma.admin.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         user_Id: data.doctor_Id,
+  //       },
+  //     });
+
+  //     const doctorAmount = doctorData?.doctorAmount ?? 0;
+
+  //     // -------------------- AMOUNTS -------------------- //
+  //     const regAmount = registrationFee?.amount ?? 0;
+  //     const emergencyAmount = emergencyFee?.amount ?? 0;
+  //     const sugarAmount = sugarFee?.amount ?? 0;
+
+  //     log('Amounts:', {
+  //       regAmount,
+  //       doctorAmount,
+  //       emergencyAmount,
+  //       sugarAmount,
+  //     });
+
+  //     // -------------------- VALIDATION -------------------- //
+  //     if (!regAmount) {
+  //       return {
+  //         status: 'failed',
+  //         message:
+  //           '⚠️ Registration Fee is not set! Please assign Registration Fee first.',
+  //       };
+  //     }
+
+  //     // -------------------- CALCULATE TOTAL REGISTRATION PAYMENT -------------------- //
+  //     let totalRegistrationAmount = regAmount + doctorAmount;
+  //     let emergencyFeeAmount = 0;
+  //     let sugarFeeAmount = 0;
+
+  //     if (data.emergency === true) {
+  //       totalRegistrationAmount += emergencyAmount;
+  //       emergencyFeeAmount = emergencyAmount;
+  //     }
+
+  //     if (data.sugarTest === true) {
+  //       totalRegistrationAmount += sugarAmount;
+  //       sugarFeeAmount = sugarAmount;
+  //     }
+
+  //     // -------------------- CREATE CONSULTATION -------------------- //
+  //     const consultation = await this.prisma.consultation.create({
+  //       data: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         patient_Id: data.patient_Id,
+  //         doctor_Id: data.doctor_Id,
+  //         purpose: data.purpose,
+  //         symptoms: data.symptoms,
+
+  //         consultationFee: doctorAmount, // ✅ ONLY doctor fee
+  //         emergencyFee: emergencyFeeAmount,
+  //         sugarTestFee: sugarFeeAmount,
+  //         registrationFee: regAmount,
+
+  //         bp: data.bp,
+  //         weight: data.weight,
+  //         height: data.height,
+  //         sugar: data.sugar,
+  //         emergency: data.emergency === true,
+  //         sugerTest: data.sugarTest === true,
+  //         sugerTestQueue: data.sugerTestQueue === true,
+  //         temperature: data.temperature,
+
+  //         notes: data.notes ? JSON.parse(data.notes) : null,
+  //         paymentStatus: false,
+  //         createdAt: data.createdAt || new Date(),
+  //       },
+  //     });
+
+  //     console.log('Consultation created:', consultation.id);
+
+  //     // -------------------- CREATE PAYMENT -------------------- //
+  //     const payment = await this.prisma.payment.create({
+  //       data: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         patient_Id: data.patient_Id,
+  //         consultation_Id: consultation.id,
+
+  //         reason: 'Registration Fee',
+  //         status: 'PENDING',
+
+  //         amount: totalRegistrationAmount, // ✅ ALL fees combined
+
+  //         type: 'REGISTRATIONFEE',
+  //         createdAt: data.createdAt || new Date(),
+  //       },
+  //     });
+
+  //     // -------------------- SUCCESS RESPONSE -------------------- //
+  //     return {
+  //       status: 'success',
+  //       data: {
+  //         consultationId: consultation.id,
+  //         paymentId: payment.id,
+  //         totalAmount: totalRegistrationAmount,
+  //       },
+  //     };
+  //   } catch (error) {
+  //     console.error('Create consultation error:', error);
+  //     return {
+  //       status: 'failed',
+  //       error: error.message,
+  //     };
+  //   }
+  // }
 
   async create(data: any) {
-  try {
-    console.log('Creating consultation with data:', data);
+    try {
+      console.log('Creating consultation with data:', data);
 
-    // -------------------- FETCH FEES -------------------- //
-    const registrationFee = await this.prisma.fees.findFirst({
-      where: {
-        hospital_Id: Number(data.hospital_Id),
-        type: 'REGISTRATION FEE',
-      },
-    });
+      // -------------------- FETCH FEES -------------------- //
+      const registrationFee = await this.prisma.fees.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          type: 'REGISTRATION FEE',
+        },
+      });
 
-    const emergencyFee = await this.prisma.fees.findFirst({
-      where: {
-        hospital_Id: Number(data.hospital_Id),
-        type: 'EMERGENCY FEE',
-      },
-    });
+      const emergencyFee = await this.prisma.fees.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          type: 'EMERGENCY FEE',
+        },
+      });
 
-    const sugarFee = await this.prisma.fees.findFirst({
-      where: {
-        hospital_Id: Number(data.hospital_Id),
-        type: 'SUGAR FEE',
-      },
-    });
+      const sugarFee = await this.prisma.fees.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          type: 'SUGAR FEE',
+        },
+      });
 
-    // -------------------- FETCH DOCTOR FEE -------------------- //
-    const doctorData = await this.prisma.admin.findFirst({
-      where: {
-        hospital_Id: Number(data.hospital_Id),
-        user_Id: data.doctor_Id,
-      },
-    });
+      // -------------------- FETCH DOCTOR FEE -------------------- //
+      const doctorData = await this.prisma.admin.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          user_Id: data.doctor_Id,
+        },
+      });
 
-    const doctorAmount = doctorData?.doctorAmount ?? 0;
+      const doctorAmount = doctorData?.doctorAmount ?? 0;
 
-    // -------------------- AMOUNTS -------------------- //
-    const regAmount = registrationFee?.amount ?? 0;
-    const emergencyAmount = emergencyFee?.amount ?? 0;
-    const sugarAmount = sugarFee?.amount ?? 0;
+      // -------------------- AMOUNTS -------------------- //
+      const regAmount = registrationFee?.amount ?? 0;
+      const emergencyAmount = emergencyFee?.amount ?? 0;
+      const sugarAmount = sugarFee?.amount ?? 0;
 
-    // -------------------- VALIDATION -------------------- //
-    if (!regAmount) {
+      console.log('Amounts:', {
+        regAmount,
+        doctorAmount,
+        emergencyAmount,
+        sugarAmount,
+      });
+
+      // -------------------- VALIDATION -------------------- //
+      if (!regAmount) {
+        return {
+          status: 'failed',
+          message:
+            '⚠️ Registration Fee is not set! Please assign Registration Fee first.',
+        };
+      }
+
+      // -------------------- CALCULATE TOTAL REGISTRATION PAYMENT -------------------- //
+      let totalRegistrationAmount = regAmount + doctorAmount;
+      let emergencyFeeAmount = 0;
+      let sugarFeeAmount = 0;
+
+      if (data.emergency === true) {
+        totalRegistrationAmount += emergencyAmount;
+        emergencyFeeAmount = emergencyAmount;
+      }
+
+      if (data.sugarTest === true) {
+        totalRegistrationAmount += sugarAmount;
+        sugarFeeAmount = sugarAmount;
+      }
+
+      // -------------------- STEP 1: Normalize today's date (UTC) -------------------- //
+      const today = new Date();
+      const tokenDateOnly = new Date(
+        Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()),
+      );
+
+      // -------------------- STEP 2: Get the max token number for today -------------------- //
+      const maxTokenToday = await this.prisma.consultation.aggregate({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          tokenDate: tokenDateOnly,
+        },
+        _max: {
+          tokenNo: true,
+        },
+      });
+
+      // -------------------- STEP 3: Determine token number -------------------- //
+      let tokenNo: number;
+
+      // ✅ Daily token logic: always increment from today's max
+      tokenNo = (maxTokenToday._max.tokenNo || 0) + 1;
+
+      console.log(
+        `Assigning tokenNo: ${tokenNo} for hospital ${data.hospital_Id} on date ${tokenDateOnly.toISOString().split('T')[0]}`,
+      );
+
+      // -------------------- CREATE CONSULTATION -------------------- //
+      const consultation = await this.prisma.consultation.create({
+        data: {
+          hospital_Id: Number(data.hospital_Id),
+          patient_Id: data.patient_Id,
+          doctor_Id: data.doctor_Id,
+          purpose: data.purpose,
+          symptoms: data.symptoms,
+
+          // ✅ TOKEN
+          tokenNo: tokenNo,
+          tokenDate: tokenDateOnly,
+
+          consultationFee: doctorAmount,
+          emergencyFee: emergencyFeeAmount,
+          sugarTestFee: sugarFeeAmount,
+          registrationFee: regAmount,
+
+          bp: data.bp,
+          weight: data.weight,
+          height: data.height,
+          sugar: data.sugar,
+          emergency: data.emergency === true,
+          sugerTest: data.sugarTest === true,
+          sugerTestQueue: data.sugerTestQueue === true,
+          temperature: data.temperature,
+
+          notes: data.notes ? JSON.parse(data.notes) : null,
+          paymentStatus: false,
+          createdAt: data.createdAt || new Date(),
+        },
+      });
+
+      console.log('Consultation created:', consultation.id);
+
+      // -------------------- CREATE PAYMENT -------------------- //
+      const payment = await this.prisma.payment.create({
+        data: {
+          hospital_Id: Number(data.hospital_Id),
+          patient_Id: data.patient_Id,
+          consultation_Id: consultation.id,
+
+          reason: 'Registration Fee',
+          status: 'PENDING',
+          amount: totalRegistrationAmount,
+          type: 'REGISTRATIONFEE',
+          createdAt: data.createdAt || new Date(),
+        },
+      });
+
+      // -------------------- SUCCESS RESPONSE -------------------- //
+      return {
+        status: 'success',
+        data: {
+          consultationId: consultation.id,
+          paymentId: payment.id,
+          tokenNo: tokenNo,
+          totalAmount: totalRegistrationAmount,
+        },
+      };
+    } catch (error) {
+      console.error('Create consultation error:', error);
       return {
         status: 'failed',
-        message:
-          '⚠️ Registration Fee is not set! Please assign Registration Fee first.',
+        error: error.message,
       };
     }
-
-    // -------------------- CALCULATE TOTAL REGISTRATION PAYMENT -------------------- //
-    let totalRegistrationAmount = regAmount + doctorAmount;
-
-    if (data.emergency === true) {
-      totalRegistrationAmount += emergencyAmount;
-    }
-
-    if (data.sugarTest === true) {
-      totalRegistrationAmount += sugarAmount;
-    }
-
-    // -------------------- CREATE CONSULTATION -------------------- //
-    const consultation = await this.prisma.consultation.create({
-      data: {
-        hospital_Id: Number(data.hospital_Id),
-        patient_Id: data.patient_Id,
-        doctor_Id: data.doctor_Id,
-        purpose: data.purpose,
-        symptoms: data.symptoms,
-
-        consultationFee: doctorAmount, // ✅ ONLY doctor fee
-
-        bp: data.bp,
-        weight: data.weight,
-        height: data.height,
-        sugar: data.sugar,
-        emergency: data.emergency === true,
-        sugerTest: data.sugarTest === true,
-        sugerTestQueue: data.sugerTestQueue === true,
-        temperature: data.temperature,
-
-        notes: data.notes ? JSON.parse(data.notes) : null,
-        paymentStatus: false,
-        createdAt: data.createdAt || new Date(),
-      },
-    });
-
-    console.log('Consultation created:', consultation.id);
-
-    // -------------------- CREATE PAYMENT -------------------- //
-    const payment = await this.prisma.payment.create({
-      data: {
-        hospital_Id: Number(data.hospital_Id),
-        patient_Id: data.patient_Id,
-        consultation_Id: consultation.id,
-
-        reason: 'Registration Fee',
-        status: 'PENDING',
-
-        amount: totalRegistrationAmount, // ✅ ALL fees combined
-
-        type: 'REGISTRATIONFEE',
-        createdAt: data.createdAt || new Date(),
-      },
-    });
-
-    // -------------------- SUCCESS RESPONSE -------------------- //
-    return {
-      status: 'success',
-      data: {
-        consultationId: consultation.id,
-        paymentId: payment.id,
-        totalAmount: totalRegistrationAmount,
-      },
-    };
-  } catch (error) {
-    console.error('Create consultation error:', error);
-    return {
-      status: 'failed',
-      error: error.message,
-    };
   }
-}
 
+  // async create(data: any) {
+  //   try {
+  //     console.log('Creating consultation with data:', data);
 
+  //     // -------------------- FETCH FEES -------------------- //
+  //     const registrationFee = await this.prisma.fees.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         type: 'REGISTRATION FEE',
+  //       },
+  //     });
 
-// async create(data: any) {
-//   try {
-//     console.log('Creating consultation with data:', data);
+  //     const emergencyFee = await this.prisma.fees.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         type: 'EMERGENCY FEE',
+  //       },
+  //     });
 
-//     // -------------------- FETCH FEES -------------------- //
-//     const registrationFee = await this.prisma.fees.findFirst({
-//       where: {
-//         hospital_Id: Number(data.hospital_Id),
-//         type: 'REGISTRATION FEE',
-//       },
-//     });
+  //     const sugarFee = await this.prisma.fees.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         type: 'SUGAR FEE',
+  //       },
+  //     });
 
-//     const emergencyFee = await this.prisma.fees.findFirst({
-//       where: {
-//         hospital_Id: Number(data.hospital_Id),
-//         type: 'EMERGENCY FEE',
-//       },
-//     });
+  //     // -------------------- FETCH DOCTOR FEE -------------------- //
+  //     const doctorData = await this.prisma.admin.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         user_Id: data.doctor_Id,
+  //       },
+  //     });
 
-//     const sugarFee = await this.prisma.fees.findFirst({
-//       where: {
-//         hospital_Id: Number(data.hospital_Id),
-//         type: 'SUGAR FEE',
-//       },
-//     });
+  //     const doctorAmount = doctorData?.doctorAmount ?? 0;
 
-//     // -------------------- FETCH DOCTOR FEE -------------------- //
-//     const doctorData = await this.prisma.admin.findFirst({
-//       where: {
-//         hospital_Id: Number(data.hospital_Id),
-//         user_Id: data.doctor_Id,
-//       },
-//     });
+  //     // -------------------- AMOUNTS -------------------- //
+  //     const regAmount = registrationFee?.amount ?? 0;
+  //     const emergencyAmount = emergencyFee?.amount ?? 0;
+  //     const sugarAmount = sugarFee?.amount ?? 0;
 
-//     const doctorAmount = doctorData?.doctorAmount ?? 0;
+  //     // -------------------- VALIDATION -------------------- //
+  //     if (!regAmount) {
+  //       return {
+  //         status: 'failed',
+  //         message:
+  //           '⚠️ Registration Fee is not set! Please assign Registration Fee first.',
+  //       };
+  //     }
 
-//     // -------------------- AMOUNTS -------------------- //
-//     const regAmount = registrationFee?.amount ?? 0;
-//     const emergencyAmount = emergencyFee?.amount ?? 0;
-//     const sugarAmount = sugarFee?.amount ?? 0;
+  //     // -------------------- CALCULATE TOTAL REGISTRATION PAYMENT -------------------- //
+  //     let totalRegistrationAmount = regAmount + doctorAmount;
 
-//     // -------------------- VALIDATION -------------------- //
-//     if (!regAmount) {
-//       return {
-//         status: 'failed',
-//         message:
-//           '⚠️ Registration Fee is not set! Please assign Registration Fee first.',
-//       };
-//     }
+  //     if (data.emergency === true) {
+  //       totalRegistrationAmount += emergencyAmount;
+  //     }
 
-//     // -------------------- CALCULATE TOTAL REGISTRATION PAYMENT -------------------- //
-//     let totalRegistrationAmount = regAmount + doctorAmount;
+  //     if (data.sugarTest === true) {
+  //       totalRegistrationAmount += sugarAmount;
+  //     }
 
-//     if (data.emergency === true) {
-//       totalRegistrationAmount += emergencyAmount;
-//     }
+  //     // -------------------- TOKEN SYSTEM -------------------- //
+  //     const now = new Date();
+  //     const tokenDateStr = format(now, 'yyyy-MM-dd hh:mm a'); // full timestamp
+  //     const todayKey = format(now, 'yyyy-MM-dd'); // for daily reset
 
-//     if (data.sugarTest === true) {
-//       totalRegistrationAmount += sugarAmount;
-//     }
+  //     const lastToken = await this.prisma.consultation.findFirst({
+  //       where: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         tokenDate: { startsWith: todayKey },
+  //       },
+  //       orderBy: { tokenNo: 'desc' },
+  //       select: { tokenNo: true },
+  //     });
 
-//     // -------------------- TOKEN SYSTEM -------------------- //
-//     const now = new Date();
-//     const tokenDateStr = format(now, 'yyyy-MM-dd hh:mm a'); // full timestamp
-//     const todayKey = format(now, 'yyyy-MM-dd'); // for daily reset
+  //     const nextToken = (lastToken?.tokenNo ?? 0) + 1;
 
-//     const lastToken = await this.prisma.consultation.findFirst({
-//       where: {
-//         hospital_Id: Number(data.hospital_Id),
-//         tokenDate: { startsWith: todayKey },
-//       },
-//       orderBy: { tokenNo: 'desc' },
-//       select: { tokenNo: true },
-//     });
+  //     // -------------------- CREATE CONSULTATION -------------------- //
+  //     const consultation = await this.prisma.consultation.create({
+  //       data: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         patient_Id: data.patient_Id,
+  //         doctor_Id: data.doctor_Id,
+  //         purpose: data.purpose,
+  //         symptoms: data.symptoms,
 
-//     const nextToken = (lastToken?.tokenNo ?? 0) + 1;
+  //         consultationFee: doctorAmount, // ✅ ONLY doctor fee
 
-//     // -------------------- CREATE CONSULTATION -------------------- //
-//     const consultation = await this.prisma.consultation.create({
-//       data: {
-//         hospital_Id: Number(data.hospital_Id),
-//         patient_Id: data.patient_Id,
-//         doctor_Id: data.doctor_Id,
-//         purpose: data.purpose,
-//         symptoms: data.symptoms,
+  //         bp: data.bp,
+  //         weight: data.weight,
+  //         height: data.height,
+  //         sugar: data.sugar,
+  //         emergency: data.emergency === true,
+  //         sugerTest: data.sugarTest === true,
+  //         sugerTestQueue: data.sugerTestQueue === true,
+  //         temperature: data.temperature,
 
-//         consultationFee: doctorAmount, // ✅ ONLY doctor fee
+  //         notes: data.notes ? JSON.parse(data.notes) : null,
+  //         paymentStatus: false,
+  //         createdAt: data.createdAt || new Date(),
 
-//         bp: data.bp,
-//         weight: data.weight,
-//         height: data.height,
-//         sugar: data.sugar,
-//         emergency: data.emergency === true,
-//         sugerTest: data.sugarTest === true,
-//         sugerTestQueue: data.sugerTestQueue === true,
-//         temperature: data.temperature,
+  //         // ✅ Add token
+  //         tokenNo: nextToken,
+  //         tokenDate: tokenDateStr,
+  //       },
+  //     });
 
-//         notes: data.notes ? JSON.parse(data.notes) : null,
-//         paymentStatus: false,
-//         createdAt: data.createdAt || new Date(),
+  //     console.log('Consultation created:', consultation.id);
 
-//         // ✅ Add token
-//         tokenNo: nextToken,
-//         tokenDate: tokenDateStr,
-//       },
-//     });
+  //     // -------------------- CREATE PAYMENT -------------------- //
+  //     const payment = await this.prisma.payment.create({
+  //       data: {
+  //         hospital_Id: Number(data.hospital_Id),
+  //         patient_Id: data.patient_Id,
+  //         consultation_Id: consultation.id,
 
-//     console.log('Consultation created:', consultation.id);
+  //         reason: 'Registration Fee',
+  //         status: 'PENDING',
 
-//     // -------------------- CREATE PAYMENT -------------------- //
-//     const payment = await this.prisma.payment.create({
-//       data: {
-//         hospital_Id: Number(data.hospital_Id),
-//         patient_Id: data.patient_Id,
-//         consultation_Id: consultation.id,
+  //         amount: totalRegistrationAmount, // ✅ ALL fees combined
 
-//         reason: 'Registration Fee',
-//         status: 'PENDING',
+  //         type: 'REGISTRATIONFEE',
+  //         createdAt: data.createdAt || new Date(),
+  //       },
+  //     });
 
-//         amount: totalRegistrationAmount, // ✅ ALL fees combined
+  //     // -------------------- SUCCESS RESPONSE -------------------- //
+  //     return {
+  //       status: 'success',
+  //       data: {
+  //         consultationId: consultation.id,
+  //         paymentId: payment.id,
+  //         totalAmount: totalRegistrationAmount,
+  //         tokenNo: nextToken,
+  //         tokenDate: tokenDateStr,
+  //       },
+  //     };
+  //   } catch (error) {
+  //     console.error('Create consultation error:', error);
+  //     return {
+  //       status: 'failed',
+  //       error: error.message,
+  //     };
+  //   }
 
-//         type: 'REGISTRATIONFEE',
-//         createdAt: data.createdAt || new Date(),
-//       },
-//     });
-
-//     // -------------------- SUCCESS RESPONSE -------------------- //
-//     return {
-//       status: 'success',
-//       data: {
-//         consultationId: consultation.id,
-//         paymentId: payment.id,
-//         totalAmount: totalRegistrationAmount,
-//         tokenNo: nextToken,
-//         tokenDate: tokenDateStr,
-//       },
-//     };
-//   } catch (error) {
-//     console.error('Create consultation error:', error);
-//     return {
-//       status: 'failed',
-//       error: error.message,
-//     };
-//   }
-
-// }
-
+  // }
 
   async findAll() {
     const consultations = await this.prisma.consultation.findMany({

@@ -88,6 +88,7 @@ export class TestingAndScanningPatientService {
           type: data.type,
           selectedOptions: data.selectedOptions,
           selectedOptionResults: data.selectedOptionResults,
+          selectedOptionAmounts: data.selectedOptionAmounts,
           status: data.status,
           amount: data.amount,
           reason: data.reason,
