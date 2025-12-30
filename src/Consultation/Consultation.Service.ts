@@ -608,6 +608,8 @@ export class ConsultationService {
         SPO2: c.SPO2,
         PK: c.PK,
         notes: c.notes,
+        tokenNo: c.tokenNo,
+        tokenDate: c.tokenDate,
         Patient: {
           patient_Id: patient.user_Id,
           name: patient.name,

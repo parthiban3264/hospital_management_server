@@ -184,7 +184,7 @@ export class TestingAndScanningPatientService {
             gender: true,
             phone: true,
             address: true,
-            Consultation: { select: { id: true, doctor_Id: true } },
+            Consultation: { select: { id: true, doctor_Id: true,tokenNo:true,tokenDate:true, } },
           },
         },
       },
@@ -438,6 +438,8 @@ export class TestingAndScanningPatientService {
               ? ((patient.phone as any).mobile ?? '-')
               : '-',
           doctor: doctorInfo,
+          tokenNo: patient.Consultation && patient.Consultation.length > 0
+            ? patient.Consultation[0].tokenNo ?? '-': '-',
         },
         Hospital: {
           name: hospital.name ?? 'N/A',
