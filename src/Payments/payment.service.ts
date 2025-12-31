@@ -135,7 +135,7 @@ async findPendingPaidByHospitalNew(hospitalId: number) {
         status: "PENDING",
         //paymentStatus: true,
         symptoms: false,
-        sugerTestQueue: true,
+        //sugerTestQueue: true,
       },
     },
     include: {
