@@ -38,8 +38,8 @@ async findPendingPaymentsByHospital(hospitalId: number) {
     },
     include: {
       Hospital: {select: {id:true ,name: true,}},
-      Patient: {select: {id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,},},
-      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true} },
+      Patient: {select: {id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,bldGrp:true},},
+      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,PK:true, SPO2:true,temperature:true,height:true,weight:true, bp:true, BMI:true, emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true} },
       TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true,amount:true,selectedOptions:true,selectedOptionAmounts:true,unSelectedOptions:true },},
       MedicinePatient: {select: { id: true, medicine_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
       TonicPatient: {select: { id: true, tonic_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},

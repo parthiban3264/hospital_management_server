@@ -112,10 +112,11 @@ model Admin {
 model ButtonPermission {
   id          Int      @id @default(autoincrement())
   hospital_Id Int
-  key         String   @unique
-  designation String? // optional template (Doctor, Nurse, etc.)
+  key         String   
+  designation String // optional template (Doctor, Nurse, etc.)
   defaultIds  Json? // optional default permission IDs for designation
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
+  @@unique([designation, key])
 }
 
 model AdminStrator {
