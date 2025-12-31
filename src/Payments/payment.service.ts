@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { log } from "console";
 import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
@@ -33,6 +34,35 @@ async findPendingPaymentsByHospital(hospitalId: number) {
       hospital_Id: Number(hospitalId),
       status: {
         in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
+      },
+      NOT: {type: 'MEDICINETONICINJECTIONFEES' },
+    },
+    include: {
+      Hospital: {select: {id:true ,name: true,}},
+      Patient: {select: {id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,bldGrp:true},},
+      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,PK:true, SPO2:true,temperature:true,height:true,weight:true, bp:true, BMI:true, emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true} },
+      TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true,amount:true,selectedOptions:true,selectedOptionAmounts:true,unSelectedOptions:true },},
+      MedicinePatient: {select: { id: true, medicine_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+      TonicPatient: {select: { id: true, tonic_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+      InjectionPatient: {select: { id: true, injection_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+    },
+    orderBy: {
+      createdAt: 'asc', // Sort by creation date
+    },
+  });
+}
+async findPendingPaymentsByHospitalNew(hospitalId: number) {
+  return this.prisma.payment.findMany({
+    where: {
+      hospital_Id: Number(hospitalId),
+      status: {
+        in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
+      },
+      Consultation: {
+        //status: "PENDING",
+        //paymentStatus: true,
+        symptoms: true,
+        //sugerTestQueue: false,
       },
       NOT: {type: 'MEDICINETONICINJECTIONFEES' },
     },
@@ -94,6 +124,53 @@ async findPendingPaidByHospital(hospitalId: number) {
     },
   });
 }
+async findPendingPaidByHospitalNew(hospitalId: number) {
+  return this.prisma.payment.findMany({
+    where: {
+      hospital_Id: Number(hospitalId),
+      status: "PENDING",
+      type:'REGISTRATIONFEE',
+
+      Consultation: {
+        status: "PENDING",
+        //paymentStatus: true,
+        symptoms: false,
+        sugerTestQueue: true,
+      },
+    },
+    include: {
+      Hospital: true,
+      Patient: true,
+      Consultation: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+}
+
+
+
+
+// async findPendingPaidByHospital(hospitalId: number) {
+//   return this.prisma.payment.findMany({
+//     where: {
+//       hospital_Id: Number(hospitalId),
+//       status: {
+//         in: ['PAID'], // Only pending or ongoing payments
+//       },
+//     },
+//     include: {
+//       Hospital: true,
+//       Patient: true,
+//       Consultation: true,
+//     },
+//     orderBy: {
+//       createdAt: 'asc', // Sort by creation date
+//     },
+//   });
+// }
+
 
 async findPaidByHospitalAccounts(hospitalId: number) {
   return this.prisma.payment.findMany({
@@ -125,6 +202,14 @@ async findPaidByHospitalAccounts(hospitalId: number) {
   async findAll(hospital: number) {
     const payments = await this.prisma.payment.findMany({
       where: { hospital_Id: Number(hospital) },
+    });
+    return { status: "success", message: "Payments fetched", data: payments };
+  }
+
+  async findOnes(hospital: number, id: number) {
+    log('hospital and id', hospital, id);
+    const payments = await this.prisma.payment.findMany({
+      where: { hospital_Id: Number(hospital), id: Number(id) },
     });
     return { status: "success", message: "Payments fetched", data: payments };
   }

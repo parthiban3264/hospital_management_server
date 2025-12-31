@@ -83,6 +83,13 @@ export class TestingAndScanningPatientController {
   findAllTestandScan(@Param('hospital_Id') hospital_Id: number) {
     return this.service.finfindAllTestandScan(Number(hospital_Id));
   }
+
+   @Get('all/pendingPaymentStatus/:hospital_Id/:doctorId')
+  findAllEditTestandScan(@Param('hospital_Id') hospital_Id: number, @Param('doctorId') doctorId: string) {
+    return this.service.finfindAllEditTestandScan(Number(hospital_Id), doctorId);
+  }
+
+
   @Patch('update-payment-status/:paymentId')
   async updateTestingAndScanning(@Param('paymentId') paymentId: number) {
     try {

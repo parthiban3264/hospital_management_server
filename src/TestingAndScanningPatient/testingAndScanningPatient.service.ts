@@ -471,6 +471,25 @@ export class TestingAndScanningPatientService {
     });
     return { status: 'success', message: 'Records fetched', data: records };
   }
+  async finfindAllEditTestandScan(hospital_Id: number, doctorId: string) {
+    const records = await this.prisma.testingAndScanningPatient.findMany({
+      where: {
+        hospital_Id: Number(hospital_Id),
+       doctor_Id: { equals: doctorId },
+       paymentStatus: false,
+       status: { in: ['PENDING'] },
+      },
+      include: {
+        Hospital: true,
+        Payment: true,
+        Patient: {
+          include: { Consultation: true },
+        },
+      },
+    });
+    return { status: 'success', message: 'Records fetched', data: records };
+  }
+  
 
   async findOne(id: number) {
     const record = await this.prisma.testingAndScanningPatient.findUnique({

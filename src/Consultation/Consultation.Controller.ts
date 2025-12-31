@@ -22,7 +22,13 @@ export class ConsultationController {
     const consultations = await this.service.findAllByHospitalOverview(hospitalId);
     return { status: 'success', message: 'Consultations fetched', data: consultations };
   }
-  
+
+   @Get('history/:hospitalId/:patientId')
+  async findAllByHospitalHistory(@Param('hospitalId') hospitalId: number, @Param('patientId') patientId: String) {
+
+    const consultations = await this.service.findAllByHospitalHistory(hospitalId, patientId);
+    return { status: 'success', message: 'Consultations fetched', data: consultations };
+  }
    @Get('all/drqueue/:hospitalId')
   async findAllByHospitalDrQueue(@Param('hospitalId') hospitalId: number) {
     

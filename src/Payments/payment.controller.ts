@@ -14,15 +14,28 @@ export class PaymentController {
   findAll(@Param('hospitalId') hospitalId: number) {
     return this.service.findAll(Number(hospitalId));
   }
+  @Get('one/:hospitalId/:id')
+  findOnes(@Param('hospitalId') hospitalId: number, @Param('id') id: number) {
+    return this.service.findOnes(Number(hospitalId), id);
+  }
 
   @Get('all/pending/:hospitalId')
 async getPendingPayments(@Param('hospitalId') hospitalId: number) {
   return this.service.findPendingPaymentsByHospital(hospitalId);
 }
+ @Get('all/pendingFee/:hospitalId')
+async getPendingPayment(@Param('hospitalId') hospitalId: number) {
+  return this.service.findPendingPaymentsByHospitalNew(hospitalId);
+}
 
   @Get('all/paid/:hospitalId')
 async getPaidPayments(@Param('hospitalId') hospitalId: number) {
   return this.service.findPendingPaidByHospital(hospitalId);
+}
+
+  @Get('all/paidFee/:hospitalId')
+async getPaidPayment(@Param('hospitalId') hospitalId: number) {
+  return this.service.findPendingPaidByHospitalNew(hospitalId);
 }
   @Get('all/paid/Accounts/:hospitalId')
 async getPaidAccounts(@Param('hospitalId') hospitalId: number) {

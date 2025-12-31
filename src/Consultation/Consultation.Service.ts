@@ -3,6 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ConsultationGateway } from './consultation.gateway';
 import { QueueStatus } from '@prisma/client';
 import { log } from 'console';
+import { PaymentStatus } from 'generated/prisma';
+import { equal } from 'assert';
 //import { format } from 'date-fns';
 
 @Injectable()
@@ -503,6 +505,31 @@ export class ConsultationService {
     });
   }
 
+  async findAllByHospitalHistory(hospitalId: number, patientId: String) {
+    return this.prisma.consultation.findMany({
+      where: {
+        hospital_Id: Number(hospitalId),
+        patient_Id:  Number(patientId),
+        status: {
+          in: ['CANCELLED', 'COMPLETED'],
+        },
+      }, //,'COMPLETED' assuming hospitalId is numeric
+      include: {
+        Hospital: true,
+        Patient: {
+          include: {
+            TestingAndScanning: true,
+          },
+        },
+        Doctor: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
+
+
   async findAllByHospitalDrQueue(hospitalId: number) {
     // Step 1️⃣: Fetch consultations
     const consultations = await this.prisma.consultation.findMany({
@@ -526,6 +553,7 @@ export class ConsultationService {
             // TestingAndScanning: true,
           },
         },
+        Payment: true,
         Doctor: { select: { user_Id: true, name: true, specialist: true } },
         TeatingAndScanningPatient: true,
       },
@@ -610,6 +638,7 @@ export class ConsultationService {
         notes: c.notes,
         tokenNo: c.tokenNo,
         tokenDate: c.tokenDate,
+        payment: c.Payment,
         Patient: {
           patient_Id: patient.user_Id,
           name: patient.name,
@@ -630,6 +659,8 @@ export class ConsultationService {
             title: t.title,
             type: t.type,
             staff_Id: t.staff_Id,
+            payment_Id: t.payment_Id,
+            paymentStatus: t.paymentStatus,
             status: t.status,
             scanImages: t.scanImages,
             results: t.result,
