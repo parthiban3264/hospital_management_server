@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as sharp from "sharp";
 import Jimp from "jimp";
+import { log } from "console";
 
 
 @Controller("testing_and_scanning_patient")
@@ -15,6 +16,7 @@ export class TestingAndScanningPatientController {
 
   @Post('create')
   create(@Body() data: any) {
+    log('Creating Testing & Scanning Patient...,data:', data);
     return this.service.create(data);
   }
 //  @Post('create')

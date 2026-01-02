@@ -112,11 +112,11 @@ model Admin {
 model ButtonPermission {
   id          Int      @id @default(autoincrement())
   hospital_Id Int
-  key         String   
+  key         String   @unique
   designation String // optional template (Doctor, Nurse, etc.)
   defaultIds  Json? // optional default permission IDs for designation
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
-  @@unique([designation, key])
+  //@@unique([designation, key])
 }
 
 model AdminStrator {
@@ -147,6 +147,7 @@ model Patient {
   photo          String?       @default("null")
   status         PatientStatus @default(ACTIVE)
   address        Json?
+  
   dob            DateTime
   gender         String?
   bldGrp         String?
@@ -215,6 +216,7 @@ model Consultation {
   PK              Float?
   bp              String?
   sugar           String?
+  isTestOnly     Boolean       @default(false)
   emergency       Boolean     @default(false)
   sugerTest       Boolean     @default(false)
   sugerTestQueue  Boolean     @default(false)

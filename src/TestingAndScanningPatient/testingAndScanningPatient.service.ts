@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { log } from 'console';
 import { scan } from 'rxjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -40,7 +41,9 @@ export class TestingAndScanningPatientService {
   //   return { test, payment };
   // }
   async create(data: any) {
+    log('Creating Testing & Scanning Patient with Payment...,data:', data);
     return this.prisma.$transaction(async (tx) => {
+      
       // Step 1: Find an existing PENDING payment for the same patient in the same hospital
       let payment = await tx.payment.findFirst({
         where: {
@@ -184,7 +187,7 @@ export class TestingAndScanningPatientService {
             gender: true,
             phone: true,
             address: true,
-            Consultation: { select: { id: true, doctor_Id: true,tokenNo:true,tokenDate:true, } },
+            Consultation: { select: { id: true, doctor_Id: true,tokenNo:true,tokenDate:true,isTestOnly:true } },
           },
         },
       },
@@ -478,6 +481,9 @@ export class TestingAndScanningPatientService {
        doctor_Id: { equals: doctorId },
        paymentStatus: false,
        status: { in: ['PENDING'] },
+       Consultation: {
+         isTestOnly: false,
+       },
       },
       include: {
         Hospital: true,

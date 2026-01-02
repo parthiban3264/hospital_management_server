@@ -69,7 +69,7 @@ async findPendingPaymentsByHospitalNew(hospitalId: number) {
     include: {
       Hospital: {select: {id:true ,name: true,}},
       Patient: {select: {id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,bldGrp:true},},
-      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,PK:true, SPO2:true,temperature:true,height:true,weight:true, bp:true, BMI:true, emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true} },
+      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,PK:true, SPO2:true,temperature:true,height:true,weight:true, bp:true, BMI:true, emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true,isTestOnly:true} },
       TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true,amount:true,selectedOptions:true,selectedOptionAmounts:true,unSelectedOptions:true },},
       MedicinePatient: {select: { id: true, medicine_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
       TonicPatient: {select: { id: true, tonic_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
@@ -80,6 +80,37 @@ async findPendingPaymentsByHospitalNew(hospitalId: number) {
     },
   });
 }
+async findPendingPaymentsByHospitalNewTest(hospitalId: number) {
+  return this.prisma.payment.findMany({
+    where: {
+      hospital_Id: Number(hospitalId),
+      status: {
+        in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
+      },
+      Consultation: {
+        isTestOnly:true,
+        //status: "PENDING",
+        //paymentStatus: true,
+        // symptoms: true,
+        //sugerTestQueue: false,
+      },
+      NOT: {type: 'MEDICINETONICINJECTIONFEES' },
+    },
+    include: {
+      Hospital: {select: {id:true ,name: true,}},
+      Patient: {select: {id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,bldGrp:true},},
+      Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,PK:true, SPO2:true,temperature:true,height:true,weight:true, bp:true, BMI:true, emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true,isTestOnly:true} },
+      TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true,amount:true,selectedOptions:true,selectedOptionAmounts:true,unSelectedOptions:true },},
+      MedicinePatient: {select: { id: true, medicine_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+      TonicPatient: {select: { id: true, tonic_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+      InjectionPatient: {select: { id: true, injection_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+    },
+    orderBy: {
+      createdAt: 'asc', // Sort by creation date
+    },
+  });
+}
+
 
 // async findPendingPaidByHospital(hospitalId: number) {
 //   return this.prisma.payment.findMany({
@@ -131,12 +162,12 @@ async findPendingPaidByHospitalNew(hospitalId: number) {
       status: "PENDING",
       type:'REGISTRATIONFEE',
 
-      Consultation: {
-        status: "PENDING",
-        //paymentStatus: true,
-        symptoms: false,
-        //sugerTestQueue: true,
-      },
+      // Consultation: {
+      //   //status: "PENDING",
+      //   //paymentStatus: true,
+      //   //symptoms: false,
+      //   //sugerTestQueue: true,
+      // },
     },
     include: {
       Hospital: true,

@@ -27,7 +27,10 @@ async getPendingPayments(@Param('hospitalId') hospitalId: number) {
 async getPendingPayment(@Param('hospitalId') hospitalId: number) {
   return this.service.findPendingPaymentsByHospitalNew(hospitalId);
 }
-
+ @Get('all/pendingTestFee/:hospitalId')
+async getPendingTestPayment(@Param('hospitalId') hospitalId: number) {
+  return this.service.findPendingPaymentsByHospitalNewTest(hospitalId);
+}
   @Get('all/paid/:hospitalId')
 async getPaidPayments(@Param('hospitalId') hospitalId: number) {
   return this.service.findPendingPaidByHospital(hospitalId);

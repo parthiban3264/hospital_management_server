@@ -201,7 +201,7 @@ export class ConsultationService {
       });
 
       // -------------------- VALIDATION -------------------- //
-      if (!regAmount) {
+      if (!regAmount || !doctorAmount) {
         return {
           status: 'failed',
           message:
@@ -259,15 +259,16 @@ export class ConsultationService {
           doctor_Id: data.doctor_Id,
           purpose: data.purpose,
           symptoms: data.symptoms,
+          isTestOnly: data.isTestOnly,
 
           // ✅ TOKEN
           tokenNo: tokenNo,
           tokenDate: tokenDateOnly,
 
-          consultationFee: doctorAmount,
-          emergencyFee: emergencyFeeAmount,
-          sugarTestFee: sugarFeeAmount,
-          registrationFee: regAmount,
+          consultationFee: data.isTestOnly !== true ? doctorAmount : 0,
+          emergencyFee: data.isTestOnly !== true ? emergencyFeeAmount : 0,
+          sugarTestFee: data.isTestOnly !== true ? sugarFeeAmount : 0,
+          registrationFee: data.isTestOnly !== true ? regAmount : 0,
 
           bp: data.bp,
           weight: data.weight,
@@ -285,9 +286,29 @@ export class ConsultationService {
       });
 
       console.log('Consultation created:', consultation.id);
+       console.log('Consultation created:', consultation);
+
 
       // -------------------- CREATE PAYMENT -------------------- //
-      const payment = await this.prisma.payment.create({
+      // if (isTestOnly === false) {
+      // const payment = await this.prisma.payment.create({
+      //   data: {
+      //     hospital_Id: Number(data.hospital_Id),
+      //     patient_Id: data.patient_Id,
+      //     consultation_Id: consultation.id,
+
+      //     reason: 'Registration Fee',
+      //     status: 'PENDING',
+      //     amount: totalRegistrationAmount,
+      //     type: 'REGISTRATIONFEE',
+      //     createdAt: data.createdAt || new Date(),
+      //   },
+      // });}
+
+      let payment = null;
+
+    if (data.isTestOnly !== true) {
+      payment = await this.prisma.payment.create({
         data: {
           hospital_Id: Number(data.hospital_Id),
           patient_Id: data.patient_Id,
@@ -297,16 +318,17 @@ export class ConsultationService {
           status: 'PENDING',
           amount: totalRegistrationAmount,
           type: 'REGISTRATIONFEE',
-          createdAt: data.createdAt || new Date(),
+          createdAt:  data.createdAt || new Date(),
         },
       });
+    }
 
       // -------------------- SUCCESS RESPONSE -------------------- //
       return {
         status: 'success',
         data: {
           consultationId: consultation.id,
-          paymentId: payment.id,
+          //paymentId: payment.id ?? null,
           tokenNo: tokenNo,
           totalAmount: totalRegistrationAmount,
         },
