@@ -443,6 +443,8 @@ export class TestingAndScanningPatientService {
           doctor: doctorInfo,
           tokenNo: patient.Consultation && patient.Consultation.length > 0
             ? patient.Consultation[0].tokenNo ?? '-': '-',
+          isTestOnly: patient.Consultation && patient.Consultation.length > 0
+            ? patient.Consultation[0].isTestOnly ?? false: false,
         },
         Hospital: {
           name: hospital.name ?? 'N/A',
