@@ -42,8 +42,8 @@ export class PatientService {
 
     // ---- If both fees missing, show message ----
     if (
-      (!regAmount && !appointAmount) ||
-      (regAmount == 0 && appointAmount == 0)
+      (!regAmount && !doctorAmount) ||
+      (regAmount == 0 && doctorAmount == 0)
     ) {
       return {
         status: 'failed',

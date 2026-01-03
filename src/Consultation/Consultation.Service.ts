@@ -201,7 +201,7 @@ export class ConsultationService {
       });
 
       // -------------------- VALIDATION -------------------- //
-      if (!regAmount || !doctorAmount) {
+      if (!regAmount && !doctorAmount) {
         return {
           status: 'failed',
           message:
