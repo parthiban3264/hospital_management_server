@@ -55,12 +55,13 @@ model Hospital {
   Drawers               Drawer[]
   IncomeAndExpenses     IncomeAndExpense[]
   cosmetics             cosmetic[]
-  ButtonPermissions     ButtonPermission[]
   Tickets               Tickets[]
   ScanAndTest           ScanAndTests[]
   Medicine            Medicines[]
   Tonic             Tonics[]
   Injection        Injections[]
+  ScanAndTestUnitReferencewithPerHospital ScanAndTestUnitReferencewithPerHospital[]
+  ScanAndTestsWithPerHospitals ScanAndTestsWithPerHospital[]
 }
 
 model User {
@@ -114,9 +115,16 @@ model ButtonPermission {
   hospital_Id Int
   key         String   @unique
   designation String // optional template (Doctor, Nurse, etc.)
+  
   defaultIds  Json? // optional default permission IDs for designation
-  Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
-  //@@unique([designation, key])
+}
+model ButtonPermissions {
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  key         String   
+  designation String // optional template (Doctor, Nurse, etc.)
+  defaultIds  Json? // optional default permission IDs for designation
+  @@unique([designation, key])
 }
 
 model AdminStrator {
@@ -904,6 +912,7 @@ model ScanAndTestOption {
   @@index([optionName])
 }
 
+
 // model ScanAndTestUnitReference {
 //   id         Int      @id @default(autoincrement())
 //   optionName String   @unique
@@ -914,6 +923,7 @@ model ScanAndTestOption {
 
 //   options ScanAndTestOption[]
 // }
+
 
 model ScanAndTestUnitReference {
   id          Int      @id @default(autoincrement())
@@ -1026,3 +1036,56 @@ model Tickets {
   updatedAt   String?
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 }
+
+///// new models above this line //////
+
+
+model ScanAndTestsWithPerHospital {
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  title       String
+  type        Types
+  amount      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hospital Hospital @relation(fields: [hospital_Id], references: [id])
+  options  ScanAndTestOptionWithPerHospital[]
+
+  @@unique([hospital_Id, title, type])
+  @@index([hospital_Id])
+}
+
+model ScanAndTestOptionWithPerHospital {
+  id              Int    @id @default(autoincrement())
+  scanTestId      Int
+  unitReferenceId Int
+  price           Float?
+
+  scanTest ScanAndTestsWithPerHospital @relation(fields: [scanTestId], references: [id])
+
+  unitRef ScanAndTestUnitReferencewithPerHospital @relation(fields: [unitReferenceId], references: [id])
+
+  @@unique([scanTestId, unitReferenceId])
+  @@index([scanTestId])
+}
+
+
+model ScanAndTestUnitReferencewithPerHospital {
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  optionName  String
+  optionTitle String
+  type        String?
+  unit        String
+  reference   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hospital Hospital @relation(fields: [hospital_Id], references: [id])
+  options  ScanAndTestOptionWithPerHospital[]
+
+  @@unique([hospital_Id, optionName, optionTitle])
+  @@index([hospital_Id, optionName])
+}
+

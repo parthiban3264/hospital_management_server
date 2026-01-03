@@ -25,6 +25,7 @@ import { FeesModule } from './Fees/fees.module';
 import { CosmeticModule } from './cosmetic/cosmetic.module';
 import { ButtonPermissionModule } from './Button_Permission/button-permission.module';
 import { ScanAndTestsModule } from './TestAndScans/test.scans.module';
+import { ScanAndTestUnitReferenceModule } from './scan-and-test-unit-reference/scan-and-test-unit-reference.module';
 @Module({
   imports: [HospitalModule,
     UserModule,
@@ -48,7 +49,9 @@ import { ScanAndTestsModule } from './TestAndScans/test.scans.module';
     FeesModule,
     CosmeticModule,
     ButtonPermissionModule,
-    ScanAndTestsModule
+    ScanAndTestsModule,
+    ScanAndTestUnitReferenceModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],
