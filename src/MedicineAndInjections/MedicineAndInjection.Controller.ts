@@ -1,37 +1,37 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
-import { MedicineAndInjectionService } from "./MedicineAndInjection.Service";
+// import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
+// import { MedicineAndInjectionService } from "./MedicineAndInjection.Service";
 
-@Controller("medicine-and-injection")
-export class MedicineAndInjectionController {
-  constructor(private readonly service: MedicineAndInjectionService) {}
+// @Controller("medicine-and-injection")
+// export class MedicineAndInjectionController {
+//   constructor(private readonly service: MedicineAndInjectionService) {}
 
-  @Post('create')
-  create(@Body() data: any) {
-    console.log('medicine-and-injection body', data);
-    console.log(data.medicine_Id);
+//   @Post('create')
+//   create(@Body() data: any) {
+//     console.log('medicine-and-injection body', data);
+//     console.log(data.medicine_Id);
     
-    return this.service.create(data);
-  }
+//     return this.service.create(data);
+//   }
 
-  @Get('all')
-  findAll() {
-    return this.service.findAll();
-  }
+//   @Get('all')
+//   findAll() {
+//     return this.service.findAll();
+//   }
 
-  @Get("getById/:id")
-  findOne(@Param("id") id: number) {
-    return this.service.findOne(+id);
-  }
+//   @Get("getById/:id")
+//   findOne(@Param("id") id: number) {
+//     return this.service.findOne(+id);
+//   }
 
-  @Patch("updateById/:id")
-  update(@Param("id") id: number, @Body() data: any) {
-    console.log(data);
+//   @Patch("updateById/:id")
+//   update(@Param("id") id: number, @Body() data: any) {
+//     console.log(data);
     
-    return this.service.update(+id, data);
-  }
+//     return this.service.update(+id, data);
+//   }
 
-  @Delete("deleteById/:id")
-  remove(@Param("id") id: number) {
-    return this.service.remove(+id);
-  }
-}
+//   @Delete("deleteById/:id")
+//   remove(@Param("id") id: number) {
+//     return this.service.remove(+id);
+//   }
+// }

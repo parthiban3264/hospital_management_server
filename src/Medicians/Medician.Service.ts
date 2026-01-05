@@ -18,7 +18,7 @@ export class MedicianService {
 
   async findAll() {
     const medicianList = await this.prisma.medician.findMany({
-      include: { Hospital: true, MedicineAndInjection: true },
+      include: { Hospital: true,},
     });
     return { status: "success", message: "Medicians fetched", data: medicianList };
   }
@@ -34,7 +34,7 @@ export class MedicianService {
   async findOne(id: number) {
     const medician = await this.prisma.medician.findUnique({
       where: { id },
-      include: { Hospital: true, MedicineAndInjection: true },
+      include: { Hospital: true, },
     });
     if (!medician) throw new NotFoundException(`Medician with ID ${id} not found`);
     return { status: "success", message: "Medician fetched", data: medician };
@@ -43,7 +43,7 @@ export class MedicianService {
     async findById(id: number, hospitalId: number) {
     const medician = await this.prisma.medician.findUnique({
       where: { id ,hospital_Id: hospitalId},
-      include: { Hospital: true, MedicineAndInjection: true },
+      include: { Hospital: true,},
     });
     if (!medician) throw new NotFoundException(`Medician with ID ${id} not found`);
     return { status: "success", message: "Medician fetched", data: medician };
@@ -56,7 +56,7 @@ async findByName(hospitalId: number, name: string) {
       medicianName: { equals: name },
       hospital_Id: hospitalId,
     },
-    include: { Hospital: true, MedicineAndInjection: true },
+    include: { Hospital: true },
   });
 
   // If no exact match, provide autocomplete suggestions

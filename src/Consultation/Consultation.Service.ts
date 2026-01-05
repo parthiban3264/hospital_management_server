@@ -179,12 +179,17 @@ export class ConsultationService {
       });
 
       // -------------------- FETCH DOCTOR FEE -------------------- //
-      const doctorData = await this.prisma.admin.findFirst({
-        where: {
-          hospital_Id: Number(data.hospital_Id),
-          user_Id: data.doctor_Id,
-        },
-      });
+      let doctorData = null;
+
+      if (data.isTestOnly !== true) {
+ 
+        doctorData = await this.prisma.admin.findFirst({
+          where: {
+            hospital_Id: Number(data.hospital_Id),
+            user_Id: data.doctor_Id,
+          },
+        });
+      }
 
       const doctorAmount = doctorData?.doctorAmount ?? 0;
 
@@ -264,7 +269,7 @@ export class ConsultationService {
           // ✅ TOKEN
           tokenNo: tokenNo,
           tokenDate: tokenDateOnly,
-
+          referredByDoctorName: data.referredByDoctorName || null,
           consultationFee: data.isTestOnly !== true ? doctorAmount : 0,
           emergencyFee: data.isTestOnly !== true ? emergencyFeeAmount : 0,
           sugarTestFee: data.isTestOnly !== true ? sugarFeeAmount : 0,
@@ -286,8 +291,7 @@ export class ConsultationService {
       });
 
       console.log('Consultation created:', consultation.id);
-       console.log('Consultation created:', consultation);
-
+      console.log('Consultation created:', consultation);
 
       // -------------------- CREATE PAYMENT -------------------- //
       // if (isTestOnly === false) {
@@ -307,21 +311,21 @@ export class ConsultationService {
 
       let payment = null;
 
-    if (data.isTestOnly !== true) {
-      payment = await this.prisma.payment.create({
-        data: {
-          hospital_Id: Number(data.hospital_Id),
-          patient_Id: data.patient_Id,
-          consultation_Id: consultation.id,
+      if (data.isTestOnly !== true) {
+        payment = await this.prisma.payment.create({
+          data: {
+            hospital_Id: Number(data.hospital_Id),
+            patient_Id: data.patient_Id,
+            consultation_Id: consultation.id,
 
-          reason: 'Registration Fee',
-          status: 'PENDING',
-          amount: totalRegistrationAmount,
-          type: 'REGISTRATIONFEE',
-          createdAt:  data.createdAt || new Date(),
-        },
-      });
-    }
+            reason: 'Registration Fee',
+            status: 'PENDING',
+            amount: totalRegistrationAmount,
+            type: 'REGISTRATIONFEE',
+            createdAt: data.createdAt || new Date(),
+          },
+        });
+      }
 
       // -------------------- SUCCESS RESPONSE -------------------- //
       return {
@@ -531,7 +535,7 @@ export class ConsultationService {
     return this.prisma.consultation.findMany({
       where: {
         hospital_Id: Number(hospitalId),
-        patient_Id:  Number(patientId),
+        patient_Id: Number(patientId),
         status: {
           in: ['CANCELLED', 'COMPLETED'],
         },
@@ -550,7 +554,6 @@ export class ConsultationService {
       },
     });
   }
-
 
   async findAllByHospitalDrQueue(hospitalId: number) {
     // Step 1️⃣: Fetch consultations
@@ -661,6 +664,8 @@ export class ConsultationService {
         tokenNo: c.tokenNo,
         tokenDate: c.tokenDate,
         payment: c.Payment,
+        isTestOnly: c.isTestOnly,
+        referredByDoctorName: c.referredByDoctorName,
         Patient: {
           patient_Id: patient.user_Id,
           name: patient.name,

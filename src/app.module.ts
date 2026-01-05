@@ -10,7 +10,7 @@ import { ConsultationModule } from './Consultation/Consultation.Module';
 import { TreatmentModule } from './Treatments/Treatment.Module';
 import { MedicianModule } from './Medicians/Medician.Module';
 import { InjectionModule } from './Injections/Injection.Module';
-import { MedicineAndInjectionModule } from './MedicineAndInjections/MedicineAndInjection.Module';
+// import { MedicineAndInjectionModule } from './MedicineAndInjections/MedicineAndInjection.Module';
 import { TestingAndScanningHospitalModule } from './TestingAndScanningHospitals/testingAndScanningHospital.module';
 import { TestingAndScanningPatientModule } from './TestingAndScanningPatient/testingAndScanningPatient.module';
 import { PaymentModule } from './Payments/payment.module';
@@ -36,7 +36,7 @@ import { ScanAndTestUnitReferenceModule } from './scan-and-test-unit-reference/s
     TreatmentModule,
     MedicianModule,
     InjectionModule,
-    MedicineAndInjectionModule,
+    // MedicineAndInjectionModule,
     TestingAndScanningHospitalModule,
     TestingAndScanningPatientModule,
     PaymentModule,

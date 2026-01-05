@@ -16,7 +16,7 @@ export class InjectionService {
 
   async findAll() {
     const injections = await this.prisma.injection.findMany({
-      include: { Hospital: true, MedicineAndInjection: true },
+      include: { Hospital: true },
     });
     return { status: "success", message: "Injections fetched", data: injections };
   }
@@ -32,7 +32,7 @@ export class InjectionService {
   async findOne(id: number) {
     const injection = await this.prisma.injection.findUnique({
       where: { id },
-      include: { Hospital: true, MedicineAndInjection: true },
+      include: { Hospital: true },
     });
     if (!injection) throw new NotFoundException(`Injection with ID ${id} not found`);
     return { status: "success", message: "Injection fetched", data: injection };

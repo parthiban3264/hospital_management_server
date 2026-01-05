@@ -187,7 +187,7 @@ export class TestingAndScanningPatientService {
             gender: true,
             phone: true,
             address: true,
-            Consultation: { select: { id: true, doctor_Id: true,tokenNo:true,tokenDate:true,isTestOnly:true } },
+            Consultation: { select: { id: true, doctor_Id: true,tokenNo:true,tokenDate:true,isTestOnly:true,referredByDoctorName:true } },
           },
         },
       },
@@ -445,6 +445,8 @@ export class TestingAndScanningPatientService {
             ? patient.Consultation[0].tokenNo ?? '-': '-',
           isTestOnly: patient.Consultation && patient.Consultation.length > 0
             ? patient.Consultation[0].isTestOnly ?? false: false,
+            referredByDoctorName: patient.Consultation && patient.Consultation.length > 0
+            ? patient.Consultation[0].referredByDoctorName ?? '-': '-',
         },
         Hospital: {
           name: hospital.name ?? 'N/A',

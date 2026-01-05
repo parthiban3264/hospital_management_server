@@ -58,12 +58,12 @@ async findPendingPaymentsByHospitalNew(hospitalId: number) {
       status: {
         in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
       },
-      Consultation: {
-        //status: "PENDING",
-        //paymentStatus: true,
-        symptoms: true,
-        //sugerTestQueue: false,
-      },
+      // Consultation: {
+      //   //status: "PENDING",
+      //   //paymentStatus: true,
+      //   symptoms: false,
+      //   //sugerTestQueue: false,
+      // },
       NOT: {type: 'MEDICINETONICINJECTIONFEES' },
     },
     include: {
@@ -159,15 +159,15 @@ async findPendingPaidByHospitalNew(hospitalId: number) {
   return this.prisma.payment.findMany({
     where: {
       hospital_Id: Number(hospitalId),
-      status: "PENDING",
+      status: "PAID",
       type:'REGISTRATIONFEE',
 
-      // Consultation: {
-      //   //status: "PENDING",
-      //   //paymentStatus: true,
-      //   //symptoms: false,
-      //   //sugerTestQueue: true,
-      // },
+        Consultation: {
+        //status: "PENDING",
+        paymentStatus: true,
+        //symptoms: false,
+        //sugerTestQueue: false,
+      },
     },
     include: {
       Hospital: true,
