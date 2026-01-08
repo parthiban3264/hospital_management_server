@@ -754,25 +754,25 @@ export class ConsultationService {
       include: {
         Hospital: true,
         Patient: true,
-        MedicinePatient: {
-          include: {
-            Medician: true,
-            Payment: true,
-          },
-        },
-        InjectionPatient: {
-          include: {
-            Injection: true,
-            Payment: true,
-          },
-        },
+        // MedicinePatient: {
+        //   include: {
+        //     Medician: true,
+        //     Payment: true,
+        //   },
+        // },
+        // InjectionPatient: {
+        //   include: {
+        //     Injection: true,
+        //     Payment: true,
+        //   },
+        // },
 
-        TonicPatient: {
-          include: {
-            Tonic: true,
-            Payment: true,
-          },
-        },
+        // TonicPatient: {
+        //   include: {
+        //     Tonic: true,
+        //     Payment: true,
+        //   },
+        //},
         Doctor: true,
       },
       orderBy: {

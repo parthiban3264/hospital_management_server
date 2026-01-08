@@ -221,6 +221,7 @@ model Consultation {
   tokenNo   Int?
   tokenDate DateTime?
 
+  referredByDoctorName String?
   symptoms        Boolean     @default(false)
   notes           Json?
   registrationFee Float       @default(0)

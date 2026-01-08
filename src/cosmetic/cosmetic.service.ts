@@ -1,38 +1,38 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+// import { Injectable } from '@nestjs/common';
+// import { PrismaService } from 'src/prisma/prisma.service';
 
-@Injectable()
-export class CosmeticService {
-  constructor(private prisma: PrismaService) {}
+// @Injectable()
+// export class CosmeticService {
+//   constructor(private prisma: PrismaService) {}
 
-  create(data: any[]) {
-    return this.prisma.cosmetic.createMany({ data });
-  }
+//   create(data: any[]) {
+//     return this.prisma.cosmetic.createMany({ data });
+//   }
 
-  findAll(hospital_Id: number) {
-    return this.prisma.cosmetic.findMany({
-      where: { hospital_Id },
-      include: { Hospital: true },
-    });
-  }
+//   findAll(hospital_Id: number) {
+//     return this.prisma.cosmetic.findMany({
+//       where: { hospital_Id },
+//       include: { Hospital: true },
+//     });
+//   }
 
-  findOne(id: number) {
-    return this.prisma.cosmetic.findUnique({
-      where: { id },
-      include: { Hospital: true },
-    });
-  }
+//   findOne(id: number) {
+//     return this.prisma.cosmetic.findUnique({
+//       where: { id },
+//       include: { Hospital: true },
+//     });
+//   }
 
-  update(id: number, data: any) {
-    return this.prisma.cosmetic.update({
-      where: { id },
-      data,
-    });
-  }
+//   update(id: number, data: any) {
+//     return this.prisma.cosmetic.update({
+//       where: { id },
+//       data,
+//     });
+//   }
 
-  remove(id: number) {
-    return this.prisma.cosmetic.delete({
-      where: { id },
-    });
-  }
-}
+//   remove(id: number) {
+//     return this.prisma.cosmetic.delete({
+//       where: { id },
+//     });
+//   }
+// }

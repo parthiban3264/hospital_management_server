@@ -34,8 +34,10 @@ model Hospital {
   Admins                                  Admin[]
   Patients                                Patient[]
   Consultation                            Consultation[]
-  
-
+  Wards                                  Ward[]
+Medicines                                Medicine[]
+MedicineBatch                           MedicineBatch[]
+StockMovements                        StockMovement[]
   Treatments                              Treatment[]
   Medicians                               Medician[]
   Injections                              Injection[]
@@ -748,6 +750,124 @@ model ScanAndTestUnitReferencewithPerHospital {
 
   @@unique([hospital_Id, optionName, optionTitle])
   @@index([hospital_Id, optionName])
+}
+
+/////// InPatient/////////////////
+
+model Ward {
+  id        Int      @id @default(autoincrement())
+  hospital_Id Int
+  name      String
+  type      String
+  beds      Bed[]
+  createdAt DateTime @default(now())
+  hospital  Hospital @relation(fields: [hospital_Id], references: [id])
+  @@unique([name, type])
+}
+
+model Bed {
+  id        Int       @id @default(autoincrement())
+  hospital_Id Int
+  bedNo     Int
+  wardId    Int
+  ward      Ward      @relation(fields: [wardId], references: [id])
+  status    BedStatus @default(AVAILABLE)
+  createdAt DateTime  @default(now())
+
+  @@unique([wardId, bedNo])
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+}
+//////new medicine all in one table --------------------------------
+
+enum StockMovementType {
+  IN
+  OUT
+}
+
+
+model Medicine {
+  id         Int      @id @default(autoincrement())
+  hospital_Id    Int
+  name       String
+  category   String
+  stock      Int
+  ndc_code   String?
+  reorder    Int?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  hospital      Hospital            @relation(fields: [hospital_Id], references: [id])
+  batches   MedicineBatch[]
+}
+
+model MedicineBatch {
+  id                      Int      @id @default(autoincrement())
+  hospital_Id                 Int
+  medicine_id             Int
+  HSN                     String?
+  batch_no                String
+  expiry_date             DateTime
+  manufacture_date        DateTime
+  total_stock             Int?
+  total_quantity          Int?
+  quantity                Int
+  free_quantity           Int?
+  unit                    Int
+  rack_no                 String?
+  mrp                     Float?
+  profit                  Float?
+  purchase_price_unit     Float
+  purchase_price_quantity Float
+  selling_price_quantity  Float
+  selling_price_unit      Float
+  purchase_details        Json?
+  supplier_id             Int? // ✅ THIS WAS MISSING
+  is_active               Boolean  @default(true)
+  created_at              DateTime @default(now())
+
+  hospital Hospital      @relation(fields: [hospital_Id], references: [id])
+  medicine Medicine  @relation(fields: [medicine_id], references: [id])
+  supplier Suppliers? @relation(fields: [supplier_id], references: [id])
+
+  movements StockMovement[]
+  //billItems BillItem[]
+
+  @@unique([hospital_Id, medicine_id, batch_no])
+}
+
+model StockMovement {
+  id            Int               @id @default(autoincrement())
+  hospital_Id       Int
+  batch_id      Int
+  movement_type StockMovementType
+  quantity      Int
+  reason        String
+  reference     String?
+  movement_date DateTime          @default(now())
+
+  hospital  Hospital            @relation(fields: [hospital_Id], references: [id])
+
+  batch MedicineBatch @relation(fields: [batch_id], references: [id])
+}
+
+
+model Suppliers {
+  id         Int             @id @default(autoincrement())
+  hospital_Id    Int
+  name       String
+  phone      String
+  email      String?
+  address    String?
+  is_active  Boolean         @default(true)
+  created_at DateTime        @default(now())
+  batches    MedicineBatch[]
+
+  @@unique([hospital_Id, name, phone])
 }
 
 

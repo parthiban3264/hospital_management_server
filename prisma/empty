@@ -34,12 +34,7 @@ model Hospital {
   Admins                                  Admin[]
   Patients                                Patient[]
   Consultation                            Consultation[]
-  /////new add/////
-  MedicineNew                               Medicine[]
-  MedicineBatch                           MedicineBatch[]
-  Suppliers                               Suppliers[]
-  StockMovements                        StockMovement[]
-  Bill                                    Bill[]
+  
 
   Treatments                              Treatment[]
   Medicians                               Medician[]
@@ -203,6 +198,7 @@ model Consultation {
 
   symptoms        Boolean     @default(false)
   notes           Json?
+  referredByDoctorName String?
   registrationFee Float       @default(0)
   consultationFee Float       @default(0)
   emergencyFee    Float       @default(0)
@@ -754,140 +750,7 @@ model ScanAndTestUnitReferencewithPerHospital {
   @@index([hospital_Id, optionName])
 }
 
-//// Sivani medicine ////////////////
 
-enum AppPaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUND
-}
-
-enum StockMovementType {
-  IN
-  OUT
-}
-
-enum PaymentMode {
-  CASH
-  ONLINE
-}
-
-model Medicine {
-  id         Int      @id @default(autoincrement())
-  hospital_Id    Int
-  name       String
-  category   String
-  stock      Int
-  ndc_code   String?
-  reorder    Int?
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now())
-
-  Hospital      Hospital            @relation(fields: [hospital_Id], references: [id])
-  batches   MedicineBatch[]
-  billItems BillItem[]
-}
-
-model MedicineBatch {
-  id                      Int      @id @default(autoincrement())
-  hospital_Id                 Int
-  medicine_id             Int
-  HSN                     String?
-  batch_no                String
-  expiry_date             DateTime
-  manufacture_date        DateTime
-  total_stock             Int?
-  total_quantity          Int?
-  quantity                Int
-  free_quantity           Int?
-  unit                    Int
-  rack_no                 String?
-  mrp                     Float?
-  profit                  Float?
-  purchase_price_unit     Float
-  purchase_price_quantity Float
-  selling_price_quantity  Float
-  selling_price_unit      Float
-  purchase_details        Json?
-  supplier_id             Int? // ✅ THIS WAS MISSING
-  is_active               Boolean  @default(true)
-  created_at              DateTime @default(now())
-
-  Hospital      Hospital            @relation(fields: [hospital_Id], references: [id])
-  medicine Medicine  @relation(fields: [medicine_id], references: [id])
-  supplier Supplier? @relation(fields: [supplier_id], references: [id])
-
-  movements StockMovement[]
-  billItems BillItem[]
-
-  @@unique([hospital_Id, medicine_id, batch_no])
-}
-
-model StockMovement {
-  id            Int               @id @default(autoincrement())
-  hospital_Id   Int
-  batch_id      Int
-  movement_type StockMovementType
-  quantity      Int
-  reason        String
-  reference     String?
-  movement_date DateTime          @default(now())
-
-  Hospital      Hospital            @relation(fields: [hospital_Id], references: [id])
-  batch MedicineBatch @relation(fields: [batch_id], references: [id])
-}
-
-model Bill {
-  bill_id       Int
-  hospital_Id   Int
-  patient_Id       String
-  customer_name String
-  phone         String
-  doctor_name   String?
-  subtotal      Float?
-  tax           Float?
-  discount      Float?
-  total         Float
-  paid_amount   Float?
-  payment_mode  PaymentMode
-  created_at    DateTime    @default(now())
-
-  Hospital      Hospital       @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient       @relation(fields: [patient_Id], references: [id])
-  items BillItem[]
-
-  @@id([hospital_Id, bill_id]) // ✅ composite primary key
-}
-
-model BillItem {
-  id          Int   @id @default(autoincrement())
-  hospital_Id     Int
-  bill_id     Int
-  medicine_id Int
-  batch_id    Int
-  unit        Int
-  unit_price  Float
-  total_price Float
-
-  bill     Bill          @relation(fields: [hospital_Id, bill_id], references: [hospital_Id,bill_id])
-  medicine Medicine      @relation(fields: [medicine_id], references: [id])
-  batch    MedicineBatch @relation(fields: [batch_id], references: [id])
-}
-
-model Suppliers {
-  id         Int             @id @default(autoincrement())
-  hospital_Id    Int
-  name       String
-  phone      String
-  email      String?
-  address    String?
-  is_active  Boolean         @default(true)
-  created_at DateTime        @default(now())
-  batches    MedicineBatch[]
-
-  @@unique([hospital_Id, name, phone])
-}
 ////////////////////////////// old table ////////////////////////////
 
 model Medician {
