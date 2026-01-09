@@ -971,7 +971,7 @@ model Prescription {
   hospital_Id     Int
   prescription_no String @unique
   patient_Id      Int
-  doctor_Id       Int
+  doctor_Id       String
   consultation_Id Int?
 
   status         PrescriptionStatus @default(DRAFT)
@@ -985,7 +985,7 @@ model Prescription {
 
   hospital     Hospital      @relation(fields: [hospital_Id], references: [id])
   patient      Patient       @relation(fields: [patient_Id], references: [id])
-  doctor       Admin         @relation(fields: [doctor_Id], references: [id])
+  doctor       Admin         @relation(fields: [doctor_Id], references: [user_Id])
   consultation Consultation? @relation(fields: [consultation_Id], references: [id])
 
   medicines PrescriptionMedicine[]

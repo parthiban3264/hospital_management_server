@@ -62,24 +62,24 @@ async createWard(
     });
   }
 
- async deleteWard(id: number, hospital_Id: number) {
-  return await prisma.$transaction(async (tx) => {
-    // 1. Delete all beds in the ward
-     tx.bed.deleteMany({
-      where: {
-        wardId: id,
-      },
-    });
+//  async deleteWard(id: number, hospital_Id: number) {
+//   return await prisma.$transaction(async (tx) => {
+//     // 1. Delete all beds in the ward
+//      tx.bed.deleteMany({
+//       where: {
+//         wardId: id,
+//       },
+//     });
 
-    // 2. Delete the ward
-    return await tx.ward.delete({
-      where: {
-          id,
-          hospital_Id,
-      },
-    });
-  });
-}
+//     // 2. Delete the ward
+//     return await tx.ward.delete({
+//       where: {
+//           id,
+//           hospital_Id,
+//       },
+//     });
+//   });
+// }
 
 
   // Create Bed
@@ -149,6 +149,16 @@ updateBed(
   });
 }
 
+getAvailableBeds(hospital_Id: number) {
+    return prisma.ward.findMany({
+      where:{hospital_Id},
+      include: {
+        beds: {
+          where: { status: 'AVAILABLE' },
+        },
+      },
+    });
+  }
 
   // Delete Bed
   deleteBed(id: number, hospital_Id: number) {
@@ -156,4 +166,14 @@ updateBed(
       where: { id },
     });
   }
+  async deleteWard(id: number,hospital_Id:number) {
+  return prisma.$transaction(async (tx) => {
+    await tx.bed.deleteMany({
+      where: { wardId: id, },
+    });
+    return tx.ward.delete({
+      where: { id,hospital_Id },
+    });
+  });
+}
 }

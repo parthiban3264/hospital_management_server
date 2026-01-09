@@ -2,18 +2,20 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { DispenseMedicineDto } from './dto/dispense-medicine.dto';
+import { log } from 'console';
 
 @Injectable()
 export class PrescriptionService {
   constructor(private readonly prisma: PrismaService) {}
 
   // 🧑‍⚕️ CREATE PRESCRIPTION
-  async createPrescription(hospital_Id: number, dto: CreatePrescriptionDto) {
+  async createPrescription( dto: CreatePrescriptionDto) {
+    log('prescription',dto)
     return this.prisma.prescription.create({
   data: {
-    hospital_Id,
+    hospital_Id : Number(dto.hospital_Id),
     prescription_no: `RX-${Date.now()}`,
-    patient_Id: dto.patient_Id,
+    patient_Id: Number(dto.patient_Id),
     doctor_Id: dto.doctor_Id,
     consultation_Id: dto.consultation_Id,
     notes: dto.notes,
@@ -140,7 +142,7 @@ export class PrescriptionService {
           patient_Id: prescriptionMedicine.prescription.patient_Id,
           consultation_Id: prescriptionMedicine.prescription.consultation_Id,
           prescription_Id: prescriptionMedicine.prescription_Id,
-          reason: 'MEDICINE DISPENSE',
+          reason: 'Prescription Fee',
           amount: amount,
           createdBy: pharmacist_Id.toString(),
           createdAt: new Date().toISOString(),

@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
 import { PrescriptionService } from './prescription.service';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { DispenseMedicineDto } from './dto/dispense-medicine.dto';
+import { log } from 'console';
 
 @Controller('prescriptions')
 export class PrescriptionController {
@@ -10,8 +11,8 @@ export class PrescriptionController {
   // 🧑‍⚕️ CREATE PRESCRIPTION
   @Post()
   create(@Req() req, @Body() dto: CreatePrescriptionDto) {
+    log('prescription',dto);
     return this.prescriptionService.createPrescription(
-      req.user.hospital_Id,
       dto
     );
   }

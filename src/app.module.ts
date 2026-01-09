@@ -36,6 +36,7 @@ import { InventoryModule } from './inventory/inventory.module';
 import { AdmissionModule } from './admission/admission/admission.module';
 import { ChargesModule } from './charges/charges/charges.module';
 import { PrescriptionModule } from './prescription/prescription.module';
+import { ReorderModule } from './reorder/reorder.module';
 //import { SalesModule } from './sales/sale.module';
 //import { BillingModule } from './shivani/billing/billing.module';
 @Module({
@@ -75,6 +76,7 @@ import { PrescriptionModule } from './prescription/prescription.module';
     AdmissionModule,
     ChargesModule,
     PrescriptionModule,
+    ReorderModule,
     
   ],
   controllers: [AppController],

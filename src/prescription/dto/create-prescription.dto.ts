@@ -1,4 +1,5 @@
 export class CreatePrescriptionDto {
+    hospital_Id:string;
   patient_Id: number;
   doctor_Id: number;
   consultation_Id?: number;

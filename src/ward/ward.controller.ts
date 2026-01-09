@@ -16,19 +16,22 @@ export class WardController {
 
   // Create Ward
   @Post(':hospital_Id')
-  createWard(@Param('hospital_Id') hospital_Id: string,@Body() body: { name: string; type: string;beds:any }) {
-    log('wards:',body ,hospital_Id)
-     //limit value is :  12582912000
-// wards: {
-//   name: 'testing',
-//   type: 'General',
-//   beds: [
-//     { bedNo: 45, status: 'AVAILABLE' },
-//     { bedNo: 87, status: 'AVAILABLE' }
-//   ]
-// } 1
+  createWard(
+    @Param('hospital_Id') hospital_Id: string,
+    @Body() body: { name: string; type: string; beds: any },
+  ) {
+    log('wards:', body, hospital_Id);
+    //limit value is :  12582912000
+    // wards: {
+    //   name: 'testing',
+    //   type: 'General',
+    //   beds: [
+    //     { bedNo: 45, status: 'AVAILABLE' },
+    //     { bedNo: 87, status: 'AVAILABLE' }
+    //   ]
+    // } 1
 
-    return this.wardService.createWard(body,Number(hospital_Id));
+    return this.wardService.createWard(body, Number(hospital_Id));
   }
 
   // Get All Wards
@@ -36,10 +39,17 @@ export class WardController {
   getAllWards(@Param('hospital_Id') hospital_Id: string) {
     return this.wardService.getAllWards(Number(hospital_Id));
   }
-
+  @Get(':hospital_Id/available-beds')
+  getAvailableBeds(@Param('hospital_Id') hospital_Id: String) {
+    log('hospital_Id', hospital_Id);
+    return this.wardService.getAvailableBeds(Number(hospital_Id));
+  }
   // Get Ward by ID
   @Get(':id/:hospital_Id')
-  getWardById(@Param('id') id: string, @Param('hospital_Id') hospital_Id: string) {
+  getWardById(
+    @Param('id') id: string,
+    @Param('hospital_Id') hospital_Id: string,
+  ) {
     return this.wardService.getWardById(+id, Number(hospital_Id));
   }
 
@@ -55,7 +65,10 @@ export class WardController {
 
   // Delete Ward
   @Delete(':id/:hospital_Id')
-  deleteWard(@Param('id') id: string, @Param('hospital_Id') hospital_Id: string) {
+  deleteWard(
+    @Param('id') id: string,
+    @Param('hospital_Id') hospital_Id: string,
+  ) {
     return this.wardService.deleteWard(+id, Number(hospital_Id));
   }
 
@@ -70,41 +83,43 @@ export class WardController {
   }
 
   @Patch(':id/fullUpdate/:hospital_Id')
-updateWardWithBeds(
-  @Param('id') id: string,
-  @Param('hospital_Id') hospital_Id: string,
-  @Body()
-  body: {
-    name?: string;
-    type?: string;
-    beds?: {
-      id: number;
+  updateWardWithBeds(
+    @Param('id') id: string,
+    @Param('hospital_Id') hospital_Id: string,
+    @Body()
+    body: {
+      name?: string;
+      type?: string;
+      beds?: {
+        id: number;
+        bedNo?: number;
+        status?: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
+      }[];
+    },
+  ) {
+    return this.wardService.updateWardWithBeds(+id, body, Number(hospital_Id));
+  }
+
+  // Update Bed (number / status)
+  @Patch('beds/:bedId/:hospital_Id')
+  updateBed(
+    @Param('bedId') bedId: string,
+    @Param('hospital_Id') hospital_Id: string,
+    @Body()
+    body: {
       bedNo?: number;
       status?: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
-    }[];
-  },
-) {
-  return this.wardService.updateWardWithBeds(+id, body, Number(hospital_Id));
-}
-
-// Update Bed (number / status)
-@Patch('beds/:bedId/:hospital_Id')
-updateBed(
-  @Param('bedId') bedId: string,
-  @Param('hospital_Id') hospital_Id: string,
-  @Body()
-  body: {
-    bedNo?: number;
-    status?: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
-  },
-) {
-  return this.wardService.updateBed(+bedId, body, Number(hospital_Id));
-}
-
+    },
+  ) {
+    return this.wardService.updateBed(+bedId, body, Number(hospital_Id));
+  }
 
   // Delete Bed
   @Delete('beds/:bedId/:hospital_Id')
-  deleteBed(@Param('bedId') bedId: string, @Param('hospital_Id') hospital_Id: string) {
+  deleteBed(
+    @Param('bedId') bedId: string,
+    @Param('hospital_Id') hospital_Id: string,
+  ) {
     return this.wardService.deleteBed(+bedId, Number(hospital_Id));
   }
 }

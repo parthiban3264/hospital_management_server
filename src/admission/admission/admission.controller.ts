@@ -35,9 +35,10 @@ async getAdmittedAdmissions(@Param('hospital_Id') hospital_Id:string) {
 
 }
 
-  @Post('admit')
-admitPatient(@Body() dto: any) {
-  return this.admissionService.admitPatient(dto);
+  @Post(':hospital_Id/admit')
+admitPatient(@Body() dto: any,@Param('hospital_Id') hospital_Id:String) {
+  log('dto',dto);
+  return this.admissionService.admitPatient(dto,Number(hospital_Id));
 }
 
   @Get('patients/by-phone/:phone/:hospital_Id')
