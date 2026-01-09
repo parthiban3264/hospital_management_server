@@ -762,12 +762,11 @@ model Ward {
   beds      Bed[]
   createdAt DateTime @default(now())
   hospital  Hospital @relation(fields: [hospital_Id], references: [id])
-  @@unique([name, type])
+  @@unique([hospital_Id,name, type])
 }
 
 model Bed {
   id        Int       @id @default(autoincrement())
-  hospital_Id Int
   bedNo     Int
   wardId    Int
   ward      Ward      @relation(fields: [wardId], references: [id])
@@ -787,6 +786,7 @@ enum BedStatus {
 enum StockMovementType {
   IN
   OUT
+  RETURN
 }
 
 
@@ -803,6 +803,7 @@ model Medicine {
 
   hospital      Hospital            @relation(fields: [hospital_Id], references: [id])
   batches   MedicineBatch[]
+  //billItems BillItem[]
 }
 
 model MedicineBatch {
@@ -868,6 +869,95 @@ model Suppliers {
   batches    MedicineBatch[]
 
   @@unique([hospital_Id, name, phone])
+}
+
+enum PrescriptionStatus {
+  DRAFT
+  SIGNED
+  PARTIALLY_DISPENSED
+  DISPENSED
+  CANCELLED
+}
+enum MedicineRoute {
+  ORAL        // tablet, syrup
+  INJECTION
+  IV
+  IM
+  TOPICAL
+}
+enum MedicineStatus {
+PENDING
+CANCELLED
+COMPLETED
+ONGOING
+}
+
+model Prescription {
+  id               Int      @id @default(autoincrement())
+  hospital_Id      Int
+  prescription_no  String   @unique
+  patient_Id       Int
+  doctor_Id        Int
+  consultation_Id  Int?
+
+  status           PrescriptionStatus @default(DRAFT)
+  notes            String?
+  follow_up_date   DateTime?
+  valid_till       DateTime?
+
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  is_active        Boolean  @default(true)
+
+  hospital      Hospital     @relation(fields: [hospital_Id], references: [id])
+  patient       Patient      @relation(fields: [patient_Id], references: [id])
+  doctor        Admin       @relation(fields: [doctor_Id], references: [id])
+  consultation  Consultation? @relation(fields: [consultation_Id], references: [id])
+
+  medicines PrescriptionMedicine[]
+}
+
+model PrescriptionMedicine {
+  id              Int      @id @default(autoincrement())
+  prescription_Id Int
+  medicine_Id     Int
+
+  dosage          String?     // "1-0-1", "2ml"
+  route           MedicineRoute
+  frequency       String?     // daily / weekly
+  days            Int
+  total_quantity  Int
+
+  after_food      Boolean @default(false)
+  morning         Boolean @default(false)
+  afternoon       Boolean @default(false)
+  night           Boolean @default(false)
+
+  instructions    String?
+  status          MedicineStatus @default(PENDING)
+
+  created_at DateTime @default(now())
+
+  prescription Prescription @relation(fields: [prescription_Id], references: [id])
+  medicine     Medicine     @relation(fields: [medicine_Id], references: [id])
+
+  dispenses PrescriptionDispense[]
+}
+model PrescriptionDispense {
+  id                     Int      @id @default(autoincrement())
+  hospital_Id            Int
+  prescription_medicine_Id Int
+  medicine_Id            Int
+  batch_Id               Int
+
+  dispensed_quantity     Int
+  dispensed_by           Int   // pharmacist user id
+  dispensed_at           DateTime @default(now())
+
+  prescriptionMedicine PrescriptionMedicine @relation(fields: [prescription_medicine_Id], references: [id])
+
+  medicine Medicine @relation(fields: [medicine_Id], references: [id])
+  batch    MedicineBatch @relation(fields: [batch_Id], references: [id])
 }
 
 

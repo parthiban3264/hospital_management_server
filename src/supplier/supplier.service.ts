@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 import { PrismaClient } from '@prisma/client';
+import { log } from 'console';
 
 const prisma = new PrismaClient();
 
@@ -38,7 +39,7 @@ export class SupplierService {
   // 📄 Get all suppliers of a shop
   findAll(shopId: number) {
     return prisma.suppliers.findMany({
-      where: { hospital_Id: shopId },
+      where: { hospital_Id: shopId ,is_active:true},
       orderBy: { created_at: 'desc' },
     });
   }
@@ -61,9 +62,10 @@ export class SupplierService {
 
   // ✏️ Update supplier (shop-safe)
   async update(shopId: number, id: number, dto: UpdateSupplierDto) {
-    await this.findOne(shopId, id);
+    log('dto',dto);
+    //await this.findOne(shopId, id);
 
-    return prisma.supplier.update({
+    return prisma.suppliers.update({
       where: { id },
       data: dto,
     });

@@ -7,10 +7,36 @@ const prisma = new PrismaClient();
 
 export class WardService {
 
-  // Create Ward
-  createWard(data: { name: string; type: string ,hospital_Id:number}) {
-    return prisma.ward.create({ data });
-  }
+async createWard(
+  data: { name: string; type: string; beds: any[] },
+  hospital_Id: number
+) {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Create ward
+    const ward = await tx.ward.create({
+      data: {
+        hospital_Id,
+        name: data.name,
+        type: data.type,
+      },
+    });
+
+    // 2. Create beds
+    if (data.beds?.length) {
+      await tx.bed.createMany({
+        data: data.beds.map((bed) => ({
+          bedNo: bed.bedNo,
+          wardId: ward.id,
+          status: bed.status ?? 'AVAILABLE',
+        })),
+      });
+    }
+
+    return ward;
+  });
+}
+
+
 
   // Get All Wards
   getAllWards(hospital_Id: number) {
@@ -36,12 +62,25 @@ export class WardService {
     });
   }
 
-  // Delete Ward
-  deleteWard(id: number, hospital_Id: number) {
-    return prisma.ward.delete({
-      where: { id, hospital_Id },
+ async deleteWard(id: number, hospital_Id: number) {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Delete all beds in the ward
+     tx.bed.deleteMany({
+      where: {
+        wardId: id,
+      },
     });
-  }
+
+    // 2. Delete the ward
+    return await tx.ward.delete({
+      where: {
+          id,
+          hospital_Id,
+      },
+    });
+  });
+}
+
 
   // Create Bed
   createBed(wardId: number, bedNo: number, hospital_Id: number) {
@@ -49,7 +88,7 @@ export class WardService {
       data: {
         bedNo,
         wardId,
-        hospital_Id,
+        
       },
     });
   }
@@ -105,7 +144,7 @@ updateBed(
   hospital_Id: number
 ) {
   return prisma.bed.update({
-    where: { id,hospital_Id },
+    where: { id },
     data,
   });
 }
@@ -114,7 +153,7 @@ updateBed(
   // Delete Bed
   deleteBed(id: number, hospital_Id: number) {
     return prisma.bed.delete({
-      where: { id,hospital_Id },
+      where: { id },
     });
   }
 }

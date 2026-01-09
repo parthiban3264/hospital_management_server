@@ -8,15 +8,27 @@ import {
   Delete,
 } from '@nestjs/common';
 import { WardService } from './ward.service';
+import { log } from 'console';
 
 @Controller('wards')
 export class WardController {
   constructor(private readonly wardService: WardService) {}
 
   // Create Ward
-  @Post()
-  createWard(@Body() body: { name: string; type: string, hospital_Id: number }) {
-    return this.wardService.createWard(body);
+  @Post(':hospital_Id')
+  createWard(@Param('hospital_Id') hospital_Id: string,@Body() body: { name: string; type: string;beds:any }) {
+    log('wards:',body ,hospital_Id)
+     //limit value is :  12582912000
+// wards: {
+//   name: 'testing',
+//   type: 'General',
+//   beds: [
+//     { bedNo: 45, status: 'AVAILABLE' },
+//     { bedNo: 87, status: 'AVAILABLE' }
+//   ]
+// } 1
+
+    return this.wardService.createWard(body,Number(hospital_Id));
   }
 
   // Get All Wards
