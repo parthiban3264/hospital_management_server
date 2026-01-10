@@ -18,14 +18,28 @@ export class PrescriptionController {
   }
 
   // 🏥 DISPENSE MEDICINE
-  @Post('dispense')
-  dispense(@Req() req, @Body() dto: DispenseMedicineDto) {
-    return this.prescriptionService.dispenseMedicine(
-      req.user.hospital_Id,
-      req.user.id,
-      dto
-    );
-  }
+//   @Post('dispense')
+//   dispense(@Req() req, @Body() dto: DispenseMedicineDto) {
+//      const pharmacist_Id = Number(req.user.id);
+//     return this.prescriptionService.dispenseMedicine(
+//       dto
+//       pharmacist_Id
+//     );
+//   }
+
+// prescription.controller.ts
+@Post('dispense')
+async dispenseMedicine(
+  @Req() req,
+  @Body() dto: DispenseMedicineDto,
+) {
+    log('dispense',dto);
+  // assume pharmacist logged in
+
+  return this.prescriptionService.dispenseMedicine(
+    dto,
+  );
+}
 
   // 📄 GET PRESCRIPTION DETAILS
   @Get(':id')

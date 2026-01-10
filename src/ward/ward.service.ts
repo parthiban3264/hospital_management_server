@@ -13,7 +13,7 @@ async createWard(
 ) {
   return await prisma.$transaction(async (tx) => {
     // 1. Create ward
-    const ward = await tx.ward.create({
+    const ward = await tx.wards.create({
       data: {
         hospital_Id,
         name: data.name,
@@ -40,7 +40,7 @@ async createWard(
 
   // Get All Wards
   getAllWards(hospital_Id: number) {
-    return prisma.ward.findMany({
+    return prisma.wards.findMany({
       where: { hospital_Id },
       include: { beds: true },
     });
@@ -48,7 +48,7 @@ async createWard(
 
   // Get Ward by ID
   getWardById(id: number, hospital_Id: number) {
-    return prisma.ward.findUnique({
+    return prisma.wards.findUnique({
       where: { id, hospital_Id },
       include: { beds: true },
     });
@@ -56,7 +56,7 @@ async createWard(
 
   // Update Ward
   updateWard(id: number, data: { name?: string; type?: string, }, hospital_Id: number) {
-    return prisma.ward.update({
+    return prisma.wards.update({
       where: { id, hospital_Id },
       data,
     });
@@ -108,7 +108,7 @@ async createWard(
 ) {
   return prisma.$transaction(async (tx) => {
     // Update ward
-    await tx.ward.update({
+    await tx.wards.update({
       where: { id, hospital_Id },
       data: {
         name: data.name,
@@ -129,7 +129,7 @@ async createWard(
       }
     }
 
-    return tx.ward.findUnique({
+    return tx.wards.findUnique({
       where: { id },
       include: { beds: true },
     });
@@ -150,7 +150,7 @@ updateBed(
 }
 
 getAvailableBeds(hospital_Id: number) {
-    return prisma.ward.findMany({
+    return prisma.wards.findMany({
       where:{hospital_Id},
       include: {
         beds: {
@@ -171,7 +171,7 @@ getAvailableBeds(hospital_Id: number) {
     await tx.bed.deleteMany({
       where: { wardId: id, },
     });
-    return tx.ward.delete({
+    return tx.wards.delete({
       where: { id,hospital_Id },
     });
   });

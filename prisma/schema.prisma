@@ -34,7 +34,7 @@ model Hospital {
   Admins                                  Admin[]
   Patients                                Patient[]
   Consultation                            Consultation[]
-  Wards                                   Ward[]
+  Wards                                   Wards[]
   Medicines                               Medicine[]
   MedicineBatch                           MedicineBatch[]
   StockMovements                          StockMovement[]
@@ -765,7 +765,8 @@ model ScanAndTestUnitReferencewithPerHospital {
 
 /////// InPatient/////////////////
 
-model Ward {
+
+model Wards {
   id          Int      @id @default(autoincrement())
   hospital_Id Int
   name        String
@@ -781,7 +782,7 @@ model Bed {
   id         Int         @id @default(autoincrement())
   bedNo      Int
   wardId     Int
-  ward       Ward        @relation(fields: [wardId], references: [id])
+  ward       Wards        @relation(fields: [wardId], references: [id])
   status     BedStatus   @default(AVAILABLE)
   createdAt  DateTime    @default(now())
   admissions Admission[]
@@ -830,6 +831,7 @@ model Admission {
 
 enum AdmissionStatus {
   ADMITTED
+  COMPLETED
   DISCHARGED
   CANCELLED
 }
@@ -950,6 +952,7 @@ enum PrescriptionStatus {
 
 enum MedicineRoute {
   TABLET
+  INJECTION
   SYRUP
   DROP
   OINTMENT
@@ -985,7 +988,7 @@ model Prescription {
 
   hospital     Hospital      @relation(fields: [hospital_Id], references: [id])
   patient      Patient       @relation(fields: [patient_Id], references: [id])
-  doctor       Admin         @relation(fields: [doctor_Id], references: [user_Id])
+  doctor       Admin         @relation(fields: [doctor_Id,hospital_Id], references: [user_Id,hospital_Id])
   consultation Consultation? @relation(fields: [consultation_Id], references: [id])
 
   medicines PrescriptionMedicine[]

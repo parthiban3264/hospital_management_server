@@ -64,11 +64,12 @@ export class TestingAndScanningPatientService {
           },
         });
       } else {
+        const reason = data.isTestOnly !== true ? 'Testing & Scanning Fee' : 'Private Testing Fee'
         payment = await tx.payment.create({
           data: {
             hospital_Id: data.hospital_Id,
             patient_Id: data.patient_Id,
-            reason: 'Testing & Scanning Fee',
+            reason: reason,
             status: 'PENDING',
             consultation_Id: data.consultation_Id,
             amount: data.amount,

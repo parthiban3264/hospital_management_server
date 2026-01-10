@@ -59,7 +59,7 @@ async findPendingPaymentsByHospitalNew(hospitalId: number) {
         in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
       },
       Consultation: {
-         isTestOnly:false,
+         //isTestOnly:false,
         //status: "PENDING",
         //paymentStatus: true,
         //symptoms: false,
