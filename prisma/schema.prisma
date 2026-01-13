@@ -516,6 +516,7 @@ model Payment {
   InjectionPatient           InjectionPatient[]
   TonicPatient               TonicPatient[]
   Consultation               Consultation?               @relation(fields: [consultation_Id], references: [id])
+  Prescription Prescription[]
 }
 
 //////just create but not use ////////
@@ -772,6 +773,7 @@ model Wards {
   name        String
   type        String
   beds        Bed[]
+  rent        Float?
   createdAt   DateTime @default(now())
   hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 
@@ -976,6 +978,7 @@ model Prescription {
   patient_Id      Int
   doctor_Id       String
   consultation_Id Int?
+  payment_Id Int?
 
   status         PrescriptionStatus @default(DRAFT)
   notes          String?
@@ -990,6 +993,7 @@ model Prescription {
   patient      Patient       @relation(fields: [patient_Id], references: [id])
   doctor       Admin         @relation(fields: [doctor_Id,hospital_Id], references: [user_Id,hospital_Id])
   consultation Consultation? @relation(fields: [consultation_Id], references: [id])
+  payment Payment? @relation(fields: [payment_Id], references: [id])
 
   medicines PrescriptionMedicine[]
 }
@@ -1031,7 +1035,7 @@ model PrescriptionDispense {
   prescription_medicine_Id Int
   medicine_Id              Int
   batch_Id                 Int
-
+amount Int?
   dispensed_quantity Int
   dispensed_by       Int
   dispensed_at       DateTime @default(now())

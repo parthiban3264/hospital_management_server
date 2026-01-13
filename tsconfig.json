@@ -11,6 +11,9 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
+    //--------add new-----------
+    "esModuleInterop": true,
+//--------------------------------
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,

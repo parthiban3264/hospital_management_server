@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { log } from "console";
 import { PrismaService } from "src/prisma/prisma.service";
+import dayjs from 'dayjs';
 
 @Injectable()
 export class PaymentService {
@@ -52,20 +53,63 @@ async findPendingPaymentsByHospital(hospitalId: number) {
   });
 }
 async findPendingPaymentsByHospitalNew(hospitalId: number) {
-  return this.prisma.payment.findMany({
-    where: {
-      hospital_Id: Number(hospitalId),
-      status: {
-        in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
+//   const sevenDaysAgo = new Date();
+// sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+const sevenDaysAgoStr = dayjs()
+  .subtract(7, 'day')
+  .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
+
+
+return this.prisma.payment.findMany({
+  where: {
+    hospital_Id: Number(hospitalId),
+
+    Consultation: {},
+
+    NOT: {
+      type: 'MEDICINETONICINJECTIONFEES',
+    },
+
+    OR: [
+      // ✅ All PENDING (no date restriction)
+      {
+        status: 'PENDING',
       },
-      Consultation: {
-         //isTestOnly:false,
-        //status: "PENDING",
-        //paymentStatus: true,
-        //symptoms: false,
-        //sugerTestQueue: false,
+
+      // ✅ PAID → only last 7 days
+      {
+        status: 'PAID',
+        updatedAt: {
+          gte: sevenDaysAgoStr, // ✅ Date object
+        },
       },
-      NOT: {type: 'MEDICINETONICINJECTIONFEES' },
+
+      // ✅ CANCELLED → all (or add date if you want)
+      {
+        status: 'CANCELLED',
+      },
+    ],
+
+
+
+
+  //   where: {
+  //     hospital_Id: Number(hospitalId),
+  //     status: {
+  //       in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
+  //     },
+   
+  //     Consultation: {
+  //        //isTestOnly:false,
+  //       //status: "PENDING",
+  //       //paymentStatus: true,
+  //       //symptoms: false,
+  //       //sugerTestQueue: false,
+  //     },
+  //     NOT: {type: 'MEDICINETONICINJECTIONFEES' },
+  //         createdAt: {
+  //   gte: sevenDaysAgo,
+  // },
     },
     include: {
       Hospital: {select: {id:true ,name: true,}},

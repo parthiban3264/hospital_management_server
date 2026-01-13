@@ -6,6 +6,7 @@ export class CreatePrescriptionDto {
   notes?: string;
   follow_up_date?: Date;
   valid_till?: Date;
+   createdAt: any;
 
   medicines: {
     medicine_Id: number;
