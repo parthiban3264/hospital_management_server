@@ -56,7 +56,7 @@ async findPendingPaymentsByHospitalNew(hospitalId: number) {
 //   const sevenDaysAgo = new Date();
 // sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 const sevenDaysAgoStr = dayjs()
-  .subtract(7, 'day')
+  .subtract(3, 'day')
   .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
 
 
