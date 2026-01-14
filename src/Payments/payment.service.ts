@@ -52,11 +52,189 @@ async findPendingPaymentsByHospital(hospitalId: number) {
     },
   });
 }
+// async findPendingLimitedPaymentsByHospitalNew(
+//   hospitalId: number,
+//   page: number,
+//   limit: number,
+// ) {
+//   const skip = (page - 1) * limit;
+//   return this.prisma.payment.findMany({
+//     where: {
+//       hospital_Id: Number(hospitalId),
+//       status: {
+//         in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
+//       },
+//       NOT: {type: 'MEDICINETONICINJECTIONFEES' },
+//     },
+//     include: {
+//       Hospital: {select: {id:true ,name: true,}},
+//       Patient: {select: {id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,bldGrp:true},},
+//       Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,PK:true, SPO2:true,temperature:true,height:true,weight:true, bp:true, BMI:true, emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true} },
+//       TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true,amount:true,selectedOptions:true,selectedOptionAmounts:true,unSelectedOptions:true },},
+//       MedicinePatient: {select: { id: true, medicine_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+//       TonicPatient: {select: { id: true, tonic_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+//       InjectionPatient: {select: { id: true, injection_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
+//     },
+//     orderBy: {
+//       createdAt: 'asc', // Sort by creation date
+//     },
+//     skip,
+//     take: limit,
+//   });
+//}
+
+async findPendingLimitedPaymentsByHospitalNew(
+  hospitalId: number,
+  page: number,
+  limit: number,
+) {
+  const skip = (page - 1) * limit;
+
+  // 📅 Date boundaries
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const twoDaysAgo = new Date(today);
+  twoDaysAgo.setDate(today.getDate() - 2);
+
+  // 🔥 STEP 1: Fetch ordered payment IDs (MySQL syntax)
+  const paymentIds: { id: number }[] = await this.prisma.$queryRaw`
+    SELECT id
+    FROM \`Payment\`
+    WHERE
+      hospital_Id = ${Number(hospitalId)}
+      AND status IN ('PENDING', 'PAID', 'CANCELLED')
+      AND type != 'MEDICINETONICINJECTIONFEES'
+    ORDER BY
+      CASE
+        WHEN createdAt >= ${today} THEN 1
+        WHEN createdAt >= ${yesterday} THEN 2
+        WHEN createdAt >= ${twoDaysAgo} THEN 3
+        ELSE 4
+      END,
+      createdAt ASC
+    LIMIT ${limit} OFFSET ${skip};
+  `;
+
+  if (!paymentIds.length) return [];
+
+  const ids = paymentIds.map(p => p.id);
+
+  // 🔥 STEP 2: Fetch full records with Prisma includes
+  const payments = await this.prisma.payment.findMany({
+    where: {
+      id: { in: ids },
+    },
+    include: {
+      Hospital: {
+        select: { id: true, name: true },
+      },
+      Patient: {
+        select: {
+          id: true,
+          user_Id: true,
+          name: true,
+          dob: true,
+          gender: true,
+          phone: true,
+          address: true,
+          createdAt: true,
+          bldGrp: true,
+        },
+      },
+      Consultation: {
+        select: {
+          id: true,
+          doctor_Id: true,
+          patient_Id: true,
+          sugar: true,
+          PK: true,
+          SPO2: true,
+          temperature: true,
+          height: true,
+          weight: true,
+          bp: true,
+          BMI: true,
+          emergency: true,
+          registrationFee: true,
+          sugarTestFee: true,
+          emergencyFee: true,
+          consultationFee: true,
+          status: true,
+          tokenDate: true,
+          tokenNo: true,
+        },
+      },
+      TestingAndScanningPatients: {
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          status: true,
+          payment_Id: true,
+          consultation_Id: true,
+          amount: true,
+          selectedOptions: true,
+          selectedOptionAmounts: true,
+          unSelectedOptions: true,
+        },
+      },
+      MedicinePatient: {
+        select: {
+          id: true,
+          medicine_Id: true,
+          quantity: true,
+          payment_Id: true,
+          consultation_Id: true,
+          total: true,
+        },
+      },
+      TonicPatient: {
+        select: {
+          id: true,
+          tonic_Id: true,
+          quantity: true,
+          payment_Id: true,
+          consultation_Id: true,
+          total: true,
+        },
+      },
+      InjectionPatient: {
+        select: {
+          id: true,
+          injection_Id: true,
+          quantity: true,
+          payment_Id: true,
+          consultation_Id: true,
+          total: true,
+        },
+      },
+    },
+  });
+
+  // 🔥 STEP 3: Maintain custom order
+  const orderedPayments = ids.map(id =>
+    payments.find(p => p.id === id),
+  );
+
+  return orderedPayments;
+}
+
+
 async findPendingPaymentsByHospitalNew(hospitalId: number) {
 //   const sevenDaysAgo = new Date();
 // sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-const sevenDaysAgoStr = dayjs()
-  .subtract(3, 'day')
+const threeDaysAgoStr = dayjs()
+  .subtract(4, 'day')
+  .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
+  const twoDaysAgoStr = dayjs()
+  .subtract(1, 'day')
+  .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
+   const monthDaysAgoStr = dayjs()
+  .subtract(1, 'month')
   .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
 
 
@@ -74,19 +252,25 @@ return this.prisma.payment.findMany({
       // ✅ All PENDING (no date restriction)
       {
         status: 'PENDING',
+        createdAt: {
+          gte: threeDaysAgoStr, // ✅ Date object
+        },
       },
 
       // ✅ PAID → only last 7 days
       {
         status: 'PAID',
         updatedAt: {
-          gte: sevenDaysAgoStr, // ✅ Date object
+          gte: twoDaysAgoStr, // ✅ Date object
         },
       },
 
       // ✅ CANCELLED → all (or add date if you want)
       {
         status: 'CANCELLED',
+        createdAt: {
+          gte: monthDaysAgoStr, // ✅ Date object
+        },
       },
     ],
 

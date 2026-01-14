@@ -156,6 +156,19 @@ export class AdmissionService {
             address: dto.patient.address ?? null,
           },
         });
+        // payment = await this.prisma.payment.create({
+        //   data: {
+        //     hospital_Id: Number(data.hospital_Id),
+        //     patient_Id: data.patient_Id,
+        //     consultation_Id: consultation.id,
+
+        //     reason: 'Registration Fee',
+        //     status: 'PENDING',
+        //     amount: totalRegistrationAmount,
+        //     type: 'REGISTRATIONFEE',
+        //     createdAt: data.createdAt || new Date(),
+        //   },
+        // });
 
         patientId = patient.id;
       }

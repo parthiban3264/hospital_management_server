@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Patch } from "@nestjs/common";
+import { Controller, Get, Post, Put, Delete, Body, Param, Patch, Query } from "@nestjs/common";
 import { PaymentService } from "./payment.service";
 
 @Controller("payments")
@@ -26,6 +26,24 @@ async getPendingPayments(@Param('hospitalId') hospitalId: number) {
  @Get('all/pendingFee/:hospitalId')
 async getPendingPayment(@Param('hospitalId') hospitalId: number) {
   return this.service.findPendingPaymentsByHospitalNew(hospitalId);
+}
+
+//  @Get('all/limited/pendingFee/:hospitalId')
+// async getLimitedPendingPayment(@Param('hospitalId') hospitalId: number) {
+//   return this.service.findPendingLimitedPaymentsByHospitalNew(hospitalId);
+// }
+
+@Get('all/limited/pendingFee/:hospitalId')
+async getLimitedPendingPayment(
+  @Param('hospitalId') hospitalId: number,
+  @Query('page') page = 1,
+  @Query('limit') limit = 50,
+) {
+  return this.service.findPendingLimitedPaymentsByHospitalNew(
+    Number(hospitalId),
+    Number(page),
+    Number(limit),
+  );
 }
  @Get('all/pendingTestFee/:hospitalId')
 async getPendingTestPayment(@Param('hospitalId') hospitalId: number) {
