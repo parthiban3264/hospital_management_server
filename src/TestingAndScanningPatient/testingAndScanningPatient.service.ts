@@ -76,6 +76,11 @@ export class TestingAndScanningPatientService {
             type: 'TESTINGFEESANDSCANNINGFEE',
             createdAt: data.createdAt,
           },
+          include:{
+            TestingAndScanningPatients:true,
+            Patient:true,
+            Consultation:true
+          }
         });
       }
 
@@ -104,7 +109,7 @@ export class TestingAndScanningPatientService {
         },
       });
 
-      return { test, payment };
+      return { test, data: {payment} };
     });
   }
   async updateTestingAndScanningByPayment(paymentId: number) {
@@ -158,7 +163,7 @@ export class TestingAndScanningPatientService {
       where: {
         hospital_Id: Number(hospital_Id),
         type: type.toUpperCase(),
-        status: { in: ['PENDING'] },
+        status: { in: ['PENDING','COMPLETED'] },
         paymentStatus: true,
       },
       include: {

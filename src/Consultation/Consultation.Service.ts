@@ -292,23 +292,7 @@ export class ConsultationService {
       console.log('Consultation created:', consultation.id);
       console.log('Consultation created:', consultation);
 
-      // -------------------- CREATE PAYMENT -------------------- //
-      // if (isTestOnly === false) {
-      // const payment = await this.prisma.payment.create({
-      //   data: {
-      //     hospital_Id: Number(data.hospital_Id),
-      //     patient_Id: data.patient_Id,
-      //     consultation_Id: consultation.id,
-
-      //     reason: 'Registration Fee',
-      //     status: 'PENDING',
-      //     amount: totalRegistrationAmount,
-      //     type: 'REGISTRATIONFEE',
-      //     createdAt: data.createdAt || new Date(),
-      //   },
-      // });}
-
-      let payment = null;
+      let payment;
 
       if (data.isTestOnly !== true) {
         payment = await this.prisma.payment.create({
@@ -323,19 +307,38 @@ export class ConsultationService {
             type: 'REGISTRATIONFEE',
             createdAt: data.createdAt || new Date(),
           },
+          include: {
+            Hospital: true,
+            Consultation: true,
+            Patient: true,
+          },
         });
       }
-
+      log('payment', payment);
       // -------------------- SUCCESS RESPONSE -------------------- //
-      return {
-        status: 'success',
-        data: {
-          consultationId: consultation.id,
-          //paymentId: payment.id ?? null,
-          tokenNo: tokenNo,
-          totalAmount: totalRegistrationAmount,
-        },
-      };
+      if (data.isTestOnly !== true) {
+        log('this 1');
+        return {
+          status: 'success',
+          data: {
+            consultationId: consultation.id,
+            payment: payment,
+            tokenNo: tokenNo,
+            totalAmount: totalRegistrationAmount,
+          },
+        };
+      } else {
+        log('this 2');
+        return {
+          status: 'success',
+          data: {
+            consultationId: consultation.id,
+            payment : payment,
+            tokenNo: tokenNo,
+            totalAmount: totalRegistrationAmount,
+          },
+        };
+      }
     } catch (error) {
       console.error('Create consultation error:', error);
       return {
@@ -777,10 +780,10 @@ export class ConsultationService {
             medicines: {
               include: {
                 dispenses: true,
-                medicine:true
+                medicine: true,
               },
             },
-            payment:true,
+            payment: true,
           },
         },
         Doctor: true,

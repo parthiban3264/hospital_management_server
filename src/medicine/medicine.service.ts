@@ -199,6 +199,18 @@ export class MedicineService {
     };
   }
 
+  async findAllByhospitaldAllMedicineName(hospitalId: number) {
+    const injections = await prisma.medicine.findMany({
+      where: { hospital_Id: Number(hospitalId) ,is_active : true},
+      select:{name:true,category:true},
+      // include: { Hospital: true, MedicineAndInjection: true },
+    });
+    return {
+      injections,
+    };
+  }
+  
+
   remove(id: number) {
     return prisma.medicine.update({
       where: { id },

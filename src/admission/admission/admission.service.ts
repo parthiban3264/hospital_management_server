@@ -26,11 +26,11 @@ export class AdmissionService {
 
       const updateData: any = {};
 
-      // 👨‍⚕️ Change doctor
-      if (data.doctorId) {
-        updateData.oldDoctorDetail = admission.doctorId;
-        updateData.doctorId = data.doctorId;
-      }
+      // // 👨‍⚕️ Change doctor
+      // if (data.doctorId) {
+      //   updateData.oldDoctorDetail = admission.doctorId;
+      //   updateData.doctorId = data.doctorId;
+      // }
 
       // 👩‍⚕️ Change nurse
       if (data.nurseId) {
@@ -72,8 +72,8 @@ export class AdmissionService {
         data: updateData,
         include: {
           patient: true,
-          doctor: true,
-          nurse: true,
+          //doctor: true,
+          //nurse: true,
           bed: { include: { ward: true } },
         },
       });
@@ -194,9 +194,9 @@ export class AdmissionService {
         data: {
           hospital_Id: hospital_Id,
           patient_Id: patientId,
-          reason: dto.reason,
-          doctorId: dto.doctorId,
-          nurseId: dto.nurseId,
+          //reason: dto.reason,
+          // doctorId: dto.doctorId,
+          // nurseId: dto.nurseId,
           bedId: dto.bedId,
           attenderDetail: dto.admitBy ?? null,
         },
@@ -217,8 +217,8 @@ export class AdmissionService {
         where: { id: admission.id },
         include: {
           patient: true,
-          doctor: true,
-          nurse: true,
+          // doctor: true,
+          // nurse: true,
           bed: {
             include: {
               ward: true, // ✅ THIS IS THE KEY
@@ -247,8 +247,8 @@ export class AdmissionService {
         data,
         include: {
           patient: true,
-          doctor: true,
-          nurse: true,
+          // doctor: true,
+          // nurse: true,
           bed: true,
         },
       });
@@ -266,8 +266,8 @@ export class AdmissionService {
     return prisma.admission.findMany({
       include: {
         patient: true,
-        doctor: true,
-        nurse: true,
+        // doctor: true,
+        // nurse: true,
         bed: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -280,8 +280,8 @@ export class AdmissionService {
       where: { id, hospital_Id },
       include: {
         patient: true,
-        doctor: true,
-        nurse: true,
+        // doctor: true,
+        // nurse: true,
         bed: true,
       },
     });
@@ -295,8 +295,8 @@ export class AdmissionService {
         data,
         include: {
           patient: true,
-          doctor: true,
-          nurse: true,
+          // doctor: true,
+          // nurse: true,
           bed: true,
         },
       });

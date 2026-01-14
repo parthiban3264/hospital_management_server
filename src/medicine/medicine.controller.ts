@@ -49,6 +49,11 @@ export class MedicineController {
     return this.service.finfindAllByhospitaldAll(hospitalId);
   }
 
+@Get('all/mediNameOnly/:hospitalId')
+  findAllByhospitaldAllMedicineName(@Param('hospitalId') hospitalId: number) {
+    log('medi ',hospitalId);
+    return this.service.findAllByhospitaldAllMedicineName(hospitalId);
+  }
   @Get()
   findAll(@Query('shop_id') shop_id: string) {
     return this.service.findAll(+shop_id);

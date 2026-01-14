@@ -104,8 +104,8 @@ model Admin {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   Consultation     Consultation[]
-  DoctorAssignment Admission[]    @relation("DoctorAssignment")
-  NurseAssignment  Admission[]    @relation("NurseAssignment")
+  // DoctorAssignment Admission[]    @relation("DoctorAssignment")
+  // NurseAssignment  Admission[]    @relation("NurseAssignment")
   Prescription     Prescription[]
 
   Doctor   Treatment[] @relation("Doctor_Treatment")
@@ -175,6 +175,8 @@ model Patient {
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   User     User?    @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
+  @@unique([id,hospital_Id])
+  
 }
 
 enum Status {
@@ -798,19 +800,45 @@ enum BedStatus {
   MAINTENANCE
 }
 
+// model Admission {
+//   id          Int @id @default(autoincrement())
+//   hospital_Id Int
+
+//   patient_Id Int
+//   patient    Patient @relation(fields: [patient_Id], references: [id])
+
+//   reason   String
+//   doctorId Int
+//   doctor   Admin  @relation("DoctorAssignment", fields: [doctorId], references: [id])
+
+//   nurseId Int
+//   nurse   Admin @relation("NurseAssignment", fields: [nurseId], references: [id])
+
+//   bedId Int
+//   bed   Bed @relation(fields: [bedId], references: [id])
+
+//   admitTime     DateTime  @default(now())
+//   dischargeTime DateTime?
+//   wardChange    Json?
+
+//   attenderDetail  Json?
+//   oldDoctorDetail Json?
+
+//   status AdmissionStatus @default(ADMITTED)
+
+//   charges  Charge[]
+//   hospital Hospital @relation(fields: [hospital_Id], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
 model Admission {
   id          Int @id @default(autoincrement())
   hospital_Id Int
 
   patient_Id Int
   patient    Patient @relation(fields: [patient_Id], references: [id])
-
-  reason   String
-  doctorId Int
-  doctor   Admin  @relation("DoctorAssignment", fields: [doctorId], references: [id])
-
-  nurseId Int
-  nurse   Admin @relation("NurseAssignment", fields: [nurseId], references: [id])
 
   bedId Int
   bed   Bed @relation(fields: [bedId], references: [id])
@@ -820,7 +848,6 @@ model Admission {
   wardChange    Json?
 
   attenderDetail  Json?
-  oldDoctorDetail Json?
 
   status AdmissionStatus @default(ADMITTED)
 
