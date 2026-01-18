@@ -77,6 +77,7 @@ export class TestingAndScanningPatientService {
             createdAt: data.createdAt,
           },
           include:{
+            Hospital: true,
             TestingAndScanningPatients:true,
             Patient:true,
             Consultation:true

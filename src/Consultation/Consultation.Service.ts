@@ -333,7 +333,7 @@ export class ConsultationService {
           status: 'success',
           data: {
             consultationId: consultation.id,
-            payment : payment,
+            //payment : payment,
             tokenNo: tokenNo,
             totalAmount: totalRegistrationAmount,
           },
