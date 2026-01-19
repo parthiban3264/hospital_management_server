@@ -4,6 +4,7 @@ import { StockMovementType } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { UpdateInventoryStatusDto } from './dto/update-inventory-status.dto';
 import { CreateBatchWithStockDto } from './dto/create-batch-with-stock.dto';
+import { log } from 'console';
 
 const prisma = new PrismaClient();
 
@@ -158,17 +159,44 @@ async getMedicineStockHistory(shop_id: number) {
     return !!batch;
   }
 
-   async isMedicineNameTaken(shop_id: number, name: string): Promise<boolean> {
-    const existing = await prisma.medicine.findFirst({
-      where: {
-        hospital_Id: shop_id,
-        name: {
-          equals: name.trim(),
-        },
+  //  async isMedicineNameTaken(shop_id: number, name: string,category:string): Promise<boolean> {
+  //   const existing = await prisma.medicine.findFirst({
+  //     where: {
+  //       hospital_Id: shop_id,category.toUpperCase : category.toUpperCase,
+  //       name: {
+  //         equals: name.trim(),
+  //       },
+  //     },
+  //   });
+  //   return !!existing;
+  // }
+
+async isMedicineNameTaken(
+  shop_id: number,
+  name: string,
+  category: string
+): Promise<boolean> {
+  // find the first medicine matching shop and name (case-sensitive)
+  const existing = await prisma.medicine.findFirst({
+    where: {
+      hospital_Id: shop_id,
+      name: {
+        equals: name.trim(), // case-sensitive
       },
-    });
-    return !!existing;
-  }
+    },
+  });
+log('existing',existing);
+  // if no medicine found, return false
+  // if (existing) return false;
+
+  // check category case-insensitively
+  if (!existing) return false;
+  log(existing.category.toUpperCase())
+   log(category.toUpperCase())
+  log((existing.category.toUpperCase() == category.toUpperCase()));
+  return (existing.category.toUpperCase() == category.toUpperCase());
+}
+
 
 async createMedicineWithBatchAndStock(dto: CreateMedicineWithBatchDto) {
   return prisma.$transaction(async (tx) => {
@@ -414,6 +442,93 @@ async updateMedicineOrBatchStatus(dto: UpdateInventoryStatusDto) {
       message: 'Medicine and all batches status updated',
       medicine_id,
       is_active,
+    };
+  });
+}
+
+async createBulkMedicineWithBatchAndStock(
+  shopId: number,
+  batches: any[],
+) {
+  return prisma.$transaction(async (tx) => {
+
+    const results: {
+      medicine_id: number;
+      batch_id: number;
+    }[] = [];
+
+    for (const body of batches) {
+
+      // 1️⃣ CREATE MEDICINE
+      const medicine = await tx.medicine.create({
+        data: {
+          hospital_Id: shopId,
+          name: body.medicine_name,
+          category: body.category,
+          ndc_code: body.ndc_code,
+          reorder: Number(body.reorder_level) || 0,
+          stock: Number(body.total_stock), // initial stock
+        },
+      });
+
+      // 2️⃣ CREATE BATCH
+      const batch = await tx.medicineBatch.create({
+        data: {
+          hospital_Id: shopId,
+          medicine_id: medicine.id,
+
+          batch_no: body.batch_no,
+          manufacture_date: new Date(body.mfg_date),
+          expiry_date: new Date(body.exp_date),
+
+          HSN: body.hsncode,
+          rack_no: body.rack_no,
+
+          quantity: Number(body.quantity),
+          free_quantity: Number(body.free_quantity || 0),
+          total_quantity: Number(body.total_quantity),
+          unit: Number(body.unit),
+
+          purchase_price_unit: Number(body.purchase_price_per_unit),
+          purchase_price_quantity: Number(body.purchase_price_per_quantity),
+          selling_price_unit: Number(body.selling_price_per_unit),
+          selling_price_quantity: Number(body.selling_price_per_quantity),
+
+          mrp: body.mrp ? Number(body.mrp) : undefined,
+          profit: body.profit_percent
+            ? Number(body.profit_percent)
+            : undefined,
+
+          purchase_details: body.purchase_details,
+          supplier_id: Number(body.supplier_id),
+
+          total_stock: Number(body.total_stock),
+          is_active: true,
+          created_at: new Date(),
+        },
+      });
+
+      // 3️⃣ STOCK MOVEMENT
+      await tx.stockMovement.create({
+        data: {
+          hospital_Id: shopId,
+          batch_id: batch.id,
+          movement_type: StockMovementType.IN,
+          quantity: Number(body.total_stock),
+          reason: body.reason ?? 'Bulk Medicine Upload',
+        },
+      });
+
+      results.push({
+        medicine_id: medicine.id,
+        batch_id: batch.id,
+      });
+    }
+
+    return {
+      message: 'Bulk medicine upload successful',
+      total_uploaded: results.length,
+      data: results,
     };
   });
 }

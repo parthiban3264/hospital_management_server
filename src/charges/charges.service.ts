@@ -29,12 +29,30 @@ async create(dto: CreateChargeDto) {
   });
 }
 
-async findByAdmission(admissionId: number) {
-  return prisma.charge.findMany({
-    where: { admissionId },
-    orderBy: { createdAt: 'desc' },
-  });
-}
+ async findPendingByHospital(hospital_Id: number) {
+    // Fetch admissions for hospital
+    const admissions = await prisma.admission.findMany({
+      where: { hospital_Id },
+      include: {
+        patient: true,
+        bed: { include: { ward: true } },
+        charges: { where: { status: 'PENDING' } },
+      },
+    });
+
+    // Filter out admissions without pending charges
+    const pendingAdmissions = admissions
+      .filter((adm) => adm.charges.length > 0)
+      .map((adm) => ({
+        admissionId: adm.id,
+        patientName: adm.patient.name,
+        wardName: adm.bed.ward.name,
+        bedNo: adm.bed.bedNo,
+        charges: adm.charges,
+      }));
+
+    return pendingAdmissions;
+  }
 
 async update(id: number, dto: CreateChargeDto) {
   return prisma.charge.update({

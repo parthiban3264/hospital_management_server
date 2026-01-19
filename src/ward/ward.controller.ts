@@ -14,11 +14,21 @@ import { log } from 'console';
 export class WardController {
   constructor(private readonly wardService: WardService) {}
 
+  @Get('hospital/patient/:hospitalId')
+  getWards(@Param('hospitalId') hospitalId: string) {
+    return this.wardService.getWardsWithBeds(+hospitalId);
+  }
+
+  // Get full admission/patient details
+  @Get('admission/patient/:admissionId')
+  getAdmission(@Param('admissionId') admissionId: string) {
+    return this.wardService.getAdmissionDetails(+admissionId);
+  }
   // Create Ward
   @Post(':hospital_Id')
   createWard(
     @Param('hospital_Id') hospital_Id: string,
-    @Body() body: { name: string; type: string; beds: any },
+    @Body() body: { name: string; type: string;rent: number; beds: any },
   ) {
     log('wards:', body, hospital_Id);
     //limit value is :  12582912000
@@ -39,11 +49,13 @@ export class WardController {
   getAllWards(@Param('hospital_Id') hospital_Id: string) {
     return this.wardService.getAllWards(Number(hospital_Id));
   }
+
   @Get(':hospital_Id/available-beds')
   getAvailableBeds(@Param('hospital_Id') hospital_Id: String) {
     log('hospital_Id', hospital_Id);
     return this.wardService.getAvailableBeds(Number(hospital_Id));
   }
+
   // Get Ward by ID
   @Get(':id/:hospital_Id')
   getWardById(
@@ -58,7 +70,7 @@ export class WardController {
   updateWard(
     @Param('id') id: string,
     @Param('hospital_Id') hospital_Id: string,
-    @Body() body: { name?: string; type?: string },
+    @Body() body: { name?: string; type?: string ; rent?: number },
   ) {
     return this.wardService.updateWard(+id, body, Number(hospital_Id));
   }

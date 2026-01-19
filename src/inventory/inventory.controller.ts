@@ -55,6 +55,7 @@ getAllMedicineHistory(
   async checkMedicineName(
     @Param('shopId') shopId: string,
     @Query('name') name: string,
+    @Query('category') category:string,
   ) {
     if (!shopId || !name) {
       return { exists: false, message: 'shop_id and name are required' };
@@ -62,6 +63,7 @@ getAllMedicineHistory(
     const exists = await this.service.isMedicineNameTaken(
       Number(shopId),
       name,
+      category,
     );
 
     return { exists };
@@ -160,6 +162,14 @@ getMedicine(@Param('id') id: string) {
 @Get('medicine/shop/:shop_id')
 getAllMedicines(@Param('shop_id') shop_id: string) {
   return this.service.getAllMedicinesWithBatches(+shop_id);
+}
+
+@Post('medicine/medicine-upload')
+async bulkMedicineUpload(@Body() body: any) {
+  const shopId = Number(body.shop_id);
+  const batches = body.batches ?? [];
+
+  return this.service.createBulkMedicineWithBatchAndStock(shopId, batches);
 }
 
 }

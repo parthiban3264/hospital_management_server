@@ -13,27 +13,36 @@ import { log } from 'console';
 @Controller('admissions')
 export class AdmissionController {
   constructor(private readonly admissionService: AdmissionService) {}
+@Get('patients/by-id/:id/:hospital_Id')
+getPatientById(
+  @Param('id') id: string,
+  @Param('hospital_Id') hospital_Id: string
+) {
+  return this.admissionService.findById(Number(id), Number(hospital_Id));
+}
 
-  // admission.controller.ts
 @Patch(':id/:hospital_Id/change-assignment')
 changeAssignment(
   @Param('id') id: string,
   @Param('hospital_Id') hospital_Id: string,
-  @Body()
-  body: {
-    doctorId?: number;
-    nurseId?: number;
-    newBedId?: number;
-  },
+  @Body() body: { doctorId?: number; nurseId?: number; newBedId?: number },
 ) {
-  return this.admissionService.changeAssignment(+id, body,Number(hospital_Id));
+  return this.admissionService.changeAssignment(+id, body, Number(hospital_Id));
 }
+
+  // admission.controller.ts
 
   @Get(':hospital_Id/admitted')
 async getAdmittedAdmissions(@Param('hospital_Id') hospital_Id:string) {
   return this.admissionService.getAdmittedAdmissions(Number(hospital_Id));
 
 }
+
+@Get('patients/all/:hospital_Id')
+  getAllPatients(@Param('hospital_Id') hospital_Id: string) {
+    log('Fetching all patients', { hospital_Id });
+    return this.admissionService.findAllPatients(Number(hospital_Id));
+  }
 
   @Post(':hospital_Id/admit')
 admitPatient(@Body() dto: any,@Param('hospital_Id') hospital_Id:String) {
@@ -58,27 +67,8 @@ getNurses(@Param('hospital_Id') hospital_Id:string) {
     return this.admissionService.getNurses(Number(hospital_Id));
   }
 
-
-  // Create Admission
-  @Post()
-  createAdmission(
-    @Body()
-    body: {
-      patientId: number;
-      doctorId: number;
-      nurseId: number;
-      bedId: number;
-      wardChange?: any;
-      attenderDetail?: any;
-      oldDoctorDetail?: any;
-      status?: 'ADMITTED' | 'DISCHARGED' | 'CANCELLED';
-    },
-  ) {
-    return this.admissionService.createAdmission(body);
-  }
-
   // Get all admissions
-  @Get(':/hospital_Id')
+  @Get(':hospital_Id')
   getAllAdmissions(@Param ('hospital_Id') hospital_Id : String) {
     return this.admissionService.getAllAdmissions(Number(hospital_Id));
   }

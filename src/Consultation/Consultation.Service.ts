@@ -6,6 +6,7 @@ import { log } from 'console';
 import { PaymentStatus } from 'generated/prisma';
 import { equal } from 'assert';
 //import { format } from 'date-fns';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class ConsultationService {
@@ -875,4 +876,32 @@ export class ConsultationService {
       return { status: 'failed', error: error.message };
     }
   }
+
+  async autoAbandon() {
+  const twoDaysAgo = dayjs().subtract(2, 'day').toDate();
+
+  const consultations = await this.prisma.consultation.findMany({
+    where: {
+      hospital_Id : 1,
+      status: { in: ['PENDING', 'ONGOING'] },
+    },
+  });
+
+  const abandonedIds = consultations
+    .filter(c =>
+      dayjs(c.createdAt, 'YYYY-MM-DD hh:mm A').isBefore(twoDaysAgo),
+    )
+    .map(c => c.id);
+
+  return this.prisma.consultation.updateMany({
+    where: {
+      id: { in: abandonedIds },
+    },
+    data: {
+      status: 'ABANDONED',
+      abandonedAt: new Date(),
+    },
+  });
+}
+
 }

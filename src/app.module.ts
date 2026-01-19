@@ -33,10 +33,11 @@ import { SupplierModule } from './supplier/supplier.module';
 import { MedicineValueModule } from './medicine-value/medicine-value.module';
 import { MedicineModule } from './medicine/medicine.module';
 import { InventoryModule } from './inventory/inventory.module';
-import { AdmissionModule } from './admission/admission/admission.module';
-import { ChargesModule } from './charges/charges/charges.module';
+import { AdmissionModule } from './admission/admission.module';
+import { ChargesModule } from './charges/charges.module';
 import { PrescriptionModule } from './prescription/prescription.module';
 import { ReorderModule } from './reorder/reorder.module';
+import { ScheduleModule } from '@nestjs/schedule';
 //import { SalesModule } from './sales/sale.module';
 //import { BillingModule } from './shivani/billing/billing.module';
 @Module({
@@ -77,7 +78,7 @@ import { ReorderModule } from './reorder/reorder.module';
     ChargesModule,
     PrescriptionModule,
     ReorderModule,
-    
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],

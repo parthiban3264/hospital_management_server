@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { ChargesService } from './charges.service';
-@Controller('charge')
+@Controller('charges')
 export class ChargesController {
   constructor(private readonly chargesService: ChargesService) {}
 
@@ -18,10 +18,10 @@ create(@Body() dto: CreateChargeDto) {
   return this.chargesService.create(dto);
 }
 
-@Get('admission/:admissionId')
-findByAdmission(@Param('admissionId') id: number) {
-  return this.chargesService.findByAdmission(+id);
-}
+ @Get('hospital/:hospital_Id/pending')
+  findPendingByHospital(@Param('hospital_Id') hospital_Id: number) {
+    return this.chargesService.findPendingByHospital(+hospital_Id);
+  }
 
 @Patch(':id')
 update(@Param('id') id: number, @Body() dto: CreateChargeDto) {

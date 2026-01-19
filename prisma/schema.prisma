@@ -175,7 +175,7 @@ model Patient {
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   User     User?    @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
-  @@unique([id,hospital_Id])
+  //@@unique([id,hospital_Id])
   
 }
 
@@ -187,6 +187,7 @@ enum Status {
   ENDPROCESSING
   ONGOING
   PENDING
+  ABANDONED
 }
 
 enum QueueStatus {
@@ -237,6 +238,7 @@ model Consultation {
   access               Json?
   createdAt            String?
   updatedAt            String?
+  abandonedAt  DateTime?
   paymentStatus        Boolean     @default(false)
 
   Hospital                  Hospital                    @relation(fields: [hospital_Id], references: [id])
@@ -489,6 +491,7 @@ enum Type {
   MEDICINEFEEANDINJECTIONFEE
   MEDICINETONICINJECTIONFEES
   ROOMCHARGE
+  ADMISSIONFEE
   OTHER
 }
 
@@ -716,54 +719,6 @@ model Tickets {
   createdAt   String
   updatedAt   String?
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
-}
-
-model ScanAndTestsWithPerHospital {
-  id          Int      @id @default(autoincrement())
-  hospital_Id Int
-  title       String
-  type        Types
-  amount      Float?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  hospital Hospital                           @relation(fields: [hospital_Id], references: [id])
-  options  ScanAndTestOptionWithPerHospital[]
-
-  @@unique([hospital_Id, title, type])
-  @@index([hospital_Id])
-}
-
-model ScanAndTestOptionWithPerHospital {
-  id              Int    @id @default(autoincrement())
-  scanTestId      Int
-  unitReferenceId Int
-  price           Float?
-
-  scanTest ScanAndTestsWithPerHospital @relation(fields: [scanTestId], references: [id])
-
-  unitRef ScanAndTestUnitReferencewithPerHospital @relation(fields: [unitReferenceId], references: [id])
-
-  @@unique([scanTestId, unitReferenceId])
-  @@index([scanTestId])
-}
-
-model ScanAndTestUnitReferencewithPerHospital {
-  id          Int      @id @default(autoincrement())
-  hospital_Id Int
-  optionName  String
-  optionTitle String
-  type        String?
-  unit        String
-  reference   Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  hospital Hospital                           @relation(fields: [hospital_Id], references: [id])
-  options  ScanAndTestOptionWithPerHospital[]
-
-  @@unique([hospital_Id, optionName, optionTitle])
-  @@index([hospital_Id, optionName])
 }
 
 /////// InPatient/////////////////
@@ -1259,3 +1214,52 @@ model ScanAndTestUnitReferance {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model ScanAndTestsWithPerHospital {
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  title       String
+  type        Types
+  amount      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hospital Hospital                           @relation(fields: [hospital_Id], references: [id])
+  options  ScanAndTestOptionWithPerHospital[]
+
+  @@unique([hospital_Id, title, type])
+  @@index([hospital_Id])
+}
+
+model ScanAndTestOptionWithPerHospital {
+  id              Int    @id @default(autoincrement())
+  scanTestId      Int
+  unitReferenceId Int
+  price           Float?
+
+  scanTest ScanAndTestsWithPerHospital @relation(fields: [scanTestId], references: [id])
+
+  unitRef ScanAndTestUnitReferencewithPerHospital @relation(fields: [unitReferenceId], references: [id])
+
+  @@unique([scanTestId, unitReferenceId])
+  @@index([scanTestId])
+}
+
+model ScanAndTestUnitReferencewithPerHospital {
+  id          Int      @id @default(autoincrement())
+  hospital_Id Int
+  optionName  String
+  optionTitle String
+  type        String?
+  unit        String
+  reference   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hospital Hospital                           @relation(fields: [hospital_Id], references: [id])
+  options  ScanAndTestOptionWithPerHospital[]
+
+  @@unique([hospital_Id, optionName, optionTitle])
+  @@index([hospital_Id, optionName])
+}
+
