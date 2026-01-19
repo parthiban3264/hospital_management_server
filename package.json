@@ -33,7 +33,6 @@
     "@prisma/client": "^6.19.0",
     "bcrypt": "^6.0.0",
     "class-validator": "^0.14.3",
-    "crypto": "^1.0.1",
     "dayjs": "^1.11.19",
     "jimp": "^0.16.1",
     "mariadb": "^3.4.5",
