@@ -63,7 +63,7 @@ model Hospital {
   Prescription                            Prescription[]
   ScanAndTestUnitReferencewithPerHospital ScanAndTestUnitReferencewithPerHospital[]
   ScanAndTestsWithPerHospitals            ScanAndTestsWithPerHospital[]
-  PrescriptionDispense PrescriptionDispense[]
+  PrescriptionDispense                    PrescriptionDispense[]
 }
 
 model User {
@@ -176,7 +176,6 @@ model Patient {
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   User     User?    @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
   //@@unique([id,hospital_Id])
-  
 }
 
 enum Status {
@@ -238,7 +237,7 @@ model Consultation {
   access               Json?
   createdAt            String?
   updatedAt            String?
-  abandonedAt  DateTime?
+  abandonedAt          DateTime?
   paymentStatus        Boolean     @default(false)
 
   Hospital                  Hospital                    @relation(fields: [hospital_Id], references: [id])
@@ -482,6 +481,7 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   CANCELLED
+  PARTIALLY_PAID
 }
 
 enum Type {
@@ -502,9 +502,11 @@ model Payment {
   staff_Id        String?
   consultation_Id Int?
   prescription_Id Int?
+  admission_Id    Int?
   reason          String
   status          PaymentStatus @default(PENDING)
   amount          Float?
+  received_Amount Float?
   paymentType     PaymentType?
   type            Type?
   transactionId   Json?
@@ -519,9 +521,10 @@ model Payment {
   TestingAndScanningPatients TestingAndScanningPatient[]
   MedicinePatient            MedicinePatient[]
   InjectionPatient           InjectionPatient[]
+  Admission                  Admission?                   @relation(fields: [admission_Id], references: [id])
   TonicPatient               TonicPatient[]
   Consultation               Consultation?               @relation(fields: [consultation_Id], references: [id])
-  Prescription Prescription[]
+  Prescription               Prescription[]
 }
 
 //////just create but not use ////////
@@ -723,7 +726,6 @@ model Tickets {
 
 /////// InPatient/////////////////
 
-
 model Wards {
   id          Int      @id @default(autoincrement())
   hospital_Id Int
@@ -741,7 +743,7 @@ model Bed {
   id         Int         @id @default(autoincrement())
   bedNo      Int
   wardId     Int
-  ward       Wards        @relation(fields: [wardId], references: [id])
+  ward       Wards       @relation(fields: [wardId], references: [id])
   status     BedStatus   @default(AVAILABLE)
   createdAt  DateTime    @default(now())
   admissions Admission[]
@@ -802,15 +804,16 @@ model Admission {
   dischargeTime DateTime?
   wardChange    Json?
 
-  attenderDetail  Json?
+  attenderDetail Json?
 
   status AdmissionStatus @default(ADMITTED)
 
   charges  Charge[]
   hospital Hospital @relation(fields: [hospital_Id], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
 }
 
 enum AdmissionStatus {
@@ -945,7 +948,6 @@ enum MedicineRoute {
   OTHER
 }
 
-
 enum MedicineStatus {
   PENDING
   CANCELLED
@@ -960,7 +962,7 @@ model Prescription {
   patient_Id      Int
   doctor_Id       String
   consultation_Id Int?
-  payment_Id Int?
+  payment_Id      Int?
 
   status         PrescriptionStatus @default(DRAFT)
   notes          String?
@@ -973,9 +975,9 @@ model Prescription {
 
   hospital     Hospital      @relation(fields: [hospital_Id], references: [id])
   patient      Patient       @relation(fields: [patient_Id], references: [id])
-  doctor       Admin         @relation(fields: [doctor_Id,hospital_Id], references: [user_Id,hospital_Id])
+  doctor       Admin         @relation(fields: [doctor_Id, hospital_Id], references: [user_Id, hospital_Id])
   consultation Consultation? @relation(fields: [consultation_Id], references: [id])
-  payment Payment? @relation(fields: [payment_Id], references: [id])
+  payment      Payment?      @relation(fields: [payment_Id], references: [id])
 
   medicines PrescriptionMedicine[]
 }
@@ -985,12 +987,12 @@ model PrescriptionMedicine {
   prescription_Id Int
   medicine_Id     Int
 
-  dosage         String?
-  route          MedicineRoute
-  frequency      String?
-  days           Int
-  total_quantity Int
-  dispensed_quantity Int @default(0)
+  dosage             String?
+  route              MedicineRoute
+  frequency          String?
+  days               Int
+  total_quantity     Int
+  dispensed_quantity Int           @default(0)
 
   after_food Boolean @default(false)
   morning    Boolean @default(false)
@@ -1010,17 +1012,16 @@ model PrescriptionMedicine {
   @@unique([prescription_Id, medicine_Id])
 }
 
-
 model PrescriptionDispense {
-  id                       Int @id @default(autoincrement())
+  id                       Int      @id @default(autoincrement())
   hospital_Id              Int
   prescription_medicine_Id Int
   medicine_Id              Int
   batch_Id                 Int
-amount Int?
-  dispensed_quantity Int
-  dispensed_by       Int
-  dispensed_at       DateTime @default(now())
+  amount                   Int?
+  dispensed_quantity       Int
+  dispensed_by             Int
+  dispensed_at             DateTime @default(now())
 
   hospital Hospital @relation(fields: [hospital_Id], references: [id])
 
@@ -1029,7 +1030,6 @@ amount Int?
   medicine Medicine      @relation(fields: [medicine_Id], references: [id])
   batch    MedicineBatch @relation(fields: [batch_Id], references: [id])
 }
-
 
 ////////////////////////////// old table ////////////////////////////
 
@@ -1262,4 +1262,3 @@ model ScanAndTestUnitReferencewithPerHospital {
   @@unique([hospital_Id, optionName, optionTitle])
   @@index([hospital_Id, optionName])
 }
-

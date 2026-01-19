@@ -206,6 +206,11 @@ async admitPatient(dto: any, hospital_Id: number) {
             type: 'ADMISSIONFEE',
             createdAt: dto.createdAt || new Date(),
           },
+          include:{
+            Admission:{
+              include:{charges:true}
+            }
+          }
     })
 
     // 🔒 Occupy bed
@@ -222,6 +227,7 @@ async admitPatient(dto: any, hospital_Id: number) {
         bed: {
           include: { ward: true },
         },
+        payments:true,
       },
     });
   });
