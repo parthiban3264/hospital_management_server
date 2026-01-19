@@ -52,6 +52,7 @@ export class TestingAndScanningPatientService {
           type: 'TESTINGFEESANDSCANNINGFEE', // match your logic
           status: 'PENDING',
         },
+        
       });
 
       // Step 2: Create or update payment
@@ -62,6 +63,12 @@ export class TestingAndScanningPatientService {
             amount: (payment.amount ?? 0) + (data.amount ?? 0),
             updatedAt: data.createdAt,
           },
+          include:{
+            Hospital: true,
+            //TestingAndScanningPatients: true,
+            Patient:true,
+            Consultation:true,
+          }
         });
       } else {
         const reason = data.isTestOnly !== true ? 'Testing & Scanning Fee' : 'Private Testing Fee'
@@ -78,11 +85,12 @@ export class TestingAndScanningPatientService {
           },
           include:{
             Hospital: true,
-            TestingAndScanningPatients:true,
+            //TestingAndScanningPatients: true,
             Patient:true,
-            Consultation:true
+            Consultation:true,
           }
         });
+        log('paymment:',payment);
       }
 
       // Step 3: Create new test linked to that payment
@@ -109,7 +117,7 @@ export class TestingAndScanningPatientService {
           payment_Id: payment.id, // link to the same payment
         },
       });
-
+log('tset',test);
       return { test, data: {payment} };
     });
   }
