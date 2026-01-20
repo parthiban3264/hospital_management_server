@@ -816,6 +816,15 @@ model Admission {
   payments  Payment[]
 }
 
+// model AdmissionRoomRent {
+//   id Int @id @default(autoincrement())
+//   admission_Id Int
+//   status ChargeStatus @default(PENDING)
+//   amount Float
+//   createdAt String
+//   updatedAt DateTime @updatedAt
+// }
+
 enum AdmissionStatus {
   ADMITTED
   COMPLETED
@@ -826,6 +835,7 @@ enum AdmissionStatus {
 enum ChargeStatus {
   PENDING
   PAID
+  CANCELLED
 }
 
 model Charge {

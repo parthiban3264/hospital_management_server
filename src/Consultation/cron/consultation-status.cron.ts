@@ -9,7 +9,7 @@ export class ConsultationStatusCron {
   ) {}
 
   // Runs every hour
-  @Cron(CronExpression.EVERY_2_HOURS)
+  @Cron(CronExpression.EVERY_DAY_AT_11PM)
   async handleAutoAbandoned() {
     await this.consultationService.autoAbandon();
   }

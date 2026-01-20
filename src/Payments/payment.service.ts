@@ -240,6 +240,7 @@ const threeDaysAgoStr = dayjs()
   .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
 
 
+
 return this.prisma.payment.findMany({
   where: {
     hospital_Id: Number(hospitalId),
@@ -258,7 +259,12 @@ return this.prisma.payment.findMany({
           gte: threeDaysAgoStr, // ✅ Date object
         },
       },
-
+{
+        status: 'PARTIALLY_PAID',
+        createdAt: {
+          gte: monthDaysAgoStr, // ✅ Date object
+        },
+      },
       // ✅ PAID → only last 7 days
       {
         status: 'PAID',
@@ -266,7 +272,6 @@ return this.prisma.payment.findMany({
           gte: twoDaysAgoStr, // ✅ Date object
         },
       },
-
       // ✅ CANCELLED → all (or add date if you want)
       {
         status: 'CANCELLED',
@@ -274,6 +279,7 @@ return this.prisma.payment.findMany({
           gte: monthDaysAgoStr, // ✅ Date object
         },
       },
+      
     ],
 
 

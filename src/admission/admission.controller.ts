@@ -99,6 +99,12 @@ getNurses(@Param('hospital_Id') hospital_Id:string) {
     return this.admissionService.updateAdmission(+id, body,Number(hospital_Id));
   }
 
+  @Patch('admissionId/status/:id')
+updateStatus(@Param('id') id: number, @Body() dto: any) {
+   console.log('Updating charges for admission:', id);
+  return this.admissionService.updateStatus(+id, dto);
+}
+
   // Delete admission
   @Delete(':id/:hospital_Id')
   deleteAdmission(@Param('id') id: string,@Param('hospital_Id') hospital_Id: string) {

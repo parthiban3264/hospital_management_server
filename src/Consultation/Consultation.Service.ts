@@ -882,7 +882,7 @@ export class ConsultationService {
 
   const consultations = await this.prisma.consultation.findMany({
     where: {
-      hospital_Id : 1,
+      //hospital_Id : 1,
       status: { in: ['PENDING', 'ONGOING'] },
     },
   });
