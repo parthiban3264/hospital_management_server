@@ -12,10 +12,12 @@ export class ScanAndTestUnitReferenceService {
         data: {
           hospital_Id: body.hospital_Id,
           optionName: body.optionName,
-          optionTitle: body.optionTitle,
+          //optionTitle: body.optionTitle,
+          scanTestId:body.scanTestId,
           type: body.type,
           unit: body.unit,
           reference: body.reference,
+
         },
       });
     } catch (error) {

@@ -240,6 +240,7 @@ async checkUserIdExists(
           assignDoctorId: data.assignDoctorId,
           accessDoctorRole: data.accessDoctorRole,
           accessAdminRole: data.accessAdminRole,
+          inPatientAmount: data.inPatientAmount
         },
       });
       log('Updated Admin:', admin);

@@ -193,16 +193,31 @@ export class AdmissionService {
           attenderDetail: dto.admitBy ?? null,
         },
       });
+      if(dto.isAdvanced === true) {
+         const advancedFee = await prisma.fees.findFirst({
+        where: {
+          hospital_Id: Number(hospital_Id),
+          type: 'INPATIENT ADVANCE FEE',
+        },
+      });
+       const hasValidAdvanceFee =
+  advancedFee !== null && advancedFee.amount > 0;
+
+if (!hasValidAdvanceFee) {
+  throw new BadRequestException('Please Set Inpatient Advanced Fee');
+}
+
+
       const payment = await tx.payment.create({
         data: {
           hospital_Id: hospital_Id,
           patient_Id: dto.patientId,
           //consultation_Id: consultation.id,
           admission_Id: admission.id,
-          reason: 'Admission Fee',
+          reason: 'Inpatient Advance Fee',
           status: 'PENDING',
-          amount: wardAmount.rent,
-          type: 'ADMISSIONFEE',
+          amount: advancedFee?.amount ?? 0,
+          type: 'ADVANCEFEE',
           createdAt: dto.createdAt || new Date(),
         },
         include: {
@@ -211,7 +226,7 @@ export class AdmissionService {
           },
         },
       });
-
+    }
       // 🔒 Occupy bed
       await tx.bed.update({
         where: { id: dto.bedId },
