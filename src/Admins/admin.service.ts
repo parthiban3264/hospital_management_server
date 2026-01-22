@@ -306,14 +306,52 @@ async checkUserIdExists(
 }
 
 
+  // async remove(id: number) {
+  //   try {
+  //     await this.prisma.admin.delete({ where: { id },include:{
+  //       User:{
+  //         await this.prisma.admin.delete({ where: { user_Id:id }})
+  //       }
+  //     } });
+  //     return { status: 'success', message: 'Admin deleted' };
+  //   } catch (error) {
+  //     return { status: 'failed', error: error.message };
+  //   }
+  // }
+
   async remove(id: number) {
-    try {
-      await this.prisma.admin.delete({ where: { id } });
-      return { status: 'success', message: 'Admin deleted' };
-    } catch (error) {
-      return { status: 'failed', error: error.message };
-    }
+  try {
+    await this.prisma.$transaction(async (tx) => {
+      // 1️⃣ Find admin to get user_Id
+     const admin = await tx.admin.findUnique({
+  where: { id },
+  select: {
+    User: { select: { id: true } }, // get user primary key
+  },
+});
+
+
+      if (!admin) {
+        throw new Error("Admin not found");
+      }
+
+      // 2️⃣ Delete admin
+      await tx.admin.delete({
+        where: { id },
+      });
+
+      // 3️⃣ Delete related user
+  await tx.user.delete({
+  where: { id: admin.User.id }, // ✅ use primary key
+});
+    });
+
+    return { status: 'success', message: 'Admin deleted successfully' };
+  } catch (error) {
+    return { status: 'failed', error: error.message };
   }
+}
+
 
    // 🔹 New method: fetch permissions IDs + keys
   // async getStaffPermissions(hospitalId: number, userId: string) {

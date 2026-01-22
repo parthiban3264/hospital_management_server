@@ -21,6 +21,12 @@ enum PatientStatus {
   ACTIVE
   INACTIVE
 }
+enum AppPaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUND
+}
 
 model Hospital {
   id                                      Int                                       @id @default(autoincrement()) //  @default(autoincrement())
@@ -64,6 +70,23 @@ model Hospital {
   ScanAndTestUnitReferencewithPerHospital ScanAndTestUnitReferencewithPerHospital[]
   ScanAndTestsWithPerHospitals            ScanAndTestsWithPerHospital[]
   PrescriptionDispense                    PrescriptionDispense[]
+  AppPayment AppPayment[]
+}
+
+model AppPayment {
+  id            Int              @id @default(autoincrement())
+  hospital_Id       Int
+  baseAmount    Int
+  gst           Float
+  amount        Float
+  paidAt        DateTime         @default(now())
+  periodStart   DateTime
+  periodEnd     DateTime
+  transactionId String?
+  status        AppPaymentStatus @default(PENDING)
+  createdAt     DateTime         @default(now())
+
+  Hospital     Hospital  @relation(fields: [hospital_Id], references: [id])
 }
 
 model User {
@@ -483,6 +506,7 @@ enum PaymentStatus {
   REFUNDED
   CANCELLED
   PARTIALLY_PAID
+  PAYLATER
 }
 
 enum Type {
@@ -494,6 +518,7 @@ enum Type {
   ROOMCHARGE
   ADMISSIONFEE
   ADVANCEFEE
+  DAILYTREATMENTFEE
   OTHER
 }
 

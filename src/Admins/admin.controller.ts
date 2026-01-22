@@ -297,6 +297,7 @@ async updateProfilePhoto(
 
   @Delete('deleteById/:id')
   remove(@Param('id') id: string) {
+    log('work')
     return this.adminService.remove(+id);
   }
 }

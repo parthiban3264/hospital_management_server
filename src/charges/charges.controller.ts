@@ -28,10 +28,10 @@ create(@Body() dto: CreateChargeDto) {
 update(@Param('id') id: number, @Body() dto: CreateChargeDto) {
   return this.chargesService.update(+id, dto);
 }
-@Patch('admissionId/:id')
-updateCharges(@Param('id') id: number, @Body() dto: any) {
-   console.log('Updating charges for admission:', id);
-  return this.chargesService.updateCharges(+id, dto);
+@Patch('admissionId')
+updateCharges( @Body() dto: any) {
+   console.log('Updating charges for admission:');
+  return this.chargesService.updateCharges( dto);
 }
 
 @Delete(':id')

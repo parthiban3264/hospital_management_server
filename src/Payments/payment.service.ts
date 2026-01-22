@@ -272,6 +272,12 @@ return this.prisma.payment.findMany({
           gte: twoDaysAgoStr, // ✅ Date object
         },
       },
+      {
+        status: 'PAYLATER',
+        createdAt: {
+          gte: monthDaysAgoStr, // ✅ Date object
+        },
+      },
       // ✅ CANCELLED → all (or add date if you want)
       {
         status: 'CANCELLED',
@@ -279,7 +285,6 @@ return this.prisma.payment.findMany({
           gte: monthDaysAgoStr, // ✅ Date object
         },
       },
-      
     ],
 
 
@@ -307,7 +312,7 @@ return this.prisma.payment.findMany({
       Hospital: {select: {id:true ,name: true,}},
       Patient: {select: {id:true,user_Id: true, name:true, dob:true, gender:true,phone:true,address:true,createdAt:true,bldGrp:true},},
       Consultation: {select:{ id : true ,doctor_Id:true,patient_Id:true,sugar:true,PK:true, SPO2:true,temperature:true,height:true,weight:true, bp:true, BMI:true, emergency:true,registrationFee:true,sugarTestFee:true,emergencyFee:true,consultationFee:true,status:true,tokenDate:true,tokenNo:true,isTestOnly:true,referredByDoctorName:true} },
-      Admission: {select:{id : true ,status:true, patient_Id:true, wardChange :true , dischargeTime:true,bedId:true,bed:{include:{ward:true}},charges:true} },
+      Admission: {select:{id : true ,status:true, patient_Id:true,admitTime:true, wardChange :true , dischargeTime:true,bedId:true,bed:{include:{ward:true}},charges:true} },
       TestingAndScanningPatients: {select: { id: true, title: true, type: true, status: true,payment_Id:true, consultation_Id: true,amount:true,selectedOptions:true,selectedOptionAmounts:true,unSelectedOptions:true },},
       MedicinePatient: {select: { id: true, medicine_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},
       TonicPatient: {select: { id: true, tonic_Id: true, quantity: true,payment_Id:true, consultation_Id: true,total:true },},

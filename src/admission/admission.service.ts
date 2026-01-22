@@ -1,10 +1,13 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException,Logger } from '@nestjs/common';
+
 import { AdmissionStatus, ChargeStatus, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+
 @Injectable()
 export class AdmissionService {
+   private readonly logger = new Logger(AdmissionService.name);
   async changeAssignment(
     admissionId: number,
     data: { newBedId?: number },
@@ -193,40 +196,94 @@ export class AdmissionService {
           attenderDetail: dto.admitBy ?? null,
         },
       });
-      if(dto.isAdvanced === true) {
-         const advancedFee = await prisma.fees.findFirst({
+
+      // const today = new Date();
+      // today.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const billingStartDate = new Date(now);
+      if (now.getHours() >= 19) {
+        billingStartDate.setDate(billingStartDate.getDate() + 1);
+      }
+      billingStartDate.setHours(0, 0, 0, 0);
+      if (dto.isAdvanced === true) {
+        const advancedFee = await prisma.fees.findFirst({
+          where: {
+            hospital_Id: Number(hospital_Id),
+            type: 'INPATIENT ADVANCE FEE',
+          },
+        });
+        const hasValidAdvanceFee =
+          advancedFee !== null && advancedFee.amount > 0;
+
+        if (!hasValidAdvanceFee) {
+          throw new BadRequestException('Please Set Inpatient Advanced Fee');
+        }
+        await tx.charge.create({
+          data: {
+            admissionId: admission.id,
+            description: 'Inpatient Advance Fee',
+            chargeDate: billingStartDate,
+            amount: advancedFee.amount,
+            status: 'PENDING',
+          },
+        });
+        const payment = await tx.payment.create({
+          data: {
+            hospital_Id: hospital_Id,
+            patient_Id: dto.patientId,
+            //consultation_Id: consultation.id,
+            admission_Id: admission.id,
+            reason: 'Inpatient Advance Fee',
+            status: 'PENDING',
+            amount: advancedFee?.amount ?? 0,
+            type: 'ADVANCEFEE',
+            createdAt: dto.createdAt || new Date(),
+          },
+          include: {
+            Admission: {
+              include: { charges: true },
+            },
+          },
+        });
+      }
+      const DoctorFee = await prisma.fees.findFirst({
         where: {
           hospital_Id: Number(hospital_Id),
-          type: 'INPATIENT ADVANCE FEE',
+          type: 'INPATIENT DOCTOR FEE',
         },
       });
-       const hasValidAdvanceFee =
-  advancedFee !== null && advancedFee.amount > 0;
-
-if (!hasValidAdvanceFee) {
-  throw new BadRequestException('Please Set Inpatient Advanced Fee');
-}
-
-
-      const payment = await tx.payment.create({
-        data: {
-          hospital_Id: hospital_Id,
-          patient_Id: dto.patientId,
-          //consultation_Id: consultation.id,
-          admission_Id: admission.id,
-          reason: 'Inpatient Advance Fee',
-          status: 'PENDING',
-          amount: advancedFee?.amount ?? 0,
-          type: 'ADVANCEFEE',
-          createdAt: dto.createdAt || new Date(),
+      const NurseFee = await prisma.fees.findFirst({
+        where: {
+          hospital_Id: Number(hospital_Id),
+          type: 'INPATIENT NURSE FEE',
         },
-        include: {
-          Admission: {
-            include: { charges: true },
+      });
+      await prisma.charge.createMany({
+        data: [
+          {
+            admissionId: admission.id,
+            description: 'Room Rent',
+            chargeDate: billingStartDate,
+            amount: wardAmount.rent,
+            status: 'PENDING',
           },
-        },
+          {
+            admissionId: admission.id,
+            description: 'Doctor Fee',
+            chargeDate: billingStartDate,
+            amount: DoctorFee.amount ?? 0,
+            status: 'PENDING',
+          },
+          {
+            admissionId: admission.id,
+            description: 'Nurse Fee',
+            chargeDate: billingStartDate,
+            amount: NurseFee.amount ?? 0,
+            status: 'PENDING',
+          },
+        ],
       });
-    }
+
       // 🔒 Occupy bed
       await tx.bed.update({
         where: { id: dto.bedId },
@@ -246,6 +303,219 @@ if (!hasValidAdvanceFee) {
       });
     });
   }
+
+  // async handleDailyBilling() {
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0);
+
+  //    this.logger.log(`Daily IPD billing started for ${today.toDateString()}`);
+
+  //   try {
+  //     const admissions = await prisma.admission.findMany({
+  //       where: {
+  //         status: 'ADMITTED',
+  //         dischargeTime: null,
+  //       },
+  //       include: {
+  //         bed: { include: { ward: true } },
+  //       },
+  //     });
+
+  //     for (const admission of admissions) {
+  //       // Prevent duplicate billing
+  //       const alreadyBilled = await prisma.charge.findFirst({
+  //         where: {
+  //           admissionId: admission.id,
+  //           chargeDate: today,
+  //         },
+  //       });
+
+  //       if (alreadyBilled) continue;
+
+  //       // Get hospital fees
+  //       const doctorFee = await prisma.fees.findFirst({
+  //         where: { hospital_Id: admission.hospital_Id, type: 'INPATIENT DOCTOR FEE' },
+  //       });
+  //       const nurseFee = await prisma.fees.findFirst({
+  //         where: { hospital_Id: admission.hospital_Id, type: 'INPATIENT NURSE FEE' },
+  //       });
+
+  //       await prisma.charge.createMany({
+  //         data: [
+  //           {
+  //             admissionId: admission.id,
+  //             description: 'Room Rent',
+  //             chargeDate: today,
+  //             amount: admission.bed.ward.rent,
+  //             status: 'PENDING',
+  //           },
+  //           {
+  //             admissionId: admission.id,
+  //             description: 'Doctor Fee',
+  //             chargeDate: today,
+  //             amount: doctorFee?.amount ?? 0,
+  //             status: 'PENDING',
+  //           },
+  //           {
+  //             admissionId: admission.id,
+  //             description: 'Nurse Fee',
+  //             chargeDate: today,
+  //             amount: nurseFee?.amount ?? 0,
+  //             status: 'PENDING',
+  //           },
+  //         ],
+  //       });
+
+  //       this.logger.log(`Daily charges created for admission ${admission.id}`);
+  //     }
+
+  //     this.logger.log('Daily IPD billing completed!');
+  //   } catch (error) {
+  //     this.logger.error('Error in daily IPD billing', error);
+  //   }
+  // }
+
+async createChargesFromPayments() {
+  // const yesterday = new Date();
+  // yesterday.setDate(yesterday.getDate() - 1);
+  // yesterday.setHours(0, 0, 0, 0);
+  const today = new Date().toISOString().split('T')[0];
+
+  const payments = await prisma.payment.findMany({
+    where: {
+      type: 'DAILYTREATMENTFEE',
+      Admission: {
+        status: 'ADMITTED',
+        dischargeTime: null,
+      },
+    },
+    include: {
+      Admission: {
+        include: {
+          bed: {
+            include: {
+              ward: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  for (const payment of payments) {
+    const admission = payment.Admission;
+    if (!admission) continue;
+
+    // avoid duplicate charges for same day
+    const exists = await prisma.charge.findFirst({
+      where: {
+        admissionId: admission.id,
+        chargeDate: today,
+      },
+    });
+
+    if (exists) continue;
+
+    const doctorFee = await prisma.fees.findFirst({
+      where: {
+        hospital_Id: admission.hospital_Id,
+        type: 'INPATIENT DOCTOR FEE',
+      },
+    });
+
+    const nurseFee = await prisma.fees.findFirst({
+      where: {
+        hospital_Id: admission.hospital_Id,
+        type: 'INPATIENT NURSE FEE',
+      },
+    });
+
+    await prisma.charge.createMany({
+      data: [
+        {
+          admissionId: admission.id,
+          description: 'Room Rent',
+          chargeDate: today,
+          amount: admission.bed.ward.rent,
+          status: 'PENDING',
+        },
+        {
+          admissionId: admission.id,
+          description: 'Doctor Fee',
+          chargeDate: today,
+          amount: doctorFee?.amount ?? 0,
+          status: 'PENDING',
+        },
+        {
+          admissionId: admission.id,
+          description: 'Nurse Fee',
+          chargeDate: today,
+          amount: nurseFee?.amount ?? 0,
+          status: 'PENDING',
+        },
+      ],
+    });
+  }
+}
+
+
+async createDailyPayment() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const admissions = await prisma.admission.findMany({
+    where: {
+      status: 'ADMITTED',
+      dischargeTime: null,
+    },
+  });
+
+  for (const admission of admissions) {
+
+    // ⛔ prevent duplicate daily payment
+    const exists = await prisma.payment.findFirst({
+      where: {
+        admission_Id: admission.id,
+        type: 'DAILYTREATMENTFEE',
+        //billingDate: today,
+      },
+    });
+
+    if (exists) continue;
+
+    // ✅ get today's charges
+    const charges = await prisma.charge.findMany({
+      where: {
+        admissionId: admission.id,
+        chargeDate: today,
+      },
+    });
+
+    if (charges.length === 0) continue; // no charges → no bill
+
+    const totalAmount = charges.reduce(
+      (sum, c) => sum + c.amount,
+      0,
+    );
+
+    // ✅ create PAYMENT from charges total
+    await prisma.payment.create({
+      data: {
+        hospital_Id: admission.hospital_Id,
+        patient_Id: admission.patient_Id,
+        admission_Id: admission.id,
+        reason: `IPD Daily Bill`,
+        amount: totalAmount,
+        status: 'PENDING',
+        type: 'DAILYTREATMENTFEE',
+        //billingDate: today,
+        createdAt: new Date().toDateString(),
+      },
+    });
+  }
+}
+
+
 
   async getNurses(hospital_Id: number) {
     return prisma.admin.findMany({

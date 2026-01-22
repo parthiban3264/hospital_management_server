@@ -112,13 +112,13 @@ export class ChargesService {
     });
   }
 
-  async updateCharges(admissionId: number, dto: { status: ChargeStatus }) {
+  async updateCharges(dto: { status: ChargeStatus,chargesIds : number }) {
   return prisma.charge.updateMany({
     where: {
-      admissionId: admissionId,
+      id: dto.chargesIds,
     },
     data: {
-      status: dto.status,
+      status: dto.status, 
       updatedAt: new Date(),
     },
   });
