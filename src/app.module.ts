@@ -38,6 +38,8 @@ import { ChargesModule } from './charges/charges.module';
 import { PrescriptionModule } from './prescription/prescription.module';
 import { ReorderModule } from './reorder/reorder.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AppPaymentModule } from './app-payment/app-payment.module';
+import { SubmitTicketModule } from './submit/submit.module';
 //import { SalesModule } from './sales/sale.module';
 //import { BillingModule } from './shivani/billing/billing.module';
 @Module({
@@ -53,6 +55,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     // MedicineAndInjectionModule,
     //TestingAndScanningHospitalModule,
     TestingAndScanningPatientModule,
+    SubmitTicketModule,
     PaymentModule,
     //RoomsAvailableModule,
     TonicModule,
@@ -78,6 +81,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ChargesModule,
     PrescriptionModule,
     ReorderModule,
+    AppPaymentModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

@@ -95,8 +95,10 @@ export class AdmissionServiceCron {
   // async createChargesFromPayments() {
   //   await this.AdmissionService.createChargesFromPayments();
   // }
-  @Cron('0 23 * * *') // every day at 11 PM
-  // @Cron('*/30 * * * * *')
+  
+// every day at 11 PM
+  //@Cron('*/30 * * * * *')
+  @Cron('0 1 * * *')
   async handleDailyCharges() {
     await this.AdmissionService.createChargesFromPayments();
   }
@@ -105,7 +107,8 @@ export class AdmissionServiceCron {
   // async createDailyPayment() {
   //   await this.AdmissionService.createDailyPayment();
   // }
-  @Cron('*/30 * 19 * * *')
+ @Cron('*/30 * 19 * * *')
+   //@Cron('*/30 * * * * *')
   async createDailyPayment() {
     await this.AdmissionService.createDailyPayment();
   }

@@ -24,15 +24,23 @@ create(@Body() dto: CreateChargeDto) {
     return this.chargesService.findPendingByHospital(+hospital_Id);
   }
 
+  @Patch('admissionId')
+updateChargesupdateChargesAdvance( @Body() dto: any) {
+   console.log('Updating charges for admission:',dto);
+  return this.chargesService.updateCharges( dto);
+}
+
+
+  @Patch('admissionId/advance')
+updateChargesAdvance( @Body() dto: any) {
+   console.log('Updating charges for admission:',dto);
+  return this.chargesService.updateChargesAdvance( dto);
+}
 @Patch(':id')
 update(@Param('id') id: number, @Body() dto: CreateChargeDto) {
   return this.chargesService.update(+id, dto);
 }
-@Patch('admissionId')
-updateCharges( @Body() dto: any) {
-   console.log('Updating charges for admission:');
-  return this.chargesService.updateCharges( dto);
-}
+
 
 @Delete(':id')
 remove(@Param('id') id: number) {

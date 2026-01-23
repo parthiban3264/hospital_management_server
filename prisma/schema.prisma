@@ -21,6 +21,7 @@ enum PatientStatus {
   ACTIVE
   INACTIVE
 }
+
 enum AppPaymentStatus {
   PENDING
   COMPLETED
@@ -29,11 +30,14 @@ enum AppPaymentStatus {
 }
 
 model Hospital {
-  id                                      Int                                       @id @default(autoincrement()) //  @default(autoincrement())
-  name                                    String
-  address                                 String
-  photo                                   String                                    @default("https://img.freepik.com/premium-vector/hospital-logo-design-vector-illustration-white-background_272204-8968.jpg?w=2000")
-  HospitalStatus                          HospitalStatus                            @default(ACTIVE)
+  id             Int            @id @default(autoincrement()) //  @default(autoincrement())
+  name           String
+  address        String
+  photo          String         @default("https://img.freepik.com/premium-vector/hospital-logo-design-vector-illustration-white-background_272204-8968.jpg?w=2000")
+  HospitalStatus HospitalStatus @default(ACTIVE)
+  duedate        DateTime?
+  created_at     DateTime       @default(now())
+
   phone                                   String
   mail                                    String
   Users                                   User[]
@@ -70,12 +74,13 @@ model Hospital {
   ScanAndTestUnitReferencewithPerHospital ScanAndTestUnitReferencewithPerHospital[]
   ScanAndTestsWithPerHospitals            ScanAndTestsWithPerHospital[]
   PrescriptionDispense                    PrescriptionDispense[]
-  AppPayment AppPayment[]
+  AppPayment                              AppPayment[]
+  submitTickets                           SubmitTicket[]
 }
 
 model AppPayment {
   id            Int              @id @default(autoincrement())
-  hospital_Id       Int
+  hospital_Id   Int
   baseAmount    Int
   gst           Float
   amount        Float
@@ -86,7 +91,7 @@ model AppPayment {
   status        AppPaymentStatus @default(PENDING)
   createdAt     DateTime         @default(now())
 
-  Hospital     Hospital  @relation(fields: [hospital_Id], references: [id])
+  Hospital Hospital @relation(fields: [hospital_Id], references: [id])
 }
 
 model User {
@@ -115,7 +120,7 @@ model Admin {
   accessDoctorRole Boolean        @default(false) // e.g., General Physician, Cardiologist, etc.
   accessAdminRole  Boolean        @default(false) // e.g., Super Admin, Finance Admin, etc.
   doctorAmount     Float?         @default(0)
-  inPatientAmount     Float?         @default(0)
+  inPatientAmount  Float?         @default(0)
   specialist       String?
   assignDoctorId   String? // for Nurse/Staff to assign Doctor
   permissions      Json? // store [1,2,3] etc for Medical Staff; keep NULL for ADMIN
@@ -132,10 +137,11 @@ model Admin {
   // NurseAssignment  Admission[]    @relation("NurseAssignment")
   Prescription     Prescription[]
 
-  Doctor   Treatment[] @relation("Doctor_Treatment")
-  Staff    Treatment[] @relation("Staff_Treatment")
-  Hospital Hospital    @relation(fields: [hospital_Id], references: [id])
-  User     User        @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
+  Doctor        Treatment[]    @relation("Doctor_Treatment")
+  Staff         Treatment[]    @relation("Staff_Treatment")
+  Hospital      Hospital       @relation(fields: [hospital_Id], references: [id])
+  User          User           @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
+  submitTickets SubmitTicket[]
 
   @@unique([hospital_Id, user_Id])
 }
@@ -519,6 +525,7 @@ enum Type {
   ADMISSIONFEE
   ADVANCEFEE
   DAILYTREATMENTFEE
+  DISCHARGEFEE
   OTHER
 }
 
@@ -548,7 +555,7 @@ model Payment {
   TestingAndScanningPatients TestingAndScanningPatient[]
   MedicinePatient            MedicinePatient[]
   InjectionPatient           InjectionPatient[]
-  Admission                  Admission?                   @relation(fields: [admission_Id], references: [id])
+  Admission                  Admission?                  @relation(fields: [admission_Id], references: [id])
   TonicPatient               TonicPatient[]
   Consultation               Consultation?               @relation(fields: [consultation_Id], references: [id])
   Prescription               Prescription[]
@@ -751,6 +758,27 @@ model Tickets {
   Hospital    Hospital @relation(fields: [hospital_Id], references: [id])
 }
 
+enum TicketStatus {
+  PENDING
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model SubmitTicket {
+  id          Int          @id @default(autoincrement())
+  hospital_Id Int
+  admin_Id    String
+  description String
+  status      TicketStatus @default(PENDING)
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  Admin       Admin        @relation(fields: [hospital_Id, admin_Id], references: [hospital_Id, user_Id])
+
+  Hospital Hospital @relation(fields: [hospital_Id], references: [id])
+}
+
 /////// InPatient/////////////////
 
 model Wards {
@@ -870,7 +898,7 @@ model Charge {
   admissionId Int
   admission   Admission    @relation(fields: [admissionId], references: [id])
   description String
-  chargeDate  DateTime?    // 👈 VERY IMPORTANT (billing day)
+  chargeDate  DateTime? // 👈 VERY IMPORTANT (billing day)
   amount      Float
   status      ChargeStatus @default(PENDING)
   createdAt   DateTime     @default(now())
@@ -1253,8 +1281,6 @@ model ScanAndTestUnitReferance {
   updatedAt   DateTime @updatedAt
 }
 
-
-
 // model ScanAndTestOptionWithPerHospital {
 //   id              Int    @id @default(autoincrement())
 //   scanTestId      Int
@@ -1277,26 +1303,27 @@ model ScanAndTestsWithPerHospital {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  hospital Hospital                           @relation(fields: [hospital_Id], references: [id])
+  hospital Hospital                                  @relation(fields: [hospital_Id], references: [id])
   options  ScanAndTestUnitReferencewithPerHospital[]
 
   @@unique([hospital_Id, title, type])
   @@index([hospital_Id])
 }
+
 model ScanAndTestUnitReferencewithPerHospital {
-  id          Int      @id @default(autoincrement())
+  id          Int                         @id @default(autoincrement())
   hospital_Id Int
-  scanTestId      Int
+  scanTestId  Int
   optionName  String
   //optionTitle String
   type        String?
   unit        String
   price       Float?
   reference   Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-scanTest ScanAndTestsWithPerHospital @relation(fields: [scanTestId], references: [id])
-  hospital Hospital                           @relation(fields: [hospital_Id], references: [id])
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+  scanTest    ScanAndTestsWithPerHospital @relation(fields: [scanTestId], references: [id])
+  hospital    Hospital                    @relation(fields: [hospital_Id], references: [id])
 
   @@unique([hospital_Id, optionName, scanTestId])
   @@index([hospital_Id, optionName])

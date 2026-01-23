@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ChargeStatus, PrismaClient } from '@prisma/client';
 import { CreateChargeDto } from './dto/create-charge.dto';
+import { log } from 'console';
 
 const prisma = new PrismaClient();
 
@@ -59,7 +60,7 @@ export class ChargesService {
         },
       },
     });
- const status = 'PARTIALLY_PAID' === payment.status ;
+    const status = 'PARTIALLY_PAID' === payment.status;
     // 5️⃣ Update payment amount + status
     const updatedAmount = Number(payment.amount) + Number(dto.amount);
 
@@ -70,7 +71,7 @@ export class ChargesService {
       data: {
         amount: updatedAmount,
         received_Amount: status ? payment.amount : 0,
-        status:  'PENDING',
+        status: 'PENDING',
       },
     });
 
@@ -112,18 +113,39 @@ export class ChargesService {
     });
   }
 
-  async updateCharges(dto: { status: ChargeStatus,chargesIds : number }) {
-  return prisma.charge.updateMany({
-    where: {
-      id: dto.chargesIds,
-    },
-    data: {
-      status: dto.status, 
-      updatedAt: new Date(),
-    },
-  });
-}
+  async updateCharges(dto: {
+    status: ChargeStatus;
+    chargesId: number[];
+  }) {
+    log('chargesIds', dto.chargesId);
 
+    return prisma.charge.updateMany({
+      where: {
+        id: { in: dto.chargesId },
+      },
+      data: {
+        
+        status: dto.status,
+        updatedAt: new Date(),
+      },
+    });
+  }
+    async updateChargesAdvance(dto: {
+    chargesId: number[];
+    amount: number;
+  }) {
+    log('chargesIds', dto.chargesId);
+
+    return prisma.charge.updateMany({
+      where: {
+        id: { in: dto.chargesId },
+      },
+      data: {
+        amount: dto.amount,
+        updatedAt: new Date(),
+      },
+    });
+  }
 
   async remove(id: number) {
     return prisma.charge.delete({
