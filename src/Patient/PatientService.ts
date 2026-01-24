@@ -51,42 +51,69 @@ export class PatientService {
           '⚠️ Registration Fee or Appointment Fee is not set! Please assign Registration Fees after register.',
       };
     }
-console.log('user Data',data);
+    console.log('user Data', data);
 
     // Normalize user ID (phone)
     const user_Id = data.phone.mobile.replace(/^(\+?91[\s-]*)?/, '').trim();
 
     // ✅ Use a callback transaction since we need sequential logic
-    const result = await this.prisma.$transaction(async (tx) => {
-      // 1️⃣ Create User
-      // const user = await tx.user.create({
-      //   data: {
-      //     hospital_Id: data.hospital_Id,
-      //     user_Id: data.id,
-      //     password: hashedPassword,
-      //     role: 'PATIENT',
-      //   },
-      // });
+    // const result = await this.prisma.$transaction(async (tx) => {
 
-      // 2️⃣ Create Patient
+    //   // 2️⃣ Create Patient
+    //   const patient = await tx.patient.create({
+    //     data: {
+    //       ...data,
+    //       hospital_Id: data.hospital_Id,
+    //       phone: data.phone,
+    //       createdAt: data.createdAt || new Date().toISOString(),
+    //       user_Id: user_Id,
+    //     },
+    //   });
+    //   const user = await tx.user.create({
+    //   data: {
+    //     hospital_Id: data.hospital_Id,
+    //     user_Id: patient.id.toString(), // ✅ LOGIN ID
+    //     password: hashedPassword,
+    //     role: 'PATIENT',
+    //   },
+    // });
+    //   // Return all created records
+    //   return { user, patient };
+    // });
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 🔑 NEW: get next patient id per hospital
+      const lastPatient = await tx.patient.findFirst({
+        where: { hospital_Id: Number(data.hospital_Id) },
+        orderBy: { id: 'desc' },
+        select: { id: true },
+      });
+
+      const nextPatientId = (lastPatient?.id ?? 0) + 1;
+      log('nextPatientId', nextPatientId);
+
+      // 2️⃣ Create Patient (SMALL ADDITION ONLY)
       const patient = await tx.patient.create({
         data: {
           ...data,
-          hospital_Id: data.hospital_Id,
+          id: nextPatientId, // ✅ REQUIRED
+          hospital_Id: Number(data.hospital_Id),
           phone: data.phone,
           createdAt: data.createdAt || new Date().toISOString(),
           user_Id: user_Id,
         },
       });
+
+      // 3️⃣ Create User (NO CHANGE)
       const user = await tx.user.create({
-      data: {
-        hospital_Id: data.hospital_Id,
-        user_Id: patient.id.toString(), // ✅ LOGIN ID
-        password: hashedPassword,
-        role: 'PATIENT',
-      },
-    });
-      // Return all created records
+        data: {
+          hospital_Id: data.hospital_Id,
+          user_Id: patient.id.toString(), // still works
+          password: hashedPassword,
+          role: 'PATIENT',
+        },
+      });
+
       return { user, patient };
     });
 
@@ -112,14 +139,14 @@ console.log('user Data',data);
   async findOneByUserId(hospital_Id: number, user_Id: string) {
     const patient = await this.prisma.patient.findUnique({
       where: {
-        
-          hospital_Id,
-          id:Number(user_Id),
-        
+         id_hospital_Id: {
+        hospital_Id: hospital_Id,
+        id: Number(user_Id),
+      },
       },
       include: {
         Consultation: { select: { id: true, patient_Id: true, status: true } },
-         Payments: true,
+        Payments: true,
         Hospital: { select: { id: true, name: true } },
         User: { select: { id: true, user_Id: true, role: true } },
       },
@@ -138,38 +165,39 @@ console.log('user Data',data);
     };
   }
 
-async findCheckUserId(hospital_Id: number, user_Id: string) {
-  const patients = await this.prisma.patient.findMany({
-    where: {
-      hospital_Id,
-      user_Id,
-    },
-    include: {
-      Consultation: { select: { id: true, patient_Id: true, status: true } },
-      Hospital: true,
-      User: true,
-    },
-  });
+  async findCheckUserId(hospital_Id: number, user_Id: string) {
+    const patients = await this.prisma.patient.findMany({
+      where: {
+        hospital_Id,
+        user_Id,
+      },
+      include: {
+        Consultation: { select: { id: true, patient_Id: true, status: true } },
+        Hospital: true,
+        User: true,
+      },
+    });
 
-  if (patients.length === 0) {
-    throw new NotFoundException(
-      `Patient with user_Id ${user_Id} in hospital ${hospital_Id} not found`,
-    );
+    if (patients.length === 0) {
+      throw new NotFoundException(
+        `Patient with user_Id ${user_Id} in hospital ${hospital_Id} not found`,
+      );
+    }
+    log('Patients found: %o', patients);
+    return {
+      status: 'success',
+      message: 'Patients fetched successfully',
+      data: patients, // return all matching patients
+    };
   }
-log('Patients found: %o', patients);
-  return {
-    status: 'success',
-    message: 'Patients fetched successfully',
-    data: patients, // return all matching patients
-  };
-}
 
   async updateByUserId(hospital_Id: number, user_Id: string, data: any) {
     const patient = await this.prisma.patient.update({
       where: {
-          hospital_Id,
-          id:Number(user_Id),
-    
+         id_hospital_Id: {
+        hospital_Id: hospital_Id,
+        id: Number(user_Id),
+      },
       },
       data,
     });
@@ -181,18 +209,35 @@ log('Patients found: %o', patients);
     };
   }
 
-  async deleteByUserId(hospital_Id: number, user_Id: string) {
-    const patient = await this.prisma.patient.delete({
-      where: {
-          hospital_Id,
-          id:Number(user_Id)
-      },
-    });
+  // async deleteByUserId(hospital_Id: number, user_Id: string) {
+  //   const patient = await this.prisma.patient.delete({
+  //     where: {
+  //       hospital_Id,
+  //       id: Number(user_Id),
+  //     },
+  //   });
 
-    return {
+  //   return {
+  //     status: 'success',
+  //     message: 'Patient deleted successfully',
+  //     data: patient,
+  //   };
+  // }
+  async deleteByUserId(hospital_Id: number, user_Id: string) {
+  const patient = await this.prisma.patient.delete({
+    where: {
+      id_hospital_Id: {
+        hospital_Id: hospital_Id,
+        id: Number(user_Id),
+      },
+    },
+  });
+
+  return {
       status: 'success',
       message: 'Patient deleted successfully',
       data: patient,
     };
-  }
+}
+
 }

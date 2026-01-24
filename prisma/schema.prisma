@@ -173,7 +173,7 @@ model AdminStrator {
 }
 
 model Patient {
-  id          Int           @id @default(autoincrement())
+  id          Int //@id @default(autoincrement())
   hospital_Id Int
   user_Id     String?
   staff_Id    String
@@ -205,7 +205,8 @@ model Patient {
 
   Hospital Hospital @relation(fields: [hospital_Id], references: [id])
   User     User?    @relation(fields: [hospital_Id, user_Id], references: [hospital_Id, user_Id])
-  //@@unique([id,hospital_Id])
+
+  @@unique([id, hospital_Id])
 }
 
 enum Status {
@@ -271,7 +272,7 @@ model Consultation {
   paymentStatus        Boolean     @default(false)
 
   Hospital                  Hospital                    @relation(fields: [hospital_Id], references: [id])
-  Patient                   Patient                     @relation(fields: [patient_Id], references: [id])
+  Patient                   Patient                     @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
   Doctor                    Admin                       @relation(fields: [hospital_Id, doctor_Id], references: [hospital_Id, user_Id])
   MedicinePatient           MedicinePatient[]
   Prescription              Prescription[]
@@ -296,7 +297,7 @@ model Treatment {
   createdAt      DateTime @default(now())
   paymentStatus  Boolean  @default(false)
   Hospital       Hospital @relation(fields: [hospital_Id], references: [id])
-  Patient        Patient  @relation(fields: [patient_Id], references: [id])
+  Patient        Patient  @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
   Doctor         Admin[]  @relation("Doctor_Treatment")
   Staff          Admin[]  @relation("Staff_Treatment")
 }
@@ -550,7 +551,7 @@ model Payment {
   createdAt       String
   updatedAt       String?
   Hospital        Hospital      @relation(fields: [hospital_Id], references: [id])
-  Patient         Patient       @relation(fields: [patient_Id], references: [id])
+  Patient         Patient       @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
 
   TestingAndScanningPatients TestingAndScanningPatient[]
   MedicinePatient            MedicinePatient[]
@@ -617,7 +618,7 @@ model TestingAndScanningPatient {
   payment_Id            Int? // link to Payment
   Payment               Payment?                 @relation(fields: [payment_Id], references: [id])
   Hospital              Hospital                 @relation(fields: [hospital_Id], references: [id])
-  Patient               Patient                  @relation(fields: [patient_Id], references: [id])
+  Patient               Patient                  @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
   Consultation          Consultation?            @relation(fields: [consultation_Id], references: [id])
 }
 
@@ -850,7 +851,7 @@ model Admission {
   hospital_Id Int
 
   patient_Id Int
-  patient    Patient @relation(fields: [patient_Id], references: [id])
+  patient    Patient @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
 
   bedId Int
   bed   Bed @relation(fields: [bedId], references: [id])
@@ -1040,7 +1041,7 @@ model Prescription {
   is_active  Boolean  @default(true)
 
   hospital     Hospital      @relation(fields: [hospital_Id], references: [id])
-  patient      Patient       @relation(fields: [patient_Id], references: [id])
+  patient      Patient       @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
   doctor       Admin         @relation(fields: [doctor_Id, hospital_Id], references: [user_Id, hospital_Id])
   consultation Consultation? @relation(fields: [consultation_Id], references: [id])
   payment      Payment?      @relation(fields: [payment_Id], references: [id])
@@ -1169,7 +1170,7 @@ model MedicinePatient {
   payment_Id       Int?
   Payment          Payment?           @relation(fields: [payment_Id], references: [id])
   Hospital         Hospital           @relation(fields: [hospital_Id], references: [id])
-  Patient          Patient            @relation(fields: [patient_Id], references: [id])
+  Patient          Patient            @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
   Medician         Medician           @relation(fields: [medicine_Id], references: [id])
   Consultation     Consultation?      @relation(fields: [consultation_Id], references: [id])
   MedicineProgress MedicineProgress[]
@@ -1198,7 +1199,7 @@ model InjectionPatient {
   payment_Id        Int?
   Payment           Payment?            @relation(fields: [payment_Id], references: [id])
   Hospital          Hospital            @relation(fields: [hospital_Id], references: [id])
-  Patient           Patient             @relation(fields: [patient_Id], references: [id])
+  Patient           Patient             @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
   Injection         Injection           @relation(fields: [injection_Id], references: [id])
   Consultation      Consultation?       @relation(fields: [consultation_Id], references: [id])
   InjectionProgress InjectionProgress[]
@@ -1229,7 +1230,7 @@ model TonicPatient {
   payment_Id    Int?
   Payment       Payment?        @relation(fields: [payment_Id], references: [id])
   Hospital      Hospital        @relation(fields: [hospital_Id], references: [id])
-  Patient       Patient         @relation(fields: [patient_Id], references: [id])
+  Patient       Patient         @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
   Tonic         Tonic           @relation(fields: [tonic_Id], references: [id])
   Consultation  Consultation?   @relation(fields: [consultation_Id], references: [id])
   TonicProgress TonicProgress[]
