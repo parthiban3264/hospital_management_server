@@ -1300,6 +1300,7 @@ model ScanAndTestsWithPerHospital {
   hospital_Id Int
   title       String
   type        Types
+  isActive    Boolean  @default(true)
   amount      Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -1317,6 +1318,7 @@ model ScanAndTestUnitReferencewithPerHospital {
   scanTestId  Int
   optionName  String
   //optionTitle String
+  isActive    Boolean  @default(true)
   type        String?
   unit        String
   price       Float?

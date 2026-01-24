@@ -13,8 +13,20 @@ export class AuthService {
       where: { hospital_Id_user_Id: { hospital_Id: hospitalId, user_Id: userId } },
     });
 
-    if (!admin?.email)
-      throw new NotFoundException({ message: 'Email not found' });
+    // Admin not found
+  if (!admin) {
+    throw new NotFoundException({
+      message: 'User not found',
+    });
+  }
+
+  // Email not found
+  if (!admin.email) {
+    throw new NotFoundException({
+      message: 'Email not found',
+      code: 'EMAIL_NOT_FOUND',
+    });
+  }
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
