@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { log } from 'console';
 import * as nodemailer from 'nodemailer';
 
 const prisma = new PrismaClient();
@@ -57,8 +58,54 @@ export class AuthService {
       where: { hospital_Id_user_Id: { hospital_Id: hospitalId, user_Id: userId } },
       data: { password: hashed },
     });
-
 // write  logic for logout all device 
     return { status: 'success', message: 'Password updated successfully write logout code' };
   }
+
+  // async adminResetPassword(hospitalId: number, userId: string) {
+  //   log('work',userId);
+  //   const user = await prisma.user.findUnique({
+  //     where: { hospital_Id_user_Id: { hospital_Id: hospitalId, user_Id: userId } },
+  //   });
+  //   const newPassword = 'abc123'
+  //   if (!user) throw new NotFoundException('User not found');
+
+  //   const hashed = await bcrypt.hash(newPassword, 12);
+  //   await prisma.user.update({
+  //     where: { hospital_Id_user_Id: { hospital_Id: hospitalId, user_Id: userId } },
+  //     data: { password: hashed },
+  //   });
+  //    return { status: 'success', message: 'Password updated successfully' };
+  // }
+  async adminResetPassword(hospitalId: number, userId: number) {
+  const user = await prisma.user.findUnique({
+    where: {
+     id:userId,hospital_Id:hospitalId
+      },
+  
+  });
+
+  if (!user) throw new NotFoundException('User not found');
+
+  const newPassword = 'abc123';
+  const hashed = await bcrypt.hash(newPassword, 12);
+  log('hased',hashed);
+
+ const users = await prisma.user.update({
+    where: {
+      id: userId, // ✅ works correctly now
+      hospital_Id:hospitalId
+    },
+    data: {
+      password: hashed,
+    },
+  });
+  log('users',users)
+
+  return {
+    status: 'success',
+    message: 'Password updated successfully',
+  };
+}
+
 }

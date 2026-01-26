@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-//import { HospitalModule } from './Hospitals/hospital.module';
+import { HospitalModule } from './Hospitals/hospital.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UserModule } from './Users/user.module';
 import { PatientModule } from './Patient/patient.module';
@@ -44,7 +44,7 @@ import { AAScanAndTestingModule } from './AAScanAndTesting/a_a_scan_and_testing.
 //import { SalesModule } from './sales/sale.module';
 //import { BillingModule } from './shivani/billing/billing.module';
 @Module({
-  imports: [//HospitalModule,
+  imports: [HospitalModule,
     UserModule,
     PatientModule,
     AdminModule,

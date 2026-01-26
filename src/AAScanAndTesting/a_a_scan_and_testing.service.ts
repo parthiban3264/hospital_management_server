@@ -1,4 +1,3 @@
-
 import {
     BadRequestException,
     Injectable,
@@ -138,4 +137,62 @@ export class AAScanAndTestingService {
             });
         }
     }
+    async updateStatus(id: number, isActive: boolean) {
+        const existing =
+            await this.prisma.scanAndTestsWithPerHospital.findUnique({
+                where: { id },
+            });
+
+        if (!existing) {
+            throw new NotFoundException('Scan/Test not found');
+        }
+
+        await this.prisma.scanAndTestUnitReferencewithPerHospital.updateMany({
+            where: { scanTestId: id },
+            data: {
+                isActive
+            }
+        });
+
+        return this.prisma.scanAndTestsWithPerHospital.update({
+            where: { id },
+            data: {
+                isActive
+            }
+        });
+    }
+    async updateStatusOptions(id: number, isActive: boolean) {
+        const existing =
+            await this.prisma.scanAndTestUnitReferencewithPerHospital.findUnique({
+                where: { id },
+            });
+
+        if (!existing) {
+            throw new NotFoundException('Scan/Test not found');
+        }
+
+        // 1️⃣ Update the option
+        await this.prisma.scanAndTestUnitReferencewithPerHospital.update({
+            where: { id },
+            data: { isActive },
+        });
+
+        // 2️⃣ Count active options AFTER update
+        const activeCount =
+            await this.prisma.scanAndTestUnitReferencewithPerHospital.count({
+                where: {
+                    scanTestId: existing.scanTestId,
+                    isActive: true,
+                },
+            });
+
+        // 3️⃣ Update scan status
+        return this.prisma.scanAndTestsWithPerHospital.update({
+            where: { id: existing.scanTestId },
+            data: {
+                isActive: activeCount > 0, // 👈 key rule
+            },
+        });
+    }
+
 }

@@ -11,6 +11,7 @@ import {
 import { AAScanAndTestingService } from './a_a_scan_and_testing.service';
 import { CreateScanTestDto } from './dto/create-scan-test.dto';
 import { UpdateScanTestDto } from './dto/update-scan-test.dto';
+ 
 
 @Controller('a_scanning_testing')
 export class AAScanAndTestingController {
@@ -50,5 +51,13 @@ export class AAScanAndTestingController {
     @Delete('option/:id')
     async deletePotion(@Param('id') id: string) {
         return this.aAScanAndTestingService.deleteOption(Number(id));
+    }
+    @Patch('status/:id')
+    async updateStatus(@Param('id') id: string,@Body('isActive') isActive:boolean) {
+        return this.aAScanAndTestingService.updateStatus(Number(id),isActive);
+    }
+    @Patch('status/option/:id')
+    async updateStatusOptions(@Param('id') id: string,@Body('isActive') isActive:boolean) {
+        return this.aAScanAndTestingService.updateStatusOptions(Number(id),isActive);
     }
 }

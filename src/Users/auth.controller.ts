@@ -4,7 +4,8 @@ import {
   Post, 
   Body, 
   Res, 
-  BadRequestException 
+  BadRequestException, 
+  Patch
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
@@ -50,5 +51,18 @@ export class AuthController {
     }
 
     return this.Service.updatePassword(hospitalId, userId, newPassword);
+  }
+    @Patch('admin/reset_password')
+  async adminResetPassword(@Body() body: { hospitalId: string; userId: number; }) {
+    const { hospitalId, userId } = body;
+
+    if (!hospitalId) {
+      throw new BadRequestException({ status: 'error', message: 'hospitalId is required' });
+    }
+    if (!userId) {
+      throw new BadRequestException({ status: 'error', message: 'userId is required' });
+    }
+
+    return this.Service.adminResetPassword(Number(hospitalId), userId);
   }
 }

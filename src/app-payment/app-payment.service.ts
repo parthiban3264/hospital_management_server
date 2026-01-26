@@ -6,7 +6,7 @@ import {
 import { PrismaClient, AppPaymentStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const BASE_YEARLY_AMOUNT = 10; // your base payment amount
+const BASE_YEARLY_AMOUNT = 15000; // your base payment amount
 const GST_RATE = 0.18; // 18% GST
 
 @Injectable()
