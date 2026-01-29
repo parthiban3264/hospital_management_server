@@ -1908,6 +1908,7 @@ async findAllIP(hospitalId: number) {
   }
 
   async update(id: number, data: any) {
+    log('Update data received:', data);
     try {
       const consultation = await this.prisma.consultation.updateMany({
         where: { id },
@@ -1919,6 +1920,7 @@ async findAllIP(hospitalId: number) {
         data: consultation,
       };
     } catch (error) {
+      log('Update error:', error);
       return { status: 'failed', error: error.message };
     }
   }

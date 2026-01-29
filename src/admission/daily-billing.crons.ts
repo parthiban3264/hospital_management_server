@@ -107,9 +107,19 @@ export class AdmissionServiceCron {
   // async createDailyPayment() {
   //   await this.AdmissionService.createDailyPayment();
   // }
- @Cron('*/30 * 19 * * *')
-   //@Cron('*/30 * * * * *')
-  async createDailyPayment() {
+ @Cron('*/30 * 18 40 * *')
+ // @Cron('*/30 * * * * *')
+  async createDailyPayment1() {
+    await this.AdmissionService.createDailyPayment();
+  }
+  @Cron('*/30 * 18 50 * *')
+ // @Cron('*/30 * * * * *')
+  async createDailyPayment2() {
+    await this.AdmissionService.createDailyPayment();
+  }
+    @Cron('*/30 * 19 * * *')
+ // @Cron('*/30 * * * * *')
+  async createDailyPayment3() {
     await this.AdmissionService.createDailyPayment();
   }
 }
