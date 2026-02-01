@@ -33,7 +33,16 @@ export class AdmissionController {
       Number(hospital_Id),
     );
   }
-
+@Patch(':admissionId/staff-change')
+  async addStaffChange(
+    @Param('admissionId') admissionId: string,
+    @Body() staffChanges: any[],
+  ) {
+    return this.admissionService.addStaffChange(
+      Number(admissionId),
+      staffChanges,
+    );
+  }
   // admission.controller.ts
 
   @Get(':hospital_Id/admitted')

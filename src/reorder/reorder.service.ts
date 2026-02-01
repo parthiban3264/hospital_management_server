@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { CreateOrderDto } from './dto/reorder.dto';
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,46 @@ export class ReorderService {
             email: lastBatch.supplier.email,
           }
         : null,
+    };
+  });
+}
+
+async createMedicineOrder(
+  shopId: number,
+  dto: CreateOrderDto,
+) {
+  const { supplier_id, items } = dto;
+
+  return prisma.$transaction(async (tx) => {
+    for (const item of items) {
+      // 1️⃣ Insert into OrderReceived
+      await tx.orderReceived.create({
+        data: {
+          hospital_Id: shopId,                 // ✅ from param
+          supplier_id,
+          medicine_id: item.medicine_id,
+          quantity: item.quantity,
+          status: 'ORDERED',
+        },
+      });
+
+      // 2️⃣ Update Medicine status
+      await tx.medicine.update({
+where: {
+  hospital_Id_id: {
+    hospital_Id: shopId,
+    id: item.medicine_id,
+  },
+}      ,
+  data: {
+          order_status: 'ORDERED',
+        },
+      });
+    }
+
+    return {
+      message: 'Medicine order placed successfully',
+      total_items: items.length,
     };
   });
 }

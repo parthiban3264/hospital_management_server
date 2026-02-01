@@ -1,5 +1,5 @@
 export class CreateMedicineWithBatchDto {
-  shop_id: number;
+  hospital_id: number;
   name: string;
   category: string;
 

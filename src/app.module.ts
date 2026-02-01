@@ -41,6 +41,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppPaymentModule } from './app-payment/app-payment.module';
 import { SubmitTicketModule } from './submit/submit.module';
 import { AAScanAndTestingModule } from './AAScanAndTesting/a_a_scan_and_testing.module';
+import { OrderModule } from './order/order.module';
 //import { SalesModule } from './sales/sale.module';
 //import { BillingModule } from './shivani/billing/billing.module';
 @Module({
@@ -85,6 +86,8 @@ import { AAScanAndTestingModule } from './AAScanAndTesting/a_a_scan_and_testing.
     AppPaymentModule,
     ScheduleModule.forRoot(),
     AAScanAndTestingModule,
+    ReorderModule,
+    OrderModule
   ],
   controllers: [AppController],
   providers: [AppService,PrismaService],

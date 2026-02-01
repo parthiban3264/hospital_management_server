@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 import { PrismaClient } from '@prisma/client';
-import { log } from 'console';
 
 const prisma = new PrismaClient();
 
@@ -27,19 +26,33 @@ export class SupplierService {
     });
   }
   // ➕ Create Supplier
-  create(shopId: number, dto: CreateSupplierDto) {
-    return prisma.suppliers.create({
+ async create(shopId: number, dto: CreateSupplierDto) {
+  return prisma.$transaction(async (tx) => {
+
+    // 1️⃣ Get last supplier for this shop
+    const lastSupplier = await tx.suppliers.findFirst({
+      where: { hospital_Id: shopId },
+      orderBy: { id: 'desc' },
+    });
+
+    const supplierId = lastSupplier ? lastSupplier.id + 1 : 1;
+
+    // 2️⃣ Create supplier
+    return tx.suppliers.create({
       data: {
+        id: supplierId,
         hospital_Id: shopId,
         ...dto,
       },
     });
-  }
+  });
+}
+
 
   // 📄 Get all suppliers of a shop
   findAll(shopId: number) {
     return prisma.suppliers.findMany({
-      where: { hospital_Id: shopId ,is_active:true},
+      where: { hospital_Id: shopId },
       orderBy: { created_at: 'desc' },
     });
   }
@@ -62,12 +75,16 @@ export class SupplierService {
 
   // ✏️ Update supplier (shop-safe)
   async update(shopId: number, id: number, dto: UpdateSupplierDto) {
-    log('dto',dto);
-    //await this.findOne(shopId, id);
+    await this.findOne(shopId, id);
 
     return prisma.suppliers.update({
-      where: { id },
-      data: dto,
+where: {
+  hospital_Id_id: {
+    hospital_Id: shopId,
+    id: id,
+  },
+}  ,
+    data: dto,
     });
   }
 
@@ -76,9 +93,12 @@ async remove(shopId: number, id: number) {
   await this.findOne(shopId, id);
 
   return prisma.suppliers.update({
-    where: { 
-      id 
-    },
+    where: {
+  hospital_Id_id: {
+    hospital_Id: shopId,
+    id: id,
+  },
+},
     data: { 
       is_active: false // ✅ Soft delete instead of hard delete
     }

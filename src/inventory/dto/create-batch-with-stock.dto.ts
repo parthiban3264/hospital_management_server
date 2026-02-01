@@ -1,5 +1,5 @@
 export class CreateBatchWithStockDto {
-  shop_id: number;
+  hospital_id: number;
 
   batch_no: string;
   hsncode?: string;

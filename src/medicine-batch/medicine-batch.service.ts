@@ -111,8 +111,12 @@ async removeBatch(
 
     // 3️⃣ Update medicine stock
     await tx.medicine.update({
-      where: { id: medicineId },
-      data: {
+where: {
+  hospital_Id_id: {
+    hospital_Id: shopId,
+    id: medicineId,
+  },
+},      data: {
         stock: {
           decrement: stockToRemove,
         },
@@ -138,9 +142,9 @@ async removeBatch(
   });
 }
 
-  findAll(shop_id: number) {
+  findAll(hospital_Id: number) {
     return prisma.medicineBatch.findMany({
-      where: { hospital_Id:shop_id },
+      where: { hospital_Id },
       include: { medicine: true },
       orderBy: { created_at: 'desc' },
     });

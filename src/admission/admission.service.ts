@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { AdmissionStatus, ChargeStatus, PrismaClient } from '@prisma/client';
 import { log } from 'console';
@@ -18,12 +23,39 @@ function formatDateTime(date: Date = new Date()) {
 
   return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
 }
+
 function dateOnlyString(date: Date = new Date()) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
+
+async function getCurrentWardRent(admission: any) {
+  // No ward change → original ward rent
+  if (
+    !Array.isArray(admission.wardChange) ||
+    admission.wardChange.length === 0
+  ) {
+    return admission.bed?.ward?.rent ?? 0;
+  }
+
+  // Latest ward change
+  const lastChange = admission.wardChange[admission.wardChange.length - 1];
+  const wardId = lastChange?.toWard?.wardId;
+
+  if (!wardId) {
+    return admission.bed?.ward?.rent ?? 0;
+  }
+
+  const ward = await prisma.wards.findUnique({
+    where: { id: wardId },
+    select: { rent: true },
+  });
+
+  return ward?.rent ?? 0;
+}
+
 @Injectable()
 export class AdmissionService {
   private readonly logger = new Logger(AdmissionService.name);
@@ -107,12 +139,71 @@ export class AdmissionService {
       });
     });
   }
+  async addStaffChange(admissionId: number, incoming: any) {
+    log('Adding staff change for admission:', admissionId, incoming);
+    const admission = await prisma.admission.findUnique({
+      where: { id: admissionId },
+      select: { staffChange: true, id: true, consultation_Id: true },
+    });
+
+    if (!admission) {
+      throw new NotFoundException('Admission not found');
+    }
+
+    const history: any[] = Array.isArray(admission.staffChange)
+      ? admission.staffChange
+      : [];
+
+    const last = history.length > 0 ? history[history.length - 1] : null;
+    log('Last staff change entry:', last);
+    log(!last && (!incoming.doctor || !incoming.nurse));
+    // 🛑 First record must be complete
+    if (!last && (!incoming.doctor || !incoming.nurse)) {
+      throw new BadRequestException(
+        'First staff change must include doctor and nurse',
+      );
+    }
+
+    const entry = Array.isArray(incoming) ? incoming[0] : incoming;
+
+    const doctor = entry.doctor;
+    const nurse = entry.nurse;
+    const dateTime = entry.dateTime;
+    log('Comparing with last entry:', { doctor, nurse });
+    log(last && last.doctor === doctor && last.nurse === nurse);
+    // 🚫 nothing changed
+    if (last && last.doctor === doctor && last.nurse === nurse) {
+      return admission;
+    }
+    if (last.doctor !== doctor && doctor != null && last.doctor != null) {
+      const consultation = await prisma.consultation.update({
+        where: { id: admission.consultation_Id },
+        data: { doctor_Id: doctor },
+      });
+      log('Consultation doctor updated:', consultation);
+    }
+    const newEntry = {
+      doctor,
+      nurse,
+      dateTime: dateTime ?? new Date().toISOString(),
+    };
+    log('New staff change entry:', newEntry);
+    return prisma.admission.update({
+      where: { id: admissionId },
+      data: {
+        staffChange: [...history, newEntry],
+      },
+    });
+  }
 
   async findById(id: number, hospital_Id: number) {
     return prisma.patient.findFirst({
       where: {
         id,
         hospital_Id,
+      },
+      include: {
+        Consultation: true,
       },
     });
   }
@@ -147,6 +238,7 @@ export class AdmissionService {
             ward: true,
           },
         },
+        consultation: true,
       },
       orderBy: {
         admitTime: 'desc',
@@ -208,14 +300,25 @@ export class AdmissionService {
       const consultation = await tx.consultation.findFirst({
         where: {
           patient_Id: dto.patientId,
-          status: {
-            notIn: ['COMPLETED', 'ABANDONED'],
-          },
         },
         orderBy: {
-          createdAt: 'desc', // or updatedAt if you prefer
+          createdAt: 'desc',
         },
       });
+
+    
+        // 🔴 Closed consultation → proper message
+        if (
+          ['COMPLETED', 'CANCELLED', 'ABANDONED', 'DISCHARGED'].includes(
+            consultation.status,
+          )
+        ) {
+          throw new BadRequestException(
+            `This patient’s consultation is already closed (status: ${consultation.status}). A new consultation must be created before admission.`,
+          );
+        }
+      
+
       log('Consultation Updatedhhh: %o', consultation.id);
       if (consultation.paymentStatus == false) {
         throw new BadRequestException(
@@ -233,7 +336,6 @@ export class AdmissionService {
         data: { status: 'ADMITTED' },
       });
 
-
       // 🏥 Create admission
       const admission = await tx.admission.create({
         data: {
@@ -241,9 +343,12 @@ export class AdmissionService {
           patient_Id: dto.patientId,
           bedId: dto.bedId,
           attenderDetail: dto.admitBy ?? null,
+          consultation_Id: consultation.id,
+          // ✅ always an array
+          staffChange: Array.isArray(dto.staffChange) ? dto.staffChange : [],
         },
       });
-log('Consultation Updated: %o', consultations);
+      log('Consultation Updated: %o', consultations);
       // const today = new Date();
       // today.setHours(0, 0, 0, 0);
       const now = new Date();
@@ -375,6 +480,8 @@ log('Consultation Updated: %o', consultations);
       },
     });
 
+    log('Found payments for daily charges:', payments);
+
     for (const payment of payments) {
       const admission = payment.Admission;
       if (!admission) continue;
@@ -425,6 +532,7 @@ log('Consultation Updated: %o', consultations);
           updatedAt: formatDateTime(new Date()),
         },
       });
+      const wardRent = await getCurrentWardRent(admission);
 
       // 🧾 Create today's charges
       await prisma.charge.createMany({
@@ -433,7 +541,7 @@ log('Consultation Updated: %o', consultations);
             admissionId: admission.id,
             description: 'Room Rent',
             chargeDate: now,
-            amount: admission.bed.ward.rent,
+            amount: wardRent,
             status: 'PENDING',
           },
           {
@@ -540,110 +648,106 @@ log('Consultation Updated: %o', consultations);
   // }
 
   async createDailyPayment() {
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
 
-  const todayStr = dateOnlyString(today);
-  const yesterdayStr = dateOnlyString(yesterday);
+    const todayStr = dateOnlyString(today);
+    const yesterdayStr = dateOnlyString(yesterday);
 
-  const admissions = await prisma.admission.findMany({
-    where: {
-      status: 'ADMITTED',
-      dischargeTime: null,
-      hospital_Id: 1
-    },
-  });
-
-  for (const admission of admissions) {
-
-    // 🔹 Fetch ALL daily payments once
-    const payments = await prisma.payment.findMany({
+    const admissions = await prisma.admission.findMany({
       where: {
-        type: 'DAILYTREATMENTFEE',
-        admission_Id: admission.id,
+        status: 'ADMITTED',
+        dischargeTime: null,
+        hospital_Id: 1,
       },
     });
-// log('pay1',payments);
 
-    let todayPayment: any = null;
-    let yesterdayPayment: any = null;
-
-    for (const p of payments) {
-      const date = p.createdAt.substring(0, 10);
-      if (date === todayStr) todayPayment = p;
-      if (date === yesterdayStr) yesterdayPayment = p;
-    }
-
-    // ✅ RULE 1: If today exists → SKIP
-
-    if (todayPayment) {
-      continue;
-    }
-
-    // 🔹 Get pending charges only if needed
-    const charges = await prisma.charge.findMany({
-      where: {
-        admissionId: admission.id,
-        status: 'PENDING',
-        NOT: { description: 'Inpatient Advance Fee' },
-      },
-    });
-    if (!charges.length) continue;
-
-    const totalAmount = charges.reduce(
-      (sum, c) => sum + Number(c.amount),
-      0,
-    );
-
-    // ✅ RULE 2: Yesterday PAID → CREATE today
-  
-    if (yesterdayPayment && yesterdayPayment.status === 'PAID') {
-      await prisma.payment.create({
-        data: {
-          hospital_Id: admission.hospital_Id,
-          patient_Id: admission.patient_Id,
-          admission_Id: admission.id,
-          reason: 'Inpatient Daily Fee',
-          amount: totalAmount,
-          status: 'PENDING',
+    for (const admission of admissions) {
+      // 🔹 Fetch ALL daily payments once
+      const payments = await prisma.payment.findMany({
+        where: {
           type: 'DAILYTREATMENTFEE',
-          createdAt: formatDateTime(new Date()),
-        },
-      });
-      continue;
-    }
-
-    // ❌ RULE 3: Yesterday NOT PAID → UPDATE yesterday
-
-    if (yesterdayPayment) {
-      await prisma.payment.update({
-        where: { id: yesterdayPayment.id },
-        data: {
-          amount: totalAmount,
-          status: 'PENDING',
-          createdAt: formatDateTime(new Date()),
-        },
-      });
-    }
-    // ❌ RULE 4: no Yesterday create
-    if (!yesterdayPayment) {
-     await prisma.payment.create({
-        data: {
-          hospital_Id: admission.hospital_Id,
-          patient_Id: admission.patient_Id,
           admission_Id: admission.id,
-          reason: 'Inpatient Daily Fee',
-          amount: totalAmount,
-          status: 'PENDING',
-          type: 'DAILYTREATMENTFEE',
-          createdAt: formatDateTime(new Date()),
         },
       });
-      continue;
+      // log('pay1',payments);
+
+      let todayPayment: any = null;
+      let yesterdayPayment: any = null;
+
+      for (const p of payments) {
+        const date = p.createdAt.substring(0, 10);
+        if (date === todayStr) todayPayment = p;
+        if (date === yesterdayStr) yesterdayPayment = p;
+      }
+
+      // ✅ RULE 1: If today exists → SKIP
+
+      if (todayPayment) {
+        continue;
+      }
+
+      // 🔹 Get pending charges only if needed
+      const charges = await prisma.charge.findMany({
+        where: {
+          admissionId: admission.id,
+          status: 'PENDING',
+          NOT: { description: 'Inpatient Advance Fee' },
+        },
+      });
+      if (!charges.length) continue;
+
+      const totalAmount = charges.reduce((sum, c) => sum + Number(c.amount), 0);
+
+      // ✅ RULE 2: Yesterday PAID → CREATE today
+
+      if (yesterdayPayment && yesterdayPayment.status === 'PAID') {
+        await prisma.payment.create({
+          data: {
+            hospital_Id: admission.hospital_Id,
+            patient_Id: admission.patient_Id,
+            admission_Id: admission.id,
+            reason: 'Inpatient Daily Fee',
+            amount: totalAmount,
+            status: 'PENDING',
+            type: 'DAILYTREATMENTFEE',
+            createdAt: formatDateTime(new Date()),
+          },
+        });
+        continue;
+      }
+
+      // ❌ RULE 3: Yesterday NOT PAID → UPDATE yesterday
+
+      if (yesterdayPayment) {
+        await prisma.payment.update({
+          where: { id: yesterdayPayment.id },
+          data: {
+            amount: totalAmount,
+            status: 'PENDING',
+            createdAt: formatDateTime(new Date()),
+          },
+        });
+      }
+      // ❌ RULE 4: no Yesterday create
+      if (!yesterdayPayment) {
+        await prisma.payment.create({
+          data: {
+            hospital_Id: admission.hospital_Id,
+            patient_Id: admission.patient_Id,
+            admission_Id: admission.id,
+            reason: 'Inpatient Daily Fee',
+            amount: totalAmount,
+            status: 'PENDING',
+            type: 'DAILYTREATMENTFEE',
+            createdAt: formatDateTime(new Date()),
+          },
+        });
+        continue;
+      }
     }
   }
-}
   async dischargeAdmission(admissionId: number) {
     const now = new Date();
 
@@ -660,8 +764,8 @@ log('Consultation Updated: %o', consultations);
         status: 'DISCHARGED',
         dischargeTime: now,
         bed: {
-          update: { status: 'AVAILABLE' }
-        }
+          update: { status: 'AVAILABLE' },
+        },
       },
     });
 
@@ -901,6 +1005,9 @@ log('Consultation Updated: %o', consultations);
         //   path: '$',
         //   array_contains: phone,
         // },
+      },
+      include: {
+        Consultation: true,
       },
     });
   }
