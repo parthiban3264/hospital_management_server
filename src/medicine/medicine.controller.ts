@@ -20,6 +20,10 @@ async getMedicineById(
   return this.service.getMedicine(+shop_id, +id);
 }
 
+  @Get('all/:hospitalId')
+  findAllByhospital(@Param('hospitalId') hospitalId: number) {
+    return this.service.finfindAllByhospitaldAll(hospitalId);
+  }
 
   @Get('low-stock/:shopId')
   async getLowStockMedicines(

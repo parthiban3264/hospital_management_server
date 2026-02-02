@@ -1046,16 +1046,16 @@ enum PrescriptionStatus {
   CANCELLED
 }
 
-enum MedicineRoute {
-  TABLET
-  INJECTION
-  SYRUP
-  DROP
-  OINTMENT
-  CREAM
-  SOAP
-  OTHER
-}
+// enum MedicineRoute {
+//   TABLET
+//   INJECTION
+//   SYRUP
+//   DROP
+//   OINTMENT
+//   CREAM
+//   SOAP
+//   OTHER
+// }
 
 enum MedicineStatus {
   PENDING
@@ -1097,7 +1097,7 @@ model PrescriptionMedicine {
   medicine_Id        Int
   hospital_Id        Int
   dosage             String?
-  route              MedicineRoute
+  route              String
   frequency          String?
   days               Int
   total_quantity     Int

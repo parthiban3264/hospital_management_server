@@ -46,6 +46,52 @@ async getMedicine(shop_id: number, id: number) {
     },
   });
 }
+//  async finfindAllByhospitaldAll(hospitalId: number) {
+//     const injections = await prisma.medicine.findMany({
+//       where: { hospital_Id: Number(hospitalId) ,batches:{every:{expiry_date:{gt:new Date()}}}},
+//       include:{
+//         batches:true,
+//       }
+//       // include: { Hospital: true, MedicineAndInjection: true },
+//     });
+//     return { status: "success", message: "Injections fetched", data: injections };
+//   }
+
+async finfindAllByhospitaldAll(hospitalId: number) {
+  const injections = await prisma.medicine.findMany({
+    where: {
+      hospital_Id: Number(hospitalId),
+      batches: {
+        some: {
+          expiry_date: {
+            gt: new Date(),
+          },
+        },
+      },
+      is_active:true,
+    },
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      batches: {
+        where: {
+          expiry_date: {
+            gt: new Date(),
+          },
+          is_active:true,
+        },
+      },
+    },
+  });
+
+  return {
+    status: "success",
+    message: "Medicines fetched",
+    data: injections,
+  };
+}
+
 
 async searchMedicines(shopId: number, query: string) {
   if (!query) return [];

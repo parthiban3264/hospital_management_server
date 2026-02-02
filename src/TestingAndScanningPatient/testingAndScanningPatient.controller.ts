@@ -86,9 +86,9 @@ export class TestingAndScanningPatientController {
     return this.service.finfindAllTestandScan(Number(hospital_Id));
   }
 
-   @Get('all/pendingPaymentStatus/:hospital_Id/:doctorId')
-  findAllEditTestandScan(@Param('hospital_Id') hospital_Id: number, @Param('doctorId') doctorId: string) {
-    return this.service.finfindAllEditTestandScan(Number(hospital_Id), doctorId);
+   @Get('all/pendingPaymentStatus/:hospital_Id/:doctorId/:patientType')
+  findAllEditTestandScan(@Param('hospital_Id') hospital_Id: number, @Param('doctorId') doctorId: string,@Param('patientType') patientType: string) {
+    return this.service.finfindAllEditTestandScan(Number(hospital_Id), doctorId,patientType);
   }
 
 

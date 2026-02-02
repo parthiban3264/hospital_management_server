@@ -306,18 +306,16 @@ export class AdmissionService {
         },
       });
 
-    
-        // 🔴 Closed consultation → proper message
-        if (
-          ['COMPLETED', 'CANCELLED', 'ABANDONED', 'DISCHARGED'].includes(
-            consultation.status,
-          )
-        ) {
-          throw new BadRequestException(
-            `This patient’s consultation is already closed (status: ${consultation.status}). A new consultation must be created before admission.`,
-          );
-        }
-      
+      // 🔴 Closed consultation → proper message
+      if (
+        ['COMPLETED', 'CANCELLED', 'ABANDONED', 'DISCHARGED'].includes(
+          consultation.status,
+        )
+      ) {
+        throw new BadRequestException(
+          `This patient’s consultation is already closed (status: ${consultation.status}). A new consultation must be created before admission.`,
+        );
+      }
 
       log('Consultation Updatedhhh: %o', consultation.id);
       if (consultation.paymentStatus == false) {
@@ -398,18 +396,33 @@ export class AdmissionService {
           },
         });
       }
+  
       const DoctorFee = await prisma.fees.findFirst({
         where: {
           hospital_Id: Number(hospital_Id),
           type: 'INPATIENT DOCTOR FEE',
         },
       });
+
+      
       const NurseFee = await prisma.fees.findFirst({
         where: {
           hospital_Id: Number(hospital_Id),
           type: 'INPATIENT NURSE FEE',
         },
       });
+
+      if (
+  !DoctorFee?.amount ||
+  DoctorFee.amount <= 0 ||
+  !NurseFee?.amount ||
+  NurseFee.amount <= 0
+) {
+  throw new BadRequestException(
+    'Please set inpatient doctor and nurse fees'
+  );
+}
+
       await prisma.charge.createMany({
         data: [
           {
@@ -563,89 +576,6 @@ export class AdmissionService {
     }
   }
 
-  // async createDailyPayment() {
-  //   // 🔹 Yesterday
-  //   const yesterday = new Date();
-  //   const today = new Date();
-  //   yesterday.setDate(yesterday.getDate() - 1);
-
-  //   const yesterdayStr = dateOnlyString(yesterday);
-  //   const todayStr = dateOnlyString(today);
-
-  //   const admissions = await prisma.admission.findMany({
-  //     where: {
-  //       status: 'ADMITTED',
-  //       dischargeTime: null,
-  //     },
-  //   });
-
-  //   for (const admission of admissions) {
-  //     // 🔍 Check if today's payment exists
-  //     const existingPayment = await prisma.payment.findFirst({
-  //       where: {
-  //         admission_Id: admission.id,
-  //         type: 'DAILYTREATMENTFEE',
-  //         status: 'PAYLATER',
-  //         OR: [
-  //           {
-  //             createdAt: {
-  //               startsWith: yesterdayStr, // "2026-01-21"
-  //             },
-  //           },
-  //           // {
-  //           //   createdAt: {
-  //           //     startsWith: todayStr, // "2026-01-22"
-  //           //   },
-  //           // },
-  //         ],
-  //       },
-  //     });
-
-  //     // 🔢 Calculate charges
-  //     const charges = await prisma.charge.findMany({
-  //       where: {
-  //         admissionId: admission.id,
-  //         status: 'PENDING',
-  //         NOT: {
-  //           description: 'Inpatient Advance Fee',
-  //         },
-  //       },
-  //     });
-
-  //     if (charges.length === 0) continue;
-
-  //     const totalAmount = charges.reduce((sum, c) => sum + Number(c.amount), 0);
-
-  //     // 🟢 UPDATE existing payment
-  //     if (existingPayment) {
-  //       await prisma.payment.update({
-  //         where: {
-  //           id: existingPayment.id, // ✅ unique
-  //         },
-  //         data: {
-  //           amount: totalAmount,
-  //           status: 'PENDING',
-  //           createdAt: formatDateTime(new Date()),
-  //         },
-  //       });
-  //       continue;
-  //     }
-
-  //     // 🆕 CREATE new payment
-  //     await prisma.payment.create({
-  //       data: {
-  //         hospital_Id: admission.hospital_Id,
-  //         patient_Id: admission.patient_Id,
-  //         admission_Id: admission.id,
-  //         reason: 'Inpatient Daily Fee',
-  //         amount: totalAmount,
-  //         status: 'PENDING',
-  //         type: 'DAILYTREATMENTFEE',
-  //         createdAt: formatDateTime(new Date()),
-  //       },
-  //     });
-  //   }
-  // }
 
   async createDailyPayment() {
     const today = new Date();
@@ -769,6 +699,14 @@ export class AdmissionService {
       },
     });
 
+    const consultation = await prisma.consultation.update({
+      where: { id: admission.consultation_Id },
+      data: {
+        status: 'DISCHARGED',
+        updatedAt: new Date().toDateString(),
+      },
+    });
+
     // 2️⃣ Find today's NON-PAID daily treatment fee
     const dailyPayment = await prisma.payment.findFirst({
       where: {
@@ -800,13 +738,6 @@ export class AdmissionService {
         description: 'Inpatient Advance Fee',
       },
     });
-
-    // const totalCharges = charges.reduce((sum, c) => sum + Number(c.amount), 0);
-
-    // const totalAdvance = advanceCharges.reduce(
-    //   (sum, c) => sum + Number(c.amount),
-    //   0,
-    // );
     const totalCharges = charges.reduce((sum, c) => sum + Number(c.amount), 0);
 
     const totalAdvance = advanceCharges.reduce(
@@ -865,82 +796,6 @@ export class AdmissionService {
       amount: totalCharges,
     };
   }
-
-  // async createDailyPayment() {
-  //   function formatDateTime(date: Date = new Date()) {
-  //     const year = date.getFullYear();
-  //     const month = String(date.getMonth() + 1).padStart(2, '0');
-  //     const day = String(date.getDate()).padStart(2, '0');
-
-  //     let hours = date.getHours();
-  //     const minutes = String(date.getMinutes()).padStart(2, '0');
-  //     const ampm = hours >= 12 ? 'PM' : 'AM';
-
-  //     hours = hours % 12 || 12; // convert to 12-hour format
-
-  //     return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
-  //   }
-
-  //   const today = new Date();
-  //   today.setHours(0, 0, 0, 0);
-  //   function todayDateString(date = new Date()) {
-  //     const y = date.getFullYear();
-  //     const m = String(date.getMonth() + 1).padStart(2, '0');
-  //     const d = String(date.getDate()).padStart(2, '0');
-  //     return `${y}-${m}-${d}`;
-  //   }
-
-  //   const admissions = await prisma.admission.findMany({
-  //     where: {
-  //       status: 'ADMITTED',
-  //       dischargeTime: null,
-  //     },
-  //   });
-
-  //   for (const admission of admissions) {
-  //     // ⛔ prevent duplicate daily payment
-  //     const exists = await prisma.payment.findFirst({
-  //       where: {
-  //         admission_Id: admission.id,
-  //         type: 'DAILYTREATMENTFEE',
-  //         createdAt: {
-  //           startsWith: todayDateString(today), // ✅ matches any time on that date
-  //         },
-  //       },
-  //     });
-
-  //     if (exists) continue;
-
-  //     // ✅ get today's charges
-  //     const charges = await prisma.charge.findMany({
-  //       where: {
-  //         admissionId: admission.id,
-  //         //chargeDate: today,
-  //         status: 'PENDING',
-  //         NOT: { description: 'Inpatient Advance Fee' },
-  //       },
-  //     });
-
-  //     if (charges.length === 0) continue; // no charges → no bill
-
-  //     const totalAmount = charges.reduce((sum, c) => sum + c.amount, 0);
-
-  //     // ✅ create PAYMENT from charges total
-  //     await prisma.payment.create({
-  //       data: {
-  //         hospital_Id: admission.hospital_Id,
-  //         patient_Id: admission.patient_Id,
-  //         admission_Id: admission.id,
-  //         reason: `Inpatient Daily Fee`,
-  //         amount: totalAmount,
-  //         status: 'PENDING',
-  //         type: 'DAILYTREATMENTFEE',
-  //         //billingDate: today,
-  //         createdAt: formatDateTime(new Date()),
-  //       },
-  //     });
-  //   }
-  // }
 
   async getNurses(hospital_Id: number) {
     return prisma.admin.findMany({

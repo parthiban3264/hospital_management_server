@@ -1670,6 +1670,15 @@ async findAllIP(hospitalId: number) {
           },
         },
         Payment: true,
+        Admission: {
+          include:{
+            bed:{
+              include:{
+                ward:true
+              }
+            }, 
+          }
+        },
         Doctor: { select: { user_Id: true, name: true, specialist: true } },
         TeatingAndScanningPatient: true,
       },
@@ -1771,6 +1780,7 @@ async findAllIP(hospitalId: number) {
           createdAt: patient.createdAt,
           updatedAt: patient.updatedAt,
         },
+        Admission: c.Admission,
         TeatingAndScanningPatient: (TeatingAndScanningPatient || [])
           .filter((t) => t.status === 'COMPLETED' && t.consultation_Id === c.id)
           .map((t) => ({
@@ -1826,20 +1836,21 @@ async findAllIP(hospitalId: number) {
     };
   }
   async findAllByMedical(hospitalId: number, mode: number) {
-    //console.log('Mode in service:', mode);
+
+    console.log('Mode in service:', mode);
     const extraCondition =
       mode == 0
         ? { medicineTonic: true }
         : mode == 1
           ? { Injection: true, medicineTonic: false }
           : {};
-    //log('Extra Condition:', extraCondition);
-    return this.prisma.consultation.findMany({
+    log('Extra Condition:', extraCondition);
+    const medi = await this.prisma.consultation.findMany({
       where: {
         hospital_Id: Number(hospitalId),
         ...extraCondition,
         // queueStatus: 'COMPLETED',
-        status: { in: ['ENDPROCESSING', 'ONGOING', 'COMPLETED'] },
+        status: { in: ['ENDPROCESSING', 'ONGOING', 'COMPLETED','ADMITTED'] },
       },
       include: {
         Hospital: true,
@@ -1880,6 +1891,8 @@ async findAllIP(hospitalId: number) {
         createdAt: 'asc',
       },
     });
+    log('Medications fetched:', medi);
+    return medi;
   }
 
   async findByHospitalDoctor(hospitalId: number, doctorId: string) {

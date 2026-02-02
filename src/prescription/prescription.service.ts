@@ -53,14 +53,14 @@ export class PrescriptionService {
 
           medicines: {
             create: dto.medicines.map((med) => ({
-            medicine: {
-  connect: {
-    hospital_Id_id: {
-      hospital_Id: Number(dto.hospital_Id),
-      id: Number(med.medicine_Id),
-    },
-  },
-},
+              medicine: {
+                connect: {
+                  hospital_Id_id: {
+                    hospital_Id: Number(dto.hospital_Id),
+                    id: Number(med.medicine_Id),
+                  },
+                },
+              },
 
               dosage: med.dosage,
               route: med.route as any,
@@ -82,18 +82,17 @@ export class PrescriptionService {
 
       return prescription;
     });
-}
+  }
 
   // 🏥 DISPENSE MEDICINE
   async dispenseMedicine(dto: DispenseMedicineDto) {
     return this.prisma.$transaction(async (tx) => {
       // 1️⃣ Prescription medicine
-      const prescriptionMedicine =
-        await tx.prescriptionMedicine.findUnique({
-          where: { id: dto.prescription_medicine_Id },
-          include: { prescription: true },
-        });
-
+      const prescriptionMedicine = await tx.prescriptionMedicine.findUnique({
+        where: { id: dto.prescription_medicine_Id },
+        include: { prescription: true },
+      });
+log('work1')
       if (!prescriptionMedicine) {
         throw new BadRequestException('Prescription medicine not found');
       }
@@ -106,7 +105,7 @@ export class PrescriptionService {
       if (dto.dispensed_quantity > remaining) {
         throw new BadRequestException('Quantity exceeded');
       }
-
+log('work2')
       // 3️⃣ Batch check (by batch_no)
       const batch = await tx.medicineBatch.findUnique({
         where: {
@@ -118,13 +117,16 @@ export class PrescriptionService {
         },
       });
 
-      if (!batch || batch.quantity < dto.dispensed_quantity) {
-        throw new BadRequestException('Insufficient stock');
-      }
-
+      // if (!batch || batch.quantity < dto.dispensed_quantity) {
+      //   throw new BadRequestException('Insufficient stock');
+      // }
+log('work3')
+      log('batch', batch);
+      log('prescriptionMedicine', prescriptionMedicine);
+      log('dto', dto);
+      log(!batch || batch.quantity < dto.dispensed_quantity)
       // 4️⃣ Calculate amount
-      const amount =
-        dto.dispensed_quantity * batch.selling_price_unit;
+      const amount = dto.dispensed_quantity * batch.selling_price_unit;
 
       // 5️⃣ Create dispense record
       const dispense = await tx.prescriptionDispense.create({
@@ -138,25 +140,24 @@ export class PrescriptionService {
           amount, // ✅ store line amount
         },
       });
-
-      // 6️⃣ Reduce batch stock
-      await tx.medicineBatch.update({
-        where: {
-          hospital_Id_medicine_id_batch_no: {
-            hospital_Id: dto.hospital_Id,
-            medicine_id: prescriptionMedicine.medicine_Id,
-            batch_no: dto.batch_Id.toString(),
-          },
-        },
-        data: {
-          quantity: { decrement: dto.dispensed_quantity },
-        },
-      });
+log('work4')
+      // // 6️⃣ Reduce batch stock
+      // await tx.medicineBatch.update({
+      //   where: {
+      //     hospital_Id_medicine_id_batch_no: {
+      //       hospital_Id: dto.hospital_Id,
+      //       medicine_id: prescriptionMedicine.medicine_Id,
+      //       batch_no: dto.batch_Id.toString(),
+      //     },
+      //   },
+      //   data: {
+      //     quantity: { decrement: dto.dispensed_quantity },
+      //   },
+      // });
 
       // 7️⃣ Update prescription medicine status
       const newQty =
-        prescriptionMedicine.dispensed_quantity +
-        dto.dispensed_quantity;
+        prescriptionMedicine.dispensed_quantity + dto.dispensed_quantity;
 
       await tx.prescriptionMedicine.update({
         where: { id: dto.prescription_medicine_Id },
@@ -168,7 +169,7 @@ export class PrescriptionService {
               : 'ONGOING',
         },
       });
-
+log('work5')
       // 8️⃣ Update payment amount (increment)
       await tx.payment.update({
         where: {
@@ -180,13 +181,13 @@ export class PrescriptionService {
           },
         },
       });
-
+log('work6')
       return {
         dispense,
         amount,
       };
     });
-}
+  }
 
   // 📄 GET PRESCRIPTION (Doctor / Pharmacy)
   async getPrescription(id: number) {
@@ -207,8 +208,6 @@ export class PrescriptionService {
     });
   }
 }
-
-
 
 //   // 🧑‍⚕️ CREATE PRESCRIPTION
 //   async createPrescription(dto: CreatePrescriptionDto) {
@@ -329,7 +328,6 @@ export class PrescriptionService {
 //       return prescription;
 //     });
 //   }
-
 
 //   // 🏥 DISPENSE MEDICINE (PHARMACY)
 //  async dispenseMedicine(

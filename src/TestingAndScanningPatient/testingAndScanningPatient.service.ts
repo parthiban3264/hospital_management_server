@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Status } from '@prisma/client';
 import { log } from 'console';
 import { scan } from 'rxjs';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -493,28 +494,69 @@ log('tset',test);
     });
     return { status: 'success', message: 'Records fetched', data: records };
   }
-  async finfindAllEditTestandScan(hospital_Id: number, doctorId: string) {
-    const records = await this.prisma.testingAndScanningPatient.findMany({
-      where: {
-        hospital_Id: Number(hospital_Id),
-       doctor_Id: { equals: doctorId },
-       paymentStatus: false,
-       status: { in: ['PENDING'] },
-       Consultation: {
-         isTestOnly: false,
-       },
+  // async finfindAllEditTestandScan(hospital_Id: number, doctorId: string,patientType: string) {
+
+    
+  //   const records = await this.prisma.testingAndScanningPatient.findMany({
+  //     where: {
+  //       hospital_Id: Number(hospital_Id),
+  //      doctor_Id: { equals: doctorId },
+  //      paymentStatus: false,
+  //      status: { in: ['PENDING'] },
+  //      Consultation: {
+  //        isTestOnly: false,
+  //      },
+  //     },
+  //     include: {
+  //       Hospital: true,
+  //       Payment: true,
+  //       Patient: {
+  //         include: { Consultation: true },
+  //       },
+  //     },
+  //   });
+  //   return { status: 'success', message: 'Records fetched', data: records };
+  // }
+  
+  async finfindAllEditTestandScan(
+  hospital_Id: number,
+  doctorId: string,
+  patientType: string,
+) {
+  const consultationStatusCondition =
+    patientType === 'inpatient'
+      ? { equals: Status.ADMITTED }
+      : { in: [Status.ONGOING, Status.ENDPROCESSING] };
+
+  const records = await this.prisma.testingAndScanningPatient.findMany({
+    where: {
+      hospital_Id,
+      doctor_Id: { equals: doctorId },
+      paymentStatus: false,
+      status: { in: ['PENDING'] },
+      Consultation: {
+        isTestOnly: false,
+        status: consultationStatusCondition,
       },
-      include: {
-        Hospital: true,
-        Payment: true,
-        Patient: {
-          include: { Consultation: true },
+    },
+    include: {
+      Hospital: true,
+      Payment: true,
+      Patient: {
+        include: {
+          Consultation: true,
         },
       },
-    });
-    return { status: 'success', message: 'Records fetched', data: records };
-  }
-  
+    },
+  });
+
+  return {
+    status: 'success',
+    message: 'Records fetched',
+    data: records,
+  };
+}
+
 
   async findOne(id: number) {
     const record = await this.prisma.testingAndScanningPatient.findUnique({
