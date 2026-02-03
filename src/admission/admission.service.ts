@@ -331,7 +331,7 @@ export class AdmissionService {
 
       const consultations = await tx.consultation.update({
         where: { id: consultation.id },
-        data: { status: 'ADMITTED' },
+        data: { patientType: 'IP' },
       });
 
       // 🏥 Create admission

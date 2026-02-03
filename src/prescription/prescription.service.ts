@@ -92,7 +92,7 @@ export class PrescriptionService {
         where: { id: dto.prescription_medicine_Id },
         include: { prescription: true },
       });
-log('work1')
+      log('work1');
       if (!prescriptionMedicine) {
         throw new BadRequestException('Prescription medicine not found');
       }
@@ -105,7 +105,7 @@ log('work1')
       if (dto.dispensed_quantity > remaining) {
         throw new BadRequestException('Quantity exceeded');
       }
-log('work2')
+      log('work2');
       // 3️⃣ Batch check (by batch_no)
       const batch = await tx.medicineBatch.findUnique({
         where: {
@@ -120,11 +120,11 @@ log('work2')
       // if (!batch || batch.quantity < dto.dispensed_quantity) {
       //   throw new BadRequestException('Insufficient stock');
       // }
-log('work3')
+      log('work3');
       log('batch', batch);
       log('prescriptionMedicine', prescriptionMedicine);
       log('dto', dto);
-      log(!batch || batch.quantity < dto.dispensed_quantity)
+      log(!batch || batch.quantity < dto.dispensed_quantity);
       // 4️⃣ Calculate amount
       const amount = dto.dispensed_quantity * batch.selling_price_unit;
 
@@ -140,7 +140,7 @@ log('work3')
           amount, // ✅ store line amount
         },
       });
-log('work4')
+      log('work4');
       // // 6️⃣ Reduce batch stock
       // await tx.medicineBatch.update({
       //   where: {
@@ -169,7 +169,7 @@ log('work4')
               : 'ONGOING',
         },
       });
-log('work5')
+      log('work5');
       // 8️⃣ Update payment amount (increment)
       await tx.payment.update({
         where: {
@@ -181,7 +181,7 @@ log('work5')
           },
         },
       });
-log('work6')
+      log('work6');
       return {
         dispense,
         amount,

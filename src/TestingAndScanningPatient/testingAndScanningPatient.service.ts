@@ -525,8 +525,8 @@ log('tset',test);
 ) {
   const consultationStatusCondition =
     patientType === 'inpatient'
-      ? { equals: Status.ADMITTED }
-      : { in: [Status.ONGOING, Status.ENDPROCESSING] };
+      ? { in: ['IP'] }
+      : { in: ['OP'] };
 
   const records = await this.prisma.testingAndScanningPatient.findMany({
     where: {
@@ -536,7 +536,7 @@ log('tset',test);
       status: { in: ['PENDING'] },
       Consultation: {
         isTestOnly: false,
-        status: consultationStatusCondition,
+        patientType: consultationStatusCondition,
       },
     },
     include: {
@@ -556,6 +556,23 @@ log('tset',test);
     data: records,
   };
 }
+
+findAllPrescriptionDispenseByBatch(
+  hospital_Id: number,
+  medicineId: string,
+) {
+  return this.prisma.prescriptionDispense.groupBy({
+    by: ['batch_Id'],
+    where: {
+      hospital_Id: Number(hospital_Id),
+      medicine_Id: Number(medicineId),
+    },
+    _sum: {
+      dispensed_quantity: true,
+    },
+  });
+}
+
 
 
   async findOne(id: number) {

@@ -91,6 +91,11 @@ export class TestingAndScanningPatientController {
     return this.service.finfindAllEditTestandScan(Number(hospital_Id), doctorId,patientType);
   }
 
+  @Get('all/prescriptionDispense/:hospital_Id/:medicianeId')
+    findAllPrescriptionDispenseByBatch(@Param('hospital_Id') hospital_Id: number, @Param('medicianeId') medicianeId: string) {
+    return this.service.findAllPrescriptionDispenseByBatch(Number(hospital_Id), medicianeId);
+  }
+
 
   @Patch('update-payment-status/:paymentId')
   async updateTestingAndScanning(@Param('paymentId') paymentId: number) {

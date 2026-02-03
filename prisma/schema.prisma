@@ -251,6 +251,7 @@ model Consultation {
   sugarTestFee         Float       @default(0)
   cancelReason         String?
   treatment            Boolean     @default(false)
+  patientType         String @default("OP")
   height               Float?
   weight               Float?
   BMI                  Float?

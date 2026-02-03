@@ -906,7 +906,6 @@
 
 // }
 
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConsultationGateway } from './consultation.gateway';
@@ -1646,12 +1645,13 @@ export class ConsultationService {
       data: formatted,
     };
   }
-async findAllIP(hospitalId: number) {
+  async findAllIP(hospitalId: number) {
     // Step 1️⃣: Fetch consultations
     const consultations = await this.prisma.consultation.findMany({
       where: {
         hospital_Id: Number(hospitalId),
-        status: { in: ['ADMITTED'] },
+        patientType: { in: ['IP'] },
+        status: { notIn: ['CANCELLED', 'DISCHARGED'] },
       },
       include: {
         Hospital: { select: { id: true, name: true } },
@@ -1671,13 +1671,13 @@ async findAllIP(hospitalId: number) {
         },
         Payment: true,
         Admission: {
-          include:{
-            bed:{
-              include:{
-                ward:true
-              }
-            }, 
-          }
+          include: {
+            bed: {
+              include: {
+                ward: true,
+              },
+            },
+          },
         },
         Doctor: { select: { user_Id: true, name: true, specialist: true } },
         TeatingAndScanningPatient: true,
@@ -1744,6 +1744,7 @@ async findAllIP(hospitalId: number) {
         hospital_Id: c.hospital_Id,
         purpose: c.purpose,
         status: c.status,
+        patientType: c.patientType,
         queueStatus: c.queueStatus,
         symptoms: c.symptoms,
         createdAt: c.createdAt,
@@ -1836,7 +1837,6 @@ async findAllIP(hospitalId: number) {
     };
   }
   async findAllByMedical(hospitalId: number, mode: number) {
-
     console.log('Mode in service:', mode);
     const extraCondition =
       mode == 0
@@ -1850,7 +1850,7 @@ async findAllIP(hospitalId: number) {
         hospital_Id: Number(hospitalId),
         ...extraCondition,
         // queueStatus: 'COMPLETED',
-        status: { in: ['ENDPROCESSING', 'ONGOING', 'COMPLETED','ADMITTED'] },
+        status: { in: ['ENDPROCESSING', 'ONGOING', 'COMPLETED', 'ADMITTED'] },
       },
       include: {
         Hospital: true,
@@ -1980,30 +1980,30 @@ async findAllIP(hospitalId: number) {
   }
 
   async autoAbandon() {
-  const twoDaysAgo = dayjs().subtract(2, 'day').toDate();
+    const twoDaysAgo = dayjs().subtract(3, 'day').toDate();
 
-  const consultations = await this.prisma.consultation.findMany({
-    where: {
-      //hospital_Id : 1,
-      status: { in: ['PENDING', 'ONGOING'] },
-    },
-  });
+    const consultations = await this.prisma.consultation.findMany({
+      where: {
+        //hospital_Id : 1,
+        patientType: 'OP',
+        status: { in: ['PENDING', 'ONGOING'] },
+      },
+    });
 
-  const abandonedIds = consultations
-    .filter(c =>
-      dayjs(c.createdAt, 'YYYY-MM-DD hh:mm A').isBefore(twoDaysAgo),
-    )
-    .map(c => c.id);
+    const abandonedIds = consultations
+      .filter((c) =>
+        dayjs(c.createdAt, 'YYYY-MM-DD hh:mm A').isBefore(twoDaysAgo),
+      )
+      .map((c) => c.id);
 
-  return this.prisma.consultation.updateMany({
-    where: {
-      id: { in: abandonedIds },
-    },
-    data: {
-      status: 'ABANDONED',
-      abandonedAt: new Date(),
-    },
-  });
-}
-
+    return this.prisma.consultation.updateMany({
+      where: {
+        id: { in: abandonedIds },
+      },
+      data: {
+        status: 'ABANDONED',
+        abandonedAt: new Date(),
+      },
+    });
+  }
 }
