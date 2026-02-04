@@ -589,7 +589,7 @@ export class AdmissionService {
       where: {
         status: 'ADMITTED',
         dischargeTime: null,
-        hospital_Id: 1,
+        //hospital_Id: 1,
       },
     });
 
