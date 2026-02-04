@@ -220,8 +220,14 @@ export class AdmissionService {
         newWardId,
         alreadyEnteredThisWardToday,
       });
-      log('Condition:', oldWardId !== newWardId && !alreadyEnteredThisWardToday);
-      log('History:', wardHistory.filter(entry => entry.toWard?.wardId === newWardId));
+      log(
+        'Condition:',
+        oldWardId !== newWardId && !alreadyEnteredThisWardToday,
+      );
+      log(
+        'History:',
+        wardHistory.filter((entry) => entry.toWard?.wardId === newWardId),
+      );
 
       if (oldWardId !== newWardId && !alreadyEnteredThisWardToday) {
         await tx.charge.create({
@@ -234,6 +240,19 @@ export class AdmissionService {
           },
         });
       }
+
+      await tx.payment.updateMany({
+        where: {
+          admission_Id: admissionId,
+          type: 'DAILYTREATMENTFEE',
+          status: 'PENDING',
+        },
+        data: {
+          amount: {
+            increment: newBed.ward.rent,
+          },
+        },
+      });
 
       // 🔄 Free old bed
       await tx.bed.update({
