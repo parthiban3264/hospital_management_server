@@ -85,6 +85,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AdmissionService } from './admission.service';
+import { log } from 'console';
 
 @Injectable()
 export class AdmissionServiceCron {
@@ -103,26 +104,17 @@ export class AdmissionServiceCron {
     await this.AdmissionService.createChargesFromPayments();
   }
 
-  // @Cron(CronExpression.EVERY_30_SECONDS)
-  // async createDailyPayment() {
-  //   await this.AdmissionService.createDailyPayment();
-  // }
 
-  // 18:40 every day
-@Cron('0 40 18 * * *')
-async createDailyPayment1840() {
-  await this.AdmissionService.createDailyPayment();
-}
-
-// 18:50 every day
-@Cron('0 50 18 * * *')
+// 19:00 every day
+@Cron('0 0 19 * * *')
 async createDailyPayment1850() {
   await this.AdmissionService.createDailyPayment();
 }
 
-// 19:00 every day
-@Cron('0 0 19 * * *')
+// 19:30 every day
+@Cron('0 30 19 * * *')
 async createDailyPayment1900() {
+  log('Creating daily payment at 19:30');
   await this.AdmissionService.createDailyPayment();
 }
 

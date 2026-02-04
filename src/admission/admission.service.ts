@@ -59,6 +59,87 @@ async function getCurrentWardRent(admission: any) {
 @Injectable()
 export class AdmissionService {
   private readonly logger = new Logger(AdmissionService.name);
+  // async changeAssignment(
+  //   admissionId: number,
+  //   data: { newBedId?: number },
+  //   hospital_Id: number,
+  // ) {
+  //   return prisma.$transaction(async (tx) => {
+  //     const admission = await tx.admission.findFirst({
+  //       where: { id: admissionId, hospital_Id },
+  //       include: {
+  //         bed: { include: { ward: true } },
+  //       },
+  //     });
+
+  //     if (!admission) {
+  //       throw new BadRequestException('Admission not found');
+  //     }
+
+  //     if (!data.newBedId || data.newBedId === admission.bedId) {
+  //       return admission;
+  //     }
+
+  //     const newBed = await tx.bed.findFirst({
+  //       where: { id: data.newBedId, status: 'AVAILABLE' },
+  //       include: { ward: true },
+  //     });
+
+  //     if (!newBed) {
+  //       throw new BadRequestException('Selected bed not available');
+  //     }
+
+  //     const now = new Date();
+
+  //     // ✅ Preserve existing history
+  //     const wardHistory: any[] = Array.isArray(admission.wardChange)
+  //       ? [...admission.wardChange]
+  //       : [];
+
+  //     // ✅ Add new movement entry
+  //     wardHistory.push({
+  //       movedAt: now.toISOString(),
+  //       fromWard: {
+  //         wardId: admission.bed.ward.id,
+  //         wardName: admission.bed.ward.name,
+  //         bedId: admission.bed.id,
+  //         bedNo: admission.bed.bedNo,
+  //       },
+  //       toWard: {
+  //         wardId: newBed.ward.id,
+  //         wardName: newBed.ward.name,
+  //         bedId: newBed.id,
+  //         bedNo: newBed.bedNo,
+  //       },
+  //     });
+
+  //     // 🔄 Free old bed
+  //     await tx.bed.update({
+  //       where: { id: admission.bedId },
+  //       data: { status: 'AVAILABLE' },
+  //     });
+
+  //     // 🔒 Occupy new bed
+  //     await tx.bed.update({
+  //       where: { id: newBed.id },
+  //       data: { status: 'OCCUPIED' },
+  //     });
+
+  //     // 💾 Save updated history
+  //     return tx.admission.update({
+  //       where: { id: admissionId },
+  //       data: {
+  //         bedId: newBed.id,
+  //         wardChange: wardHistory,
+  //       },
+  //       include: {
+  //         patient: true,
+  //         bed: { include: { ward: true } },
+  //       },
+  //     });
+  //   });
+  // }
+
   async changeAssignment(
     admissionId: number,
     data: { newBedId?: number },
@@ -89,29 +170,70 @@ export class AdmissionService {
         throw new BadRequestException('Selected bed not available');
       }
 
-      const now = new Date();
+      const oldWardId = admission.bed.ward.id;
+      const newWardId = newBed.ward.id;
 
-      // ✅ Preserve existing history
+      // 🕖 Billing date logic (after 7 PM → next day)
+      const now = new Date();
+      const billingStartDate = new Date(now);
+
+      if (now.getHours() >= 19) {
+        billingStartDate.setDate(billingStartDate.getDate() + 1);
+      }
+
+      billingStartDate.setHours(0, 0, 0, 0);
+      const billingDay = billingStartDate.toISOString().split('T')[0];
+
+      // 📜 Preserve ward history
       const wardHistory: any[] = Array.isArray(admission.wardChange)
         ? [...admission.wardChange]
         : [];
 
-      // ✅ Add new movement entry
+      // 🔍 Check if this WARD was already entered today
+      const alreadyEnteredThisWardToday = wardHistory.some((entry) => {
+        const moveDate = entry.movedAt.split('T')[0];
+        return moveDate === billingDay && entry.toWard?.wardId === newWardId;
+      });
+
+      // ➕ Add ward movement history
       wardHistory.push({
         movedAt: now.toISOString(),
         fromWard: {
-          wardId: admission.bed.ward.id,
+          wardId: oldWardId,
           wardName: admission.bed.ward.name,
           bedId: admission.bed.id,
           bedNo: admission.bed.bedNo,
         },
         toWard: {
-          wardId: newBed.ward.id,
+          wardId: newWardId,
           wardName: newBed.ward.name,
           bedId: newBed.id,
           bedNo: newBed.bedNo,
         },
       });
+
+      // 💰 Create charge ONLY if:
+      // 1️⃣ Ward changed
+      // 2️⃣ Ward not already charged today
+      log({
+        oldWardId,
+        newWardId,
+        alreadyEnteredThisWardToday,
+      });
+      log('Condition:', oldWardId !== newWardId && !alreadyEnteredThisWardToday);
+      log('History:', wardHistory.filter(entry => entry.toWard?.wardId === newWardId));
+
+      if (oldWardId !== newWardId && !alreadyEnteredThisWardToday) {
+        await tx.charge.create({
+          data: {
+            admissionId: admission.id,
+            description: 'Room Rent',
+            chargeDate: billingStartDate,
+            amount: newBed.ward.rent,
+            status: 'PENDING',
+          },
+        });
+      }
 
       // 🔄 Free old bed
       await tx.bed.update({
@@ -125,7 +247,7 @@ export class AdmissionService {
         data: { status: 'OCCUPIED' },
       });
 
-      // 💾 Save updated history
+      // 💾 Save admission
       return tx.admission.update({
         where: { id: admissionId },
         data: {
@@ -139,6 +261,8 @@ export class AdmissionService {
       });
     });
   }
+
+  //============================================================================
   async addStaffChange(admissionId: number, incoming: any) {
     log('Adding staff change for admission:', admissionId, incoming);
     const admission = await prisma.admission.findUnique({
@@ -396,7 +520,7 @@ export class AdmissionService {
           },
         });
       }
-  
+
       const DoctorFee = await prisma.fees.findFirst({
         where: {
           hospital_Id: Number(hospital_Id),
@@ -404,7 +528,6 @@ export class AdmissionService {
         },
       });
 
-      
       const NurseFee = await prisma.fees.findFirst({
         where: {
           hospital_Id: Number(hospital_Id),
@@ -413,15 +536,15 @@ export class AdmissionService {
       });
 
       if (
-  !DoctorFee?.amount ||
-  DoctorFee.amount <= 0 ||
-  !NurseFee?.amount ||
-  NurseFee.amount <= 0
-) {
-  throw new BadRequestException(
-    'Please set inpatient doctor and nurse fees'
-  );
-}
+        !DoctorFee?.amount ||
+        DoctorFee.amount <= 0 ||
+        !NurseFee?.amount ||
+        NurseFee.amount <= 0
+      ) {
+        throw new BadRequestException(
+          'Please set inpatient doctor and nurse fees',
+        );
+      }
 
       await prisma.charge.createMany({
         data: [
@@ -575,7 +698,6 @@ export class AdmissionService {
       });
     }
   }
-
 
   async createDailyPayment() {
     const today = new Date();
