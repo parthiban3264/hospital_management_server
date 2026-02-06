@@ -154,8 +154,8 @@ async create(data: any[]) {
 
   // ✅ GET ALL TESTS BY HOSPITAL + TYPE
   async findAll(hospital_Id: number, type: Types) {
-    return this.prisma.scanAndTests.findMany({
-      where: { hospital_Id,type },
+    return this.prisma.scanAndTestsWithPerHospital.findMany({
+      where: { hospital_Id,type,isActive:true },
       include: { options: true },
     });
   }

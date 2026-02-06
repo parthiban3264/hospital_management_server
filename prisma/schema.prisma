@@ -1360,7 +1360,6 @@ model ScanAndTestUnitReferencewithPerHospital {
   hospital_Id Int
   scanTestId  Int
   optionName  String
-  //optionTitle String
   isActive    Boolean                     @default(true)
   type        String?
   unit        String

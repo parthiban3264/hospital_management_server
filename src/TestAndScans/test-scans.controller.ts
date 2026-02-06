@@ -66,10 +66,9 @@ export class ScanAndTestController {
   //   return this.testScanService.upsertManyUnitReferences(optionName, unit, referance);
   // }
   @Post('unit_references/upsert_many')
-async upsertManyUnitReferences(@Body() body: any[]) {
-  return this.testScanService.upsertManyUnitReferences(body);
-}
-
+  async upsertManyUnitReferences(@Body() body: any[]) {
+    return this.testScanService.upsertManyUnitReferences(body);
+  }
 
   // ✅ GET ALL UNIT REFERENCES
   @Get('unit-reference/all')
@@ -79,10 +78,8 @@ async upsertManyUnitReferences(@Body() body: any[]) {
 
   // ✅ GET ALL UNIT REFERENCES
   @Get('unit-reference/all/:type')
-  getAllUnitReference(
-    @Param('type') type: string,
-  ) {
-    return this.testScanService.getAllUnitReference( type);
+  getAllUnitReference(@Param('type') type: string) {
+    return this.testScanService.getAllUnitReference(type);
   }
 
   // ✅ GET UNIT REFERENCE BY NAME

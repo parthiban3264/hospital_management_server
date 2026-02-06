@@ -1837,14 +1837,12 @@ export class ConsultationService {
     };
   }
   async findAllByMedical(hospitalId: number, mode: number) {
-    console.log('Mode in service:', mode);
     const extraCondition =
       mode == 0
         ? { medicineTonic: true }
         : mode == 1
           ? { Injection: true, medicineTonic: false }
           : {};
-    log('Extra Condition:', extraCondition);
     const medi = await this.prisma.consultation.findMany({
       where: {
         hospital_Id: Number(hospitalId),
@@ -1855,32 +1853,18 @@ export class ConsultationService {
       include: {
         Hospital: true,
         Patient: true,
-        // MedicinePatient: {
-        //   include: {
-        //     Medician: true,
-        //     Payment: true,
-        //   },
-        // },
-        // InjectionPatient: {
-        //   include: {
-        //     Injection: true,
-        //     Payment: true,
-        //   },
-        // },
-
-        // TonicPatient: {
-        //   include: {
-        //     Tonic: true,
-        //     Payment: true,
-        //   },
-        // },
         Prescription: {
           include: {
             medicines: {
               include: {
                 dispenses: true,
-                medicine: true,
+                medicine: {
+                  include: {
+                    batches: true,
+                  },
+                },
               },
+              
             },
             payment: true,
           },
@@ -1891,7 +1875,6 @@ export class ConsultationService {
         createdAt: 'asc',
       },
     });
-    log('Medications fetched:', medi);
     return medi;
   }
 
