@@ -818,38 +818,116 @@ export class TestingAndScanningPatientService {
     };
 
     // Helper: Get correct reference
+    // const getCorrectReference = (
+    //   refJson: any,
+    //   age: { years: number; months: number },
+    //   gender: string,
+    // ): string => {
+    //   if (!refJson) return 'N/A';
+    //   let parsed;
+    //   try {
+    //     parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
+    //   } catch {
+    //     return 'N/A';
+    //   }
+
+    //   const normalized: any = {};
+    //   Object.keys(parsed).forEach(
+    //     (k) => (normalized[k.toLowerCase()] = parsed[k]),
+    //   );
+    //   const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
+    //   const totalMonths = age.months;
+
+    //   for (const key of Object.keys(normalized)) {
+    //     const parts = key.split('_');
+    //     if (parts.length < 3) continue;
+    //     const min = parseInt(parts[0], 10);
+    //     const max = parseInt(parts[1], 10);
+    //     const genderPart = parts[2].toLowerCase();
+    //     if (!genderPart.includes(genderKey)) continue;
+    //     if (totalMonths >= min && totalMonths <= max)
+    //       return normalized[key] ?? 'N/A';
+    //   }
+    //   return 'N/A';
+    // };
+
+    //-----------------------------------------------------------------------------------
+
+    const AGE_GROUP_ORDER = [
+      'NEWBORN',
+      'INFANT',
+      'TODDLER/CHILD',
+      'CHILD',
+      'ADOLESCENT',
+      'ADULT',
+      'ELDERLY',
+    ];
+
+    const getAgeGroupKey = (totalMonths: number): string => {
+      if (totalMonths <= 1) return 'NEWBORN';
+      if (totalMonths <= 12) return 'INFANT';
+      if (totalMonths <= 72) return 'TODDLER/CHILD';
+      if (totalMonths <= 144) return 'CHILD';
+      if (totalMonths <= 216) return 'ADOLESCENT';
+      if (totalMonths <= 780) return 'ADULT';
+      return 'ELDERLY';
+    };
+
     const getCorrectReference = (
       refJson: any,
       age: { years: number; months: number },
       gender: string,
     ): string => {
       if (!refJson) return 'N/A';
-      let parsed;
-      try {
-        parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
-      } catch {
-        return 'N/A';
+
+      // ✅ CASE 1: Plain string reference (e.g. "CLAY-COLORED")
+      if (typeof refJson === 'string') {
+        const trimmed = refJson.trim();
+
+        // Not JSON → return as-is
+        if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+          return trimmed;
+        }
+
+        // Try JSON parsing only if it looks like JSON
+        try {
+          refJson = JSON.parse(trimmed);
+        } catch {
+          return trimmed; // fallback safely
+        }
       }
 
-      const normalized: any = {};
-      Object.keys(parsed).forEach(
-        (k) => (normalized[k.toLowerCase()] = parsed[k]),
-      );
-      const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
-      const totalMonths = age.months;
+      // Must be array now
+      if (!Array.isArray(refJson)) return 'N/A';
 
-      for (const key of Object.keys(normalized)) {
-        const parts = key.split('_');
-        if (parts.length < 3) continue;
-        const min = parseInt(parts[0], 10);
-        const max = parseInt(parts[1], 10);
-        const genderPart = parts[2].toLowerCase();
-        if (!genderPart.includes(genderKey)) continue;
-        if (totalMonths >= min && totalMonths <= max)
-          return normalized[key] ?? 'N/A';
+      const totalMonths = (age.years ?? 0) * 12 + (age.months ?? 0);
+      const targetGroup = getAgeGroupKey(totalMonths);
+
+      const genderKey = gender?.toLowerCase().startsWith('f')
+        ? 'FEMALE'
+        : 'MALE';
+
+      // Build available group map
+      const available: Record<string, any> = {};
+      for (const item of refJson) {
+        const key = Object.keys(item)[0];
+        if (key) available[key] = item[key];
       }
+
+      // Exact → fallback backward
+      const startIndex = AGE_GROUP_ORDER.indexOf(targetGroup);
+      for (let i = startIndex; i >= 0; i--) {
+        const group = AGE_GROUP_ORDER[i];
+        const data = available[group];
+        if (!data) continue;
+
+        return String(data[genderKey] ?? data.ALL ?? 'N/A');
+      }
+
       return 'N/A';
     };
+
+    //-----------------------------------------------------------------------------------
 
     // Step 4️⃣: Merge test, patient, hospital, references, selectedOption, doctor info
     const result = records.map((rec) => {
@@ -924,7 +1002,16 @@ export class TestingAndScanningPatientService {
           const reference = opt.reference
             ? getCorrectReference(opt.reference, age, gender)
             : 'N/A';
-
+          log(
+            'opt:',
+            opt.reference,
+            'age:',
+            age,
+            'gender:',
+            gender,
+            'reference:',
+            reference,
+          );
           return {
             name: opt.optionName,
             price: opt.price ?? null,
@@ -936,6 +1023,7 @@ export class TestingAndScanningPatientService {
         });
 
         log('Merged options for test', test.title, ':', mergedOptions);
+        log('Merged options for test', ':', testOptions);
         return {
           id: test.id,
           title: test.title,

@@ -74,6 +74,11 @@ async getPaidAccounts(@Param('hospitalId') hospitalId: number) {
     return this.service.update(+id, data);
   }
 
+  @Patch("updateById/decreaseAmount/:id")
+  decreaseAmount(@Param("id") id: number, @Body() data: any) {
+    return this.service.decreaseAmount(+id, data);
+  }
+
   @Delete("deleteById/:id")
   remove(@Param("id") id: number) {
     return this.service.remove(+id);

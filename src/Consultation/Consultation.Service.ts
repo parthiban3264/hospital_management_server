@@ -1472,6 +1472,7 @@ export class ConsultationService {
       where: {
         hospital_Id: Number(hospitalId),
         status: { in: ['PENDING', 'ENDPROCESSING', 'ONGOING'] },
+        patientType: 'OP',
       },
       include: {
         Hospital: { select: { id: true, name: true } },
@@ -1499,46 +1500,131 @@ export class ConsultationService {
     });
 
     // Step 2️⃣: Fetch unit/reference info
-    const unitRefs = await this.prisma.scanAndTestUnitReferance.findMany({
-      select: { optionName: true, unit: true, referance: true },
+    const unitRefs = await this.prisma.scanAndTestUnitReferencewithPerHospital.findMany({
+      select: { optionName: true, unit: true, reference: true },
     });
 
     // Step 3️⃣: Helper functions
-    const calculateAgeInMonths = (dob: string | Date | null) => {
-      if (!dob) return 0;
+    // const calculateAgeInMonths = (dob: string | Date | null) => {
+    //   if (!dob) return 0;
+    //   const birth = new Date(dob);
+    //   const now = new Date();
+    //   return (
+    //     (now.getFullYear() - birth.getFullYear()) * 12 +
+    //     (now.getMonth() - birth.getMonth())
+    //   );
+    // };
+
+       const calculateAge = (dob: Date | string | null) => {
+      if (!dob) return { years: 0, months: 0 };
       const birth = new Date(dob);
       const now = new Date();
-      return (
-        (now.getFullYear() - birth.getFullYear()) * 12 +
-        (now.getMonth() - birth.getMonth())
-      );
+      let years = now.getFullYear() - birth.getFullYear();
+      let months = now.getMonth() - birth.getMonth() + years * 12;
+      if (now.getDate() < birth.getDate()) months -= 1;
+      years = Math.floor(months / 12);
+      return { years, months };
+    };
+
+    // const getReferenceForPatient = (
+    //   refJson: any,
+    //   ageMonths: number,
+    //   gender: string,
+    // ) => {
+    //   if (!refJson) return 'N/A';
+    //   let parsed;
+    //   try {
+    //     parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
+    //   } catch {
+    //     return 'N/A';
+    //   }
+    //   const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
+    //   for (const key of Object.keys(parsed)) {
+    //     const [minStr, maxStr, g] = key.split('_');
+    //     const min = parseInt(minStr, 10);
+    //     const max = parseInt(maxStr, 10);
+    //     if (
+    //       ageMonths >= min &&
+    //       ageMonths <= max &&
+    //       g.toLowerCase() === genderKey
+    //     ) {
+    //       return parsed[key];
+    //     }
+    //   }
+    //   return 'N/A';
+    // };
+
+    const AGE_GROUP_ORDER = [
+      'NEWBORN',
+      'INFANT',
+      'TODDLER/CHILD',
+      'CHILD',
+      'ADOLESCENT',
+      'ADULT',
+      'ELDERLY',
+    ];
+
+    const getAgeGroupKey = (totalMonths: number): string => {
+      if (totalMonths <= 1) return 'NEWBORN';
+      if (totalMonths <= 12) return 'INFANT';
+      if (totalMonths <= 72) return 'TODDLER/CHILD';
+      if (totalMonths <= 144) return 'CHILD';
+      if (totalMonths <= 216) return 'ADOLESCENT';
+      if (totalMonths <= 780) return 'ADULT';
+      return 'ELDERLY';
     };
 
     const getReferenceForPatient = (
       refJson: any,
-      ageMonths: number,
+      age: { years: number; months: number },
       gender: string,
-    ) => {
+    ): string => {
       if (!refJson) return 'N/A';
-      let parsed;
-      try {
-        parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
-      } catch {
-        return 'N/A';
-      }
-      const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
-      for (const key of Object.keys(parsed)) {
-        const [minStr, maxStr, g] = key.split('_');
-        const min = parseInt(minStr, 10);
-        const max = parseInt(maxStr, 10);
-        if (
-          ageMonths >= min &&
-          ageMonths <= max &&
-          g.toLowerCase() === genderKey
-        ) {
-          return parsed[key];
+
+      // ✅ CASE 1: Plain string reference (e.g. "CLAY-COLORED")
+      if (typeof refJson === 'string') {
+        const trimmed = refJson.trim();
+
+        // Not JSON → return as-is
+        if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+          return trimmed;
+        }
+
+        // Try JSON parsing only if it looks like JSON
+        try {
+          refJson = JSON.parse(trimmed);
+        } catch {
+          return trimmed; // fallback safely
         }
       }
+
+      // Must be array now
+      if (!Array.isArray(refJson)) return 'N/A';
+
+      const totalMonths = (age.years ?? 0) * 12 + (age.months ?? 0);
+      const targetGroup = getAgeGroupKey(totalMonths);
+
+      const genderKey = gender?.toLowerCase().startsWith('f')
+        ? 'FEMALE'
+        : 'MALE';
+
+      // Build available group map
+      const available: Record<string, any> = {};
+      for (const item of refJson) {
+        const key = Object.keys(item)[0];
+        if (key) available[key] = item[key];
+      }
+
+      // Exact → fallback backward
+      const startIndex = AGE_GROUP_ORDER.indexOf(targetGroup);
+      for (let i = startIndex; i >= 0; i--) {
+        const group = AGE_GROUP_ORDER[i];
+        const data = available[group];
+        if (!data) continue;
+
+        return String(data[genderKey] ?? data.ALL ?? 'N/A');
+      }
+
       return 'N/A';
     };
 
@@ -1547,7 +1633,7 @@ export class ConsultationService {
     const formatted = consultations.map((c) => {
       const patient = c.Patient;
       const TeatingAndScanningPatient = c.TeatingAndScanningPatient;
-      const ageMonths = calculateAgeInMonths(patient.dob);
+      const ageMonths = calculateAge(patient.dob);
 
       return {
         id: c.id,
@@ -1576,6 +1662,7 @@ export class ConsultationService {
         tokenDate: c.tokenDate,
         payment: c.Payment,
         isTestOnly: c.isTestOnly,
+        patientType: c.patientType,
         referredByDoctorName: c.referredByDoctorName,
         Patient: {
           patient_Id: patient.user_Id,
@@ -1610,9 +1697,9 @@ export class ConsultationService {
               const unitInfo = unitRefs.find(
                 (u) => u.optionName?.toLowerCase() === key,
               );
-              const reference = unitInfo?.referance
+              const reference = unitInfo?.reference
                 ? getReferenceForPatient(
-                    unitInfo.referance,
+                    unitInfo.reference,
                     ageMonths,
                     patient.gender,
                   )
@@ -1645,6 +1732,8 @@ export class ConsultationService {
       data: formatted,
     };
   }
+
+  /////////////////////////////////////////////INPATIENT/////////////////////////////////////////////
   async findAllIP(hospitalId: number) {
     // Step 1️⃣: Fetch consultations
     const consultations = await this.prisma.consultation.findMany({
@@ -1688,8 +1777,8 @@ export class ConsultationService {
     });
 
     // Step 2️⃣: Fetch unit/reference info
-    const unitRefs = await this.prisma.scanAndTestUnitReferance.findMany({
-      select: { optionName: true, unit: true, referance: true },
+    const unitRefs = await this.prisma.scanAndTestUnitReferencewithPerHospital.findMany({
+      select: { optionName: true, unit: true, reference: true },
     });
 
     // Step 3️⃣: Helper functions
@@ -1702,32 +1791,116 @@ export class ConsultationService {
         (now.getMonth() - birth.getMonth())
       );
     };
+     const calculateAge = (dob: Date | string | null) => {
+      if (!dob) return { years: 0, months: 0 };
+      const birth = new Date(dob);
+      const now = new Date();
+      let years = now.getFullYear() - birth.getFullYear();
+      let months = now.getMonth() - birth.getMonth() + years * 12;
+      if (now.getDate() < birth.getDate()) months -= 1;
+      years = Math.floor(months / 12);
+      return { years, months };
+    };
+
+    // const getReferenceForPatient = (
+    //   refJson: any,
+    //   ageMonths: number,
+    //   gender: string,
+    // ) => {
+    //   if (!refJson) return 'N/A';
+    //   let parsed;
+    //   try {
+    //     parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
+    //   } catch {
+    //     return 'N/A';
+    //   }
+    //   const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
+    //   for (const key of Object.keys(parsed)) {
+    //     const [minStr, maxStr, g] = key.split('_');
+    //     const min = parseInt(minStr, 10);
+    //     const max = parseInt(maxStr, 10);
+    //     if (
+    //       ageMonths >= min &&
+    //       ageMonths <= max &&
+    //       g.toLowerCase() === genderKey
+    //     ) {
+    //       return parsed[key];
+    //     }
+    //   }
+    //   return 'N/A';
+    // };
+
+    const AGE_GROUP_ORDER = [
+      'NEWBORN',
+      'INFANT',
+      'TODDLER/CHILD',
+      'CHILD',
+      'ADOLESCENT',
+      'ADULT',
+      'ELDERLY',
+    ];
+
+    const getAgeGroupKey = (totalMonths: number): string => {
+      if (totalMonths <= 1) return 'NEWBORN';
+      if (totalMonths <= 12) return 'INFANT';
+      if (totalMonths <= 72) return 'TODDLER/CHILD';
+      if (totalMonths <= 144) return 'CHILD';
+      if (totalMonths <= 216) return 'ADOLESCENT';
+      if (totalMonths <= 780) return 'ADULT';
+      return 'ELDERLY';
+    };
 
     const getReferenceForPatient = (
       refJson: any,
-      ageMonths: number,
+      age: { years: number; months: number },
       gender: string,
-    ) => {
+    ): string => {
       if (!refJson) return 'N/A';
-      let parsed;
-      try {
-        parsed = typeof refJson === 'string' ? JSON.parse(refJson) : refJson;
-      } catch {
-        return 'N/A';
-      }
-      const genderKey = gender?.toLowerCase().startsWith('f') ? 'f' : 'm';
-      for (const key of Object.keys(parsed)) {
-        const [minStr, maxStr, g] = key.split('_');
-        const min = parseInt(minStr, 10);
-        const max = parseInt(maxStr, 10);
-        if (
-          ageMonths >= min &&
-          ageMonths <= max &&
-          g.toLowerCase() === genderKey
-        ) {
-          return parsed[key];
+
+      // ✅ CASE 1: Plain string reference (e.g. "CLAY-COLORED")
+      if (typeof refJson === 'string') {
+        const trimmed = refJson.trim();
+
+        // Not JSON → return as-is
+        if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+          return trimmed;
+        }
+
+        // Try JSON parsing only if it looks like JSON
+        try {
+          refJson = JSON.parse(trimmed);
+        } catch {
+          return trimmed; // fallback safely
         }
       }
+
+      // Must be array now
+      if (!Array.isArray(refJson)) return 'N/A';
+
+      const totalMonths = (age.years ?? 0) * 12 + (age.months ?? 0);
+      const targetGroup = getAgeGroupKey(totalMonths);
+
+      const genderKey = gender?.toLowerCase().startsWith('f')
+        ? 'FEMALE'
+        : 'MALE';
+
+      // Build available group map
+      const available: Record<string, any> = {};
+      for (const item of refJson) {
+        const key = Object.keys(item)[0];
+        if (key) available[key] = item[key];
+      }
+
+      // Exact → fallback backward
+      const startIndex = AGE_GROUP_ORDER.indexOf(targetGroup);
+      for (let i = startIndex; i >= 0; i--) {
+        const group = AGE_GROUP_ORDER[i];
+        const data = available[group];
+        if (!data) continue;
+
+        return String(data[genderKey] ?? data.ALL ?? 'N/A');
+      }
+
       return 'N/A';
     };
 
@@ -1736,7 +1909,7 @@ export class ConsultationService {
     const formatted = consultations.map((c) => {
       const patient = c.Patient;
       const TeatingAndScanningPatient = c.TeatingAndScanningPatient;
-      const ageMonths = calculateAgeInMonths(patient.dob);
+      const ageMonths = calculateAge(patient.dob);
 
       return {
         id: c.id,
@@ -1801,9 +1974,9 @@ export class ConsultationService {
               const unitInfo = unitRefs.find(
                 (u) => u.optionName?.toLowerCase() === key,
               );
-              const reference = unitInfo?.referance
+              const reference = unitInfo?.reference
                 ? getReferenceForPatient(
-                    unitInfo.referance,
+                    unitInfo.reference,
                     ageMonths,
                     patient.gender,
                   )

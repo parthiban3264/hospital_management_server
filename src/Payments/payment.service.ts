@@ -423,6 +423,7 @@ export class PaymentService {
             wardChange: true,
             dischargeTime: true,
             bedId: true,
+            staffChange: true,
             bed: { include: { ward: true } },
             charges: true,
           },
@@ -819,6 +820,93 @@ export class PaymentService {
       return { status: 'failed', error: error.message };
     }
   }
+
+  //  async decreaseAmount(id: number, data: any) {
+  //   try {
+  //     const updatePayment = await this.prisma.payment.update({
+  //       where: { id },
+  //       data:{
+  //         amount: {decrement: data.decrementAmount},
+  //       },
+  //     });
+
+  //     const updateCharges = await this.prisma.charge.updateMany({
+  //       where: { id: Number(data.chargeId) },
+  //       data:{
+  //         amount: {decrement: data.decrementAmount},
+  //       },
+  //     });
+  //     return { status: 'success', message: 'Payment updated', data: updatePayment };
+  //   } catch (error) {
+  //     console.error(error);
+  //     if (error.code === 'P2025') {
+  //       return { status: 'failed', message: 'Payment not found' };
+  //     }
+  //     return { status: 'failed', error: error.message };
+  //   }
+  // }
+
+  async decreaseAmount(
+    id: number,
+    data: { decrementAmount: number; chargeId: number },
+  ) {
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        // Optional: fetch first to validate amounts
+        const payment = await tx.payment.findUnique({
+          where: { id },
+          select: { amount: true },
+        });
+
+        if (!payment) {
+          throw new Error('PAYMENT_NOT_FOUND');
+        }
+
+        if (payment.amount < data.decrementAmount) {
+          throw new Error('INSUFFICIENT_PAYMENT_AMOUNT');
+        }
+
+        const updatedPayment = await tx.payment.update({
+          where: { id },
+          data: {
+            amount: { decrement: data.decrementAmount },
+          },
+        });
+
+        const updatedCharge = await tx.charge.update({
+          where: { id: data.chargeId },
+          data: {
+            amount: { decrement: data.decrementAmount },
+          },
+        });
+
+        return updatedPayment;
+      });
+
+      return {
+        status: 'success',
+        message: 'Payment updated',
+        data: result,
+      };
+    } catch (error: any) {
+      console.error(error);
+
+      if (error.message === 'PAYMENT_NOT_FOUND') {
+        return { status: 'failed', message: 'Payment not found' };
+      }
+
+      if (error.message === 'INSUFFICIENT_PAYMENT_AMOUNT') {
+        return { status: 'failed', message: 'Insufficient payment amount' };
+      }
+
+      if (error.code === 'P2025') {
+        return { status: 'failed', message: 'Record not found' };
+      }
+
+      return { status: 'failed', message: error.message };
+    }
+  }
+
   async remove(id: number) {
     try {
       const payment = await this.prisma.payment.delete({ where: { id } });
