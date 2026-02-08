@@ -117,7 +117,7 @@ export class ChargesService {
     status: ChargeStatus;
     chargesId: number[];
   }) {
-    log('chargesIds', dto.chargesId);
+    log('chargesIds', dto.chargesId, 'status', dto.status);
 
     return prisma.charge.updateMany({
       where: {
@@ -134,7 +134,6 @@ export class ChargesService {
     chargesId: number[];
     amount: number;
   }) {
-    log('chargesIds', dto.chargesId);
 
     return prisma.charge.updateMany({
       where: {
