@@ -251,7 +251,7 @@ model Consultation {
   sugarTestFee         Float       @default(0)
   cancelReason         String?
   treatment            Boolean     @default(false)
-  patientType         String @default("OP")
+  patientType          String      @default("OP")
   height               Float?
   weight               Float?
   BMI                  Float?
@@ -266,6 +266,7 @@ model Consultation {
   temperature          Float?
   medicineTonic        Boolean     @default(false)
   Injection            Boolean     @default(false)
+  medicineQueue       QueueStatus  @default(PENDING)
   scanningTesting      Boolean     @default(false)
   status               Status      @default(PENDING)
   queueStatus          QueueStatus @default(PENDING)
@@ -861,11 +862,12 @@ model Admission {
   bedId Int
   bed   Bed @relation(fields: [bedId], references: [id])
 
-  admitTime     DateTime  @default(now())
-  dischargeTime DateTime?
-  wardChange    Json?
-  staffChange   Json?
-
+  admitTime      DateTime  @default(now())
+  dischargeTime  DateTime?
+  wardChange     Json?
+  staffChange    Json?
+  notes          Json?
+  DrNotes        Json?
   attenderDetail Json?
 
   status AdmissionStatus @default(ADMITTED)
@@ -874,9 +876,27 @@ model Admission {
   hospital     Hospital      @relation(fields: [hospital_Id], references: [id])
   consultation Consultation? @relation(fields: [consultation_Id], references: [id])
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  payments           Payment[]
+  doctorInstructions DoctorInstruction[]
+}
+
+enum DoctorInstructionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model DoctorInstruction {
+  id           Int                     @id @default(autoincrement())
+  admission_Id Int
+  doctor_Id    String?
+  status       DoctorInstructionStatus @default(PENDING)
+  instruction  String
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  Admission    Admission               @relation(fields: [admission_Id], references: [id])
 }
 
 // model AdmissionRoomRent {
@@ -1083,26 +1103,27 @@ model Prescription {
   updated_at DateTime @updatedAt
   is_active  Boolean  @default(true)
 
-  hospital     Hospital      @relation(fields: [hospital_Id], references: [id])
-  patient      Patient       @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
-  doctor       Admin         @relation(fields: [doctor_Id, hospital_Id], references: [user_Id, hospital_Id])
-  consultation Consultation? @relation(fields: [consultation_Id], references: [id])
-  payment      Payment?      @relation(fields: [payment_Id], references: [id])
-
-  medicines PrescriptionMedicine[]
+  hospital               Hospital                 @relation(fields: [hospital_Id], references: [id])
+  patient                Patient                  @relation(fields: [patient_Id, hospital_Id], references: [id, hospital_Id])
+  doctor                 Admin                    @relation(fields: [doctor_Id, hospital_Id], references: [user_Id, hospital_Id])
+  consultation           Consultation?            @relation(fields: [consultation_Id], references: [id])
+  payment                Payment?                 @relation(fields: [payment_Id], references: [id])
+  MedicineAdministration MedicineAdministration[]
+  medicines              PrescriptionMedicine[]
 }
 
 model PrescriptionMedicine {
-  id                 Int           @id @default(autoincrement())
+  id                 Int     @id @default(autoincrement())
   prescription_Id    Int
   medicine_Id        Int
+  batch_No         String
   hospital_Id        Int
   dosage             String?
   route              String
   frequency          String?
-  days               Int
+  days               Float   @default(0.0) // Allows for fractional days, e.g., 0.5 for half a day
   total_quantity     Int
-  dispensed_quantity Int           @default(0)
+  dispensed_quantity Int     @default(0)
 
   after_food Boolean @default(false)
   morning    Boolean @default(false)
@@ -1119,7 +1140,7 @@ model PrescriptionMedicine {
 
   dispenses PrescriptionDispense[]
 
-  @@unique([prescription_Id, medicine_Id])
+ // @@unique([prescription_Id, medicine_Id])
 }
 
 model PrescriptionDispense {
@@ -1129,6 +1150,7 @@ model PrescriptionDispense {
   medicine_Id              Int
   batch_Id                 Int
   amount                   Int?
+  dispensed_days           Float   @default(0.0)
   dispensed_quantity       Int
   dispensed_by             Int
   dispensed_at             DateTime @default(now())
@@ -1139,6 +1161,48 @@ model PrescriptionDispense {
 
   medicine Medicine      @relation(fields: [hospital_Id, medicine_Id], references: [hospital_Id, id])
   batch    MedicineBatch @relation(fields: [batch_Id], references: [id])
+}
+
+enum TimeSlot {
+  MORNING
+  AFTERNOON
+  EVENING
+  NIGHT
+  NOSLOT
+}
+
+enum AdministrationStatus {
+  PENDING
+  TAKEN
+  MISSED
+  WITHHELD
+}
+
+model MedicineAdministration {
+  id                       Int @id @default(autoincrement())
+  hospital_id              Int
+  patient_id               Int
+  prescription_id          Int
+  prescription_medicine_id Int
+  medicine_id              Int
+
+  medicine_name String
+  dose          String
+
+  date      DateTime // store as DATE (YYYY-MM-DD)
+  time_slot TimeSlot @default(NOSLOT)
+
+  status AdministrationStatus @default(PENDING)
+
+  taken_by Int?
+  taken_at DateTime?
+  remarks  String?
+
+  created_at DateTime @default(now())
+
+  Prescription Prescription @relation(fields: [prescription_id], references: [id])
+
+  @@unique([prescription_medicine_id, date, time_slot])
 }
 
 ////////////////////////////// old table ////////////////////////////

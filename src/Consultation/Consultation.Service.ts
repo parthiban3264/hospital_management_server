@@ -1500,9 +1500,10 @@ export class ConsultationService {
     });
 
     // Step 2️⃣: Fetch unit/reference info
-    const unitRefs = await this.prisma.scanAndTestUnitReferencewithPerHospital.findMany({
-      select: { optionName: true, unit: true, reference: true },
-    });
+    const unitRefs =
+      await this.prisma.scanAndTestUnitReferencewithPerHospital.findMany({
+        select: { optionName: true, unit: true, reference: true },
+      });
 
     // Step 3️⃣: Helper functions
     // const calculateAgeInMonths = (dob: string | Date | null) => {
@@ -1515,7 +1516,7 @@ export class ConsultationService {
     //   );
     // };
 
-       const calculateAge = (dob: Date | string | null) => {
+    const calculateAge = (dob: Date | string | null) => {
       if (!dob) return { years: 0, months: 0 };
       const birth = new Date(dob);
       const now = new Date();
@@ -1759,13 +1760,31 @@ export class ConsultationService {
           },
         },
         Payment: true,
+        Prescription: {
+          include: {
+            medicines: {
+              include: {
+                dispenses: true,
+                medicine: {
+                  include: {
+                    batches: true,
+                  },
+                },
+              },
+            },
+            payment: true,
+            MedicineAdministration: true,
+          },
+        },
         Admission: {
+          where: { status: 'ADMITTED' },
           include: {
             bed: {
               include: {
                 ward: true,
               },
             },
+            doctorInstructions: true,
           },
         },
         Doctor: { select: { user_Id: true, name: true, specialist: true } },
@@ -1777,9 +1796,10 @@ export class ConsultationService {
     });
 
     // Step 2️⃣: Fetch unit/reference info
-    const unitRefs = await this.prisma.scanAndTestUnitReferencewithPerHospital.findMany({
-      select: { optionName: true, unit: true, reference: true },
-    });
+    const unitRefs =
+      await this.prisma.scanAndTestUnitReferencewithPerHospital.findMany({
+        select: { optionName: true, unit: true, reference: true },
+      });
 
     // Step 3️⃣: Helper functions
     const calculateAgeInMonths = (dob: string | Date | null) => {
@@ -1791,7 +1811,7 @@ export class ConsultationService {
         (now.getMonth() - birth.getMonth())
       );
     };
-     const calculateAge = (dob: Date | string | null) => {
+    const calculateAge = (dob: Date | string | null) => {
       if (!dob) return { years: 0, months: 0 };
       const birth = new Date(dob);
       const now = new Date();
@@ -1923,6 +1943,7 @@ export class ConsultationService {
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
         medicineTonic: c.medicineTonic,
+        medicineQueue: c.medicineQueue,
         Injection: c.Injection,
         scanningTesting: c.scanningTesting,
         paymentStatus: c.paymentStatus,
@@ -1940,6 +1961,7 @@ export class ConsultationService {
         payment: c.Payment,
         isTestOnly: c.isTestOnly,
         referredByDoctorName: c.referredByDoctorName,
+        Prescription: c.Prescription,
         Patient: {
           patient_Id: patient.user_Id,
           name: patient.name,
@@ -1956,7 +1978,11 @@ export class ConsultationService {
         },
         Admission: c.Admission,
         TeatingAndScanningPatient: (TeatingAndScanningPatient || [])
-          .filter((t) => t.status === 'COMPLETED' && t.consultation_Id === c.id)
+          .filter(
+            (t) =>
+              t.status === 'COMPLETED' ||
+              (t.status === 'PENDING' && t.consultation_Id === c.id),
+          )
           .map((t) => ({
             title: t.title,
             type: t.type,
@@ -2010,6 +2036,7 @@ export class ConsultationService {
     };
   }
   async findAllByMedical(hospitalId: number, mode: number) {
+    log('Mode received for medical fetch:', mode);
     const extraCondition =
       mode == 0
         ? { medicineTonic: true }
@@ -2037,12 +2064,21 @@ export class ConsultationService {
                   },
                 },
               },
-              
             },
             payment: true,
           },
         },
+        Admission: {
+          include: {
+            doctorInstructions: true,
+          },
+        },
         Doctor: true,
+        Payment: {
+          where: {
+            type: 'MEDICINETONICINJECTIONFEES',
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',

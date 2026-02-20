@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateScanTestDto } from './dto/create-scan-test.dto';
 import { UpdateScanTestDto } from './dto/update-scan-test.dto';
+import { log } from 'console';
 @Injectable()
 export class AAScanAndTestingService {
     constructor(private readonly prisma: PrismaService) { }
@@ -26,6 +27,7 @@ export class AAScanAndTestingService {
     //   }
 
     async create(dto: CreateScanTestDto) {
+        log('Creating Scan/Test with DTO:', dto);   
         return this.prisma.scanAndTestsWithPerHospital.create({
             data: {
                 hospital_Id: dto.hospital_Id,

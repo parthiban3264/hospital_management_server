@@ -33,7 +33,7 @@ export class AdmissionController {
       Number(hospital_Id),
     );
   }
-@Patch(':admissionId/staff-change')
+  @Patch(':admissionId/staff-change')
   async addStaffChange(
     @Param('admissionId') admissionId: string,
     @Body() staffChanges: any[],
@@ -90,6 +90,88 @@ export class AdmissionController {
   async dischargeAdmission(@Param('id') id: number) {
     return this.admissionService.dischargeAdmission(Number(id));
   }
+
+  @Patch('notes/edit/:id')
+  editNote(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      noteType: 'notes' | 'drNotes';
+      date: string;
+      index: number;
+      text: string;
+    },
+  ) {
+    return this.admissionService.editNote(
+      Number(id),
+      body.noteType,
+      body.date,
+      body.index,
+      body.text,
+    );
+  }
+  @Patch('updateInstruction/:instrctionId')
+  editInstruction(@Param('instrctionId') id: number, @Body() dto: any) {
+    return this.admissionService.editInstruction(+id, dto);
+  }
+   @Delete('deleteInstruction/:instrctionId')
+  deleteInstruction(@Param('instrctionId') id: number, @Body() dto: any) {
+    return this.admissionService.deleteInstruction(+id, dto);
+  }
+
+  @Patch('notes/:id/:noteType')
+  async AdmissionNotes(
+    @Param('id') id: number,
+    @Param('noteType') noteType: string,
+    @Body() body: any,
+  ) {
+    return this.admissionService.updateAdmissionNotes(
+      Number(id),
+      body,
+      noteType,
+    );
+  }
+
+  @Patch('update/doctor-instruction/:id')
+  async updateDoctorInstruction(@Param('id') id: number, @Body() body: any) {
+    return this.admissionService.updateDoctorInstruction(Number(id), body);
+  }
+
+  @Post('create/doctor-instruction/:admissionId')
+  async createDoctorInstruction(
+    @Param('admissionId') admissionId: string,
+    @Body() body: any,
+  ) {
+    return this.admissionService.createDoctorInstruction(
+      Number(admissionId),
+      body,
+    );
+  }
+
+  @Get('get/doctor-instructions/:admissionId')
+  async getDoctorInstructions(@Param('admissionId') admissionId: string) {
+    return this.admissionService.getDoctorInstructions(Number(admissionId));
+  }
+
+  /// 🗑 DELETE NOTE
+  @Delete('notes/delete/:id')
+  deleteNote(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      noteType: 'notes' | 'drNotes';
+      date: string;
+      index: number;
+    },
+  ) {
+    return this.admissionService.deleteNote(
+      Number(id),
+      body.noteType,
+      body.date,
+      body.index,
+    );
+  }
+
   // Get admission by ID
   @Get(':id/:hospital_Id')
   getAdmissionById(
@@ -137,4 +219,6 @@ export class AdmissionController {
   ) {
     return this.admissionService.deleteAdmission(+id, Number(hospital_Id));
   }
+
+ 
 }

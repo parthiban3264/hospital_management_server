@@ -42,7 +42,7 @@ export class PrescriptionService {
       const prescription = await tx.prescription.create({
         data: {
           hospital_Id: Number(dto.hospital_Id),
-          prescription_no: `RX-${Date.now()}`,
+          prescription_no: `MEDI-${Date.now()}`,
           patient_Id: Number(dto.patient_Id),
           doctor_Id: dto.doctor_Id.toString(),
           consultation_Id: Number(dto.consultation_Id),
@@ -61,13 +61,13 @@ export class PrescriptionService {
                   },
                 },
               },
-
+              batch_No: med.batch_No,
               dosage: med.dosage,
               route: med.route as any,
               frequency: med.frequency,
               days: med.days,
               total_quantity: med.total_quantity,
-              after_food: med.after_food ?? false,
+              after_food: med.afterEat ?? false,
               morning: med.morning ?? false,
               afternoon: med.afternoon ?? false,
               night: med.night ?? false,
@@ -75,118 +75,750 @@ export class PrescriptionService {
             })),
           },
         },
+
         include: {
-          medicines: true,
+          medicines: {
+            include: {
+              medicine: true, // ✅ LOAD MEDICINE MASTER
+            },
+          },
+        },
+      });
+      log('created prescription', prescription);
+      return prescription;
+    });
+  }
+
+  // async medicineAdministarion(id: number, dto: any) {
+  //   const prescription = await this.prisma.prescription.update({
+  //     where: { id },
+  //     data: {
+  //       status: dto.status,
+  //       medicines: {
+  //         updateMany: {
+  //           where: { prescription_Id: id },
+  //           data: { status: 'COMPLETED' },
+  //         },
+  //       },
+  //     },
+  //     include: {
+  //       medicines: {
+  //         include: { medicine: true },
+  //       },
+  //     },
+  //   });
+
+  //   if (dto.patientType == 'IP') {
+  //     const SLOT_TIME = {
+  //       MORNING: 10, // before 10 AM
+  //       AFTERNOON: 16, // before 4 PM
+  //       NIGHT: 22, // before 10 PM
+  //     };
+
+  //     const adminRows: any[] = [];
+  //     const now = new Date();
+  //     const currentHour = now.getHours();
+  //     const startDate = new Date(); // admission / prescription date
+
+  //     for (const med of prescription.medicines) {
+  //       const days = Math.ceil(Number(med.days || 0));
+
+  //       for (let d = 0; d < days; d++) {
+  //         const adminDate = new Date(startDate);
+  //         adminDate.setDate(startDate.getDate() + d);
+
+  //         const isToday = d === 0;
+
+  //         // MORNING
+  //         if (med.morning) {
+  //           if (!isToday || currentHour < SLOT_TIME.MORNING) {
+  //             adminRows.push({
+  //               hospital_id: Number(dto.hospital_Id),
+  //               patient_id: Number(dto.patient_Id),
+  //               prescription_id: prescription.id,
+  //               prescription_medicine_id: med.id,
+  //               medicine_id: med.medicine_Id,
+  //               medicine_name: med.medicine?.name ?? '',
+  //               dose: med.dosage ?? '',
+  //               date: adminDate,
+  //               time_slot: 'MORNING',
+  //               status: 'PENDING',
+  //             });
+  //           }
+  //         }
+
+  //         // AFTERNOON
+  //         if (med.afternoon) {
+  //           if (!isToday || currentHour < SLOT_TIME.AFTERNOON) {
+  //             adminRows.push({
+  //               hospital_id: Number(dto.hospital_Id),
+  //               patient_id: Number(dto.patient_Id),
+  //               prescription_id: prescription.id,
+  //               prescription_medicine_id: med.id,
+  //               medicine_id: med.medicine_Id,
+  //               medicine_name: med.medicine?.name ?? '',
+  //               dose: med.dosage ?? '',
+  //               date: adminDate,
+  //               time_slot: 'AFTERNOON',
+  //               status: 'PENDING',
+  //             });
+  //           }
+  //         }
+
+  //         // NIGHT
+  //         if (med.night) {
+  //           if (!isToday || currentHour < SLOT_TIME.NIGHT) {
+  //             adminRows.push({
+  //               hospital_id: Number(dto.hospital_Id),
+  //               patient_id: Number(dto.patient_Id),
+  //               prescription_id: prescription.id,
+  //               prescription_medicine_id: med.id,
+  //               medicine_id: med.medicine_Id,
+  //               medicine_name: med.medicine?.name ?? '',
+  //               dose: med.dosage ?? '',
+  //               date: adminDate,
+  //               time_slot: 'NIGHT',
+  //               status: 'PENDING',
+  //             });
+  //           }
+  //         }
+  //       }
+  //     }
+
+  //     if (adminRows.length > 0) {
+  //       await this.prisma.medicineAdministration.createMany({
+  //         data: adminRows,
+  //         skipDuplicates: true,
+  //       });
+  //     }
+  //   }
+  // }
+  // async medicineAdministarion(id: number, dto: any) {
+  //   await this.prisma.$transaction(async (tx) => {
+  //     const prev = await tx.prescriptionDispense.findUnique({
+  //       where: { id },
+  //       select: {
+  //         dispensed_quantity: true, // 30
+  //         dispensed_days: true,
+  //         amount: true,
+  //         prescription_medicine_Id: true,
+  //       },
+  //     });
+
+  //     if (!prev) {
+  //       throw new Error('Prescription dispense not found');
+  //     }
+
+  //     // 2️⃣ Calculate DELTA (what actually changed)
+  //     const deltaQuantity = prev.dispensed_quantity - dto.current_quantity;
+  //     const deltaDays = prev.dispensed_days - dto.current_days;
+  //     const deltaAmount = prev.amount - dto.current_amount;
+
+  //     // 🔒 Safety checks
+  //     if (deltaQuantity <= 0) {
+  //       throw new Error('Invalid dispense quantity');
+  //     }
+
+  //     const prescription = await tx.prescription.update({
+  //       where: {
+  //         id,
+  //       },
+  //       data: {
+  //         status: dto.status,
+  //       },
+  //       include: {
+  //          medicines: {
+  //         where: { NOT: { status: 'CANCELLED' } },
+  //         include: {
+  //           dispenses: true,
+  //           medicine: true,
+  //         },
+  //       },
+  //       },
+  //     });
+
+  //     for (const medi of prescription.medicines) {
+  //       const prescriptionMedicine = await tx.prescriptionMedicine.update({
+  //         where: {
+  //           id: medi.id,
+  //           prescription_Id: medi.prescription_Id,
+  //           status: 'PENDING',
+  //         },
+  //         data: {
+  //           status: dto.mediStatus,
+  //           dispensed_quantity: { decrement: deltaQuantity },
+
+  //           dispenses: {
+  //             updateMany: {
+  //               where: { prescription_medicine_Id: medi.id },
+  //               data: {
+  //                 dispensed_quantity: { decrement: deltaQuantity },
+  //                 dispensed_days: { decrement: deltaDays },
+  //                 amount: { decrement: deltaAmount },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       });
+  //     }
+
+  //     // 5️⃣ Get batch info
+  //     const batch = await tx.medicineBatch.findUnique({
+  //       where: { id: Number(dto.batchNo) },
+  //       select: {
+  //         medicine_id: true,
+  //         hospital_Id: true,
+  //       },
+  //     });
+
+  //     if (!batch) {
+  //       throw new Error('Batch not found');
+  //     }
+
+  //     //3️⃣ Update medicine stock
+  //     await tx.medicine.updateMany({
+  //       where: { id: batch.medicine_id, hospital_Id: batch.hospital_Id },
+  //       data: {
+  //         stock: { decrement: deltaQuantity },
+  //       },
+  //     });
+
+  //     // 4️⃣ Update batch quantity
+  //     await tx.medicineBatch.updateMany({
+  //       where: {
+  //         id: Number(dto.batchNo),
+  //         hospital_Id: batch.hospital_Id,
+  //         medicine_id: batch.medicine_id,
+  //       },
+  //       data: {
+  //         total_stock: { decrement: deltaQuantity },
+  //       },
+  //     });
+  //   });
+
+  //   // /* ───────── 1️⃣ UPDATE PRESCRIPTION ───────── */
+  //   // const prescription = await this.prisma.prescription.updateMany({
+  //   //   where: { id },
+  //   //   data: {
+  //   //     status: dto.status,
+  //   //     medicines: {
+  //   //       updateMany: {
+  //   //         where: { prescription_Id: id },
+  //   //         data: {
+  //   //           status: dto.mediStatus,
+  //   //         },
+  //   //       },
+  //   //     },
+  //   //   },
+  //   //   include: {
+  //   //     medicines: {
+  //   //       where: { NOT: { status: 'CANCELLED' } },
+  //   //       include: {
+  //   //         dispenses: true,
+  //   //         medicine: true,
+  //   //       },
+  //   //     },
+  //   //   },
+  //   // });
+
+  //   if (dto.patientType !== 'IP') return;
+
+  //   const adminRows: any[] = [];
+
+  //   /* ───────── 2️⃣ SORT MEDICINES (IMPORTANT) ───────── */
+  //   const medicines = [...prescription.medicines].sort(
+  //     (a, b) =>
+  //       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+  //   );
+
+  //   /* ───────── 3️⃣ MAP TO TRACK LAST DATE PER MEDICINE ───────── */
+  //   const medicineCursor = new Map<number, Date>();
+
+  //   for (const med of medicines) {
+  //     const hasSlots = med.morning || med.afternoon || med.night;
+  //     //log('dispence ', med.dispenses);
+
+  //     const daysToCreate =
+  //       med.dispenses?.reduce(
+  //         (sum, d) => sum + Number(d.dispensed_days || 0),
+  //         0,
+  //       ) || 1;
+
+  //     /* ───────── 4️⃣ INIT START DATE (ONLY ONCE PER MEDICINE) ───────── */
+  //     let startDate = medicineCursor.get(med.medicine_Id);
+
+  //     if (!startDate) {
+  //       const lastAdmin = await this.prisma.medicineAdministration.findFirst({
+  //         where: {
+  //           prescription_id: prescription.id,
+  //           medicine_id: med.medicine_Id,
+  //         },
+  //         orderBy: { date: 'desc' },
+  //       });
+
+  //       if (lastAdmin) {
+  //         startDate = new Date(lastAdmin.date);
+  //         startDate.setUTCDate(startDate.getUTCDate() + 1);
+  //       } else {
+  //         startDate = new Date(med.created_at);
+  //       }
+
+  //       startDate.setUTCHours(12, 0, 0, 0);
+  //     }
+
+  //     /* ───────── 5️⃣ CREATE ADMIN ROWS ───────── */
+  //     for (let d = 0; d < daysToCreate; d++) {
+  //       const adminDate = new Date(startDate);
+  //       adminDate.setUTCDate(startDate.getUTCDate() + d);
+  //       adminDate.setUTCHours(12, 0, 0, 0);
+
+  //       const baseRow = {
+  //         hospital_id: Number(dto.hospital_Id),
+  //         patient_id: Number(dto.patient_Id),
+  //         prescription_id: prescription.id,
+  //         prescription_medicine_id: med.id,
+  //         medicine_id: med.medicine_Id,
+  //         medicine_name: med.medicine?.name ?? '',
+  //         dose: med.dosage ?? '',
+  //         date: adminDate,
+  //         status: 'PENDING',
+  //       };
+
+  //       if (!hasSlots) {
+  //         adminRows.push({ ...baseRow, time_slot: 'NOSLOT' });
+  //       } else {
+  //         if (med.morning) adminRows.push({ ...baseRow, time_slot: 'MORNING' });
+  //         if (med.afternoon)
+  //           adminRows.push({ ...baseRow, time_slot: 'AFTERNOON' });
+  //         if (med.night) adminRows.push({ ...baseRow, time_slot: 'NIGHT' });
+  //       }
+  //     }
+
+  //     /* ───────── 6️⃣ MOVE CURSOR FOR THIS MEDICINE ───────── */
+  //     const nextDate = new Date(startDate);
+  //     nextDate.setUTCDate(startDate.getUTCDate() + daysToCreate);
+  //     nextDate.setUTCHours(12, 0, 0, 0);
+
+  //     medicineCursor.set(med.medicine_Id, nextDate);
+  //   }
+
+  //   /* ───────── 7️⃣ INSERT ───────── */
+  //   if (adminRows.length) {
+  //     await this.prisma.medicineAdministration.createMany({
+  //       data: adminRows,
+  //       skipDuplicates: true,
+  //     });
+  //   }
+  // }
+
+  async medicineAdministarion(id: number, dto: any) {
+    // 🔥 Wrap everything in ONE transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      /* ───────── 1️⃣ GET PREVIOUS DISPENSE ───────── */
+      const prev = await tx.prescriptionDispense.findUnique({
+        where: { id: dto.dispenseId },
+        select: {
+          dispensed_quantity: true,
+          dispensed_days: true,
+          amount: true,
+          prescription_medicine_Id: true,
+        },
+      });
+
+      if (!prev) throw new Error('Prescription dispense not found');
+
+      const deltaQuantity = prev.dispensed_quantity - dto.current_quantity;
+      const deltaDays = prev.dispensed_days - dto.current_days;
+      const deltaAmount = prev.amount - dto.current_amount;
+
+      if (deltaQuantity <= 0) {
+        throw new Error('Invalid dispense quantity');
+      }
+
+      /* ───────── 2️⃣ UPDATE PRESCRIPTION STATUS ───────── */
+      const prescription = await tx.prescription.update({
+        where: { id },
+        data: { status: dto.status },
+        include: {
+          medicines: {
+            where: { NOT: { status: 'CANCELLED' } },
+            include: {
+              dispenses: true,
+              medicine: true,
+            },
+          },
+        },
+      });
+
+      /* ───────── 3️⃣ UPDATE PRESCRIPTION MEDICINE + DISPENSE ───────── */
+      await tx.prescriptionMedicine.update({
+        where: {
+          id: prev.prescription_medicine_Id,
+        },
+        data: {
+          status: dto.mediStatus,
+          dispensed_quantity: { decrement: deltaQuantity },
+        },
+      });
+
+      await tx.prescriptionDispense.update({
+        where: { id: dto.dispenseId },
+        data: {
+          dispensed_quantity: { decrement: deltaQuantity },
+          dispensed_days: { decrement: deltaDays },
+          amount: { decrement: deltaAmount },
+        },
+      });
+
+      /* ───────── 4️⃣ UPDATE STOCK ───────── */
+      const batch = await tx.medicineBatch.findUnique({
+        where: { id: Number(dto.batchNo) },
+        select: {
+          medicine_id: true,
+          hospital_Id: true,
+        },
+      });
+
+      if (!batch) throw new Error('Batch not found');
+
+      await tx.medicine.updateMany({
+        where: {
+          id: batch.medicine_id,
+          hospital_Id: batch.hospital_Id,
+        },
+        data: {
+          stock: { decrement: deltaQuantity },
+        },
+      });
+
+      await tx.medicineBatch.update({
+        where: { id: Number(dto.batchNo) },
+        data: {
+          total_stock: { decrement: deltaQuantity },
         },
       });
 
       return prescription;
     });
+
+    /* =====================================================
+     AFTER TRANSACTION → CREATE MEDICINE ADMINISTRATION
+  ===================================================== */
+
+    if (dto.patientType !== 'IP') return;
+
+    const adminRows: any[] = [];
+
+    const medicines = [...result.medicines].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+
+    const medicineCursor = new Map<number, Date>();
+
+    for (const med of medicines) {
+      const hasSlots = med.morning || med.afternoon || med.night;
+
+      // 🔥 USE LATEST DISPENSE ONLY
+      const latestDispense = med.dispenses?.[0];
+
+      const daysToCreate = Number(latestDispense?.dispensed_days || 0) || 1;
+
+      let startDate = medicineCursor.get(med.medicine_Id);
+
+      if (!startDate) {
+        const lastAdmin = await this.prisma.medicineAdministration.findFirst({
+          where: {
+            prescription_id: result.id,
+            medicine_id: med.medicine_Id,
+          },
+          orderBy: { date: 'desc' },
+        });
+
+        if (lastAdmin) {
+          startDate = new Date(lastAdmin.date);
+          startDate.setUTCDate(startDate.getUTCDate() + 1);
+        } else {
+          startDate = new Date(med.created_at);
+        }
+
+        startDate.setUTCHours(12, 0, 0, 0);
+      }
+
+      for (let d = 0; d < daysToCreate; d++) {
+        const adminDate = new Date(startDate);
+        adminDate.setUTCDate(startDate.getUTCDate() + d);
+        adminDate.setUTCHours(12, 0, 0, 0);
+
+        const baseRow = {
+          hospital_id: Number(dto.hospital_Id),
+          patient_id: Number(dto.patient_Id),
+          prescription_id: result.id,
+          prescription_medicine_id: med.id,
+          medicine_id: med.medicine_Id,
+          medicine_name: med.medicine?.name ?? '',
+          dose: med.dosage ?? '',
+          date: adminDate,
+          status: 'PENDING',
+        };
+
+        if (!hasSlots) {
+          adminRows.push({ ...baseRow, time_slot: 'NOSLOT' });
+        } else {
+          if (med.morning) adminRows.push({ ...baseRow, time_slot: 'MORNING' });
+          if (med.afternoon)
+            adminRows.push({ ...baseRow, time_slot: 'AFTERNOON' });
+          if (med.night) adminRows.push({ ...baseRow, time_slot: 'NIGHT' });
+        }
+      }
+
+      const nextDate = new Date(startDate);
+      nextDate.setUTCDate(startDate.getUTCDate() + daysToCreate);
+      nextDate.setUTCHours(12, 0, 0, 0);
+
+      medicineCursor.set(med.medicine_Id, nextDate);
+    }
+
+    if (adminRows.length) {
+      await this.prisma.medicineAdministration.createMany({
+        data: adminRows,
+        skipDuplicates: true,
+      });
+    }
   }
 
-  // 🏥 DISPENSE MEDICINE
-  async dispenseMedicine(dto: DispenseMedicineDto) {
-    return this.prisma.$transaction(async (tx) => {
-      // 1️⃣ Prescription medicine
-      const prescriptionMedicine = await tx.prescriptionMedicine.findUnique({
-        where: { id: dto.prescription_medicine_Id },
-        include: { prescription: true },
-      });
-      log('work1');
-      if (!prescriptionMedicine) {
-        throw new BadRequestException('Prescription medicine not found');
-      }
-
-      // 2️⃣ Quantity check
-      const remaining =
-        prescriptionMedicine.total_quantity -
-        prescriptionMedicine.dispensed_quantity;
-
-      if (dto.dispensed_quantity > remaining) {
-        throw new BadRequestException('Quantity exceeded');
-      }
-      log('work2');
-      // 3️⃣ Batch check (by batch_no)
-      const batch = await tx.medicineBatch.findUnique({
-        where: {
-          hospital_Id_medicine_id_batch_no: {
-            hospital_Id: dto.hospital_Id,
-            medicine_id: prescriptionMedicine.medicine_Id,
-            batch_no: dto.batch_Id.toString(), // STRING batch_no
+  async createPrescriptionAndDispense(dto: CreatePrescriptionDto) {
+    return this.prisma.$transaction(
+      async (tx) => {
+        /* ─────────────────────────────
+       1️⃣ FIND OR CREATE PAYMENT
+      ───────────────────────────── */
+        log('createPrescriptionAndDispense', dto);
+        let payment = await tx.payment.findFirst({
+          where: {
+            hospital_Id: Number(dto.hospital_Id),
+            patient_Id: Number(dto.patient_Id),
+            consultation_Id: Number(dto.consultation_Id),
+            type: 'MEDICINETONICINJECTIONFEES',
+            status: 'PENDING',
           },
-        },
-      });
+        });
 
-      // if (!batch || batch.quantity < dto.dispensed_quantity) {
-      //   throw new BadRequestException('Insufficient stock');
-      // }
-      log('work3');
-      log('batch', batch);
-      log('prescriptionMedicine', prescriptionMedicine);
-      log('dto', dto);
-      log(!batch || batch.quantity < dto.dispensed_quantity);
-      // 4️⃣ Calculate amount
-      const amount = dto.dispensed_quantity * batch.selling_price_unit;
+        if (!payment) {
+          payment = await tx.payment.create({
+            data: {
+              hospital_Id: Number(dto.hospital_Id),
+              patient_Id: Number(dto.patient_Id),
+              consultation_Id: Number(dto.consultation_Id),
+              type: 'MEDICINETONICINJECTIONFEES',
+              reason: 'Prescription Fee',
+              amount: 0,
+              status: 'PENDING',
+              createdAt: dto.createdAt ?? new Date(),
+            },
+          });
+        }
 
-      // 5️⃣ Create dispense record
-      const dispense = await tx.prescriptionDispense.create({
-        data: {
-          hospital_Id: dto.hospital_Id,
-          prescription_medicine_Id: dto.prescription_medicine_Id,
-          medicine_Id: prescriptionMedicine.medicine_Id,
-          batch_Id: batch.id,
-          dispensed_quantity: dto.dispensed_quantity,
-          dispensed_by: Number(dto.pharmacist_Id),
-          amount, // ✅ store line amount
-        },
-      });
-      log('work4');
-      // // 6️⃣ Reduce batch stock
-      // await tx.medicineBatch.update({
-      //   where: {
-      //     hospital_Id_medicine_id_batch_no: {
-      //       hospital_Id: dto.hospital_Id,
-      //       medicine_id: prescriptionMedicine.medicine_Id,
-      //       batch_no: dto.batch_Id.toString(),
-      //     },
-      //   },
-      //   data: {
-      //     quantity: { decrement: dto.dispensed_quantity },
-      //   },
-      // });
-
-      // 7️⃣ Update prescription medicine status
-      const newQty =
-        prescriptionMedicine.dispensed_quantity + dto.dispensed_quantity;
-
-      await tx.prescriptionMedicine.update({
-        where: { id: dto.prescription_medicine_Id },
-        data: {
-          dispensed_quantity: newQty,
-          status:
-            newQty === prescriptionMedicine.total_quantity
-              ? 'COMPLETED'
-              : 'ONGOING',
-        },
-      });
-      log('work5');
-      // 8️⃣ Update payment amount (increment)
-      await tx.payment.update({
-        where: {
-          id: prescriptionMedicine.prescription.payment_Id,
-        },
-        data: {
-          amount: {
-            increment: amount,
+        /* ─────────────────────────────
+       2️⃣ FIND OR CREATE PRESCRIPTION
+      ───────────────────────────── */
+        let prescription = await tx.prescription.findFirst({
+          where: {
+            hospital_Id: Number(dto.hospital_Id),
+            patient_Id: Number(dto.patient_Id),
+            consultation_Id: Number(dto.consultation_Id),
+            status: 'DRAFT',
+            is_active: true,
           },
-        },
-      });
-      log('work6');
-      return {
-        dispense,
-        amount,
-      };
-    });
+          orderBy: { created_at: 'desc' },
+        });
+
+        if (!prescription) {
+          prescription = await tx.prescription.create({
+            data: {
+              hospital_Id: Number(dto.hospital_Id),
+              prescription_no: `MEDI-${Date.now()}`,
+              patient_Id: Number(dto.patient_Id),
+              doctor_Id: dto.doctor_Id.toString(),
+              consultation_Id: Number(dto.consultation_Id),
+              payment_Id: payment.id,
+            },
+          });
+        }
+
+        /* ─────────────────────────────
+       3️⃣ UPSERT PRESCRIPTION MEDICINES
+      ───────────────────────────── */
+        const existingMeds = await tx.prescriptionMedicine.findMany({
+          where: {
+            prescription_Id: prescription.id,
+            medicine_Id: Number(dto.medicines[0].medicine_Id), // Assuming one medicine per prescription for simplicity
+            batch_No: dto.medicines[0].batch_No,
+            route: dto.medicines[0].route,
+            dosage: dto.medicines[0].dosage,
+            after_food: dto.medicines[0].afterEat ?? false,
+            morning: dto.medicines[0].morning ?? false,
+            afternoon: dto.medicines[0].afternoon ?? false,
+            night: dto.medicines[0].night ?? false,
+            status: 'PENDING',
+          },
+        });
+
+        const medMap = new Map(existingMeds.map((m) => [m.medicine_Id, m]));
+
+        for (const med of dto.medicines) {
+          const existing = medMap.get(Number(med.medicine_Id));
+
+          if (existing) {
+            // ✅ UPDATE EXISTING MEDICINE
+            await tx.prescriptionMedicine.update({
+              where: { id: existing.id },
+              data: {
+                // overwrite normal fields
+                dosage: med.dosage,
+                route: med.route,
+                frequency: med.frequency,
+                instructions: med.instructions,
+
+                // 🔢 INCREMENT values
+                days: existing.days + (med.days ?? 0),
+                total_quantity:
+                  existing.total_quantity + (med.total_quantity ?? 0),
+                dispensed_quantity:
+                  existing.dispensed_quantity + (med.total_quantity ?? 0),
+              },
+            });
+          } else {
+            // ✅ CREATE NEW MEDICINE
+            await tx.prescriptionMedicine.create({
+              data: {
+                prescription_Id: prescription.id,
+                hospital_Id: Number(dto.hospital_Id),
+                medicine_Id: Number(med.medicine_Id),
+                dosage: med.dosage,
+                route: med.route,
+                frequency: med.frequency,
+                days: med.days,
+                batch_No: med.batch_No,
+                total_quantity: med.total_quantity,
+                dispensed_quantity: med.total_quantity ?? 0,
+                after_food: med.afterEat ?? false,
+                morning: med.morning ?? false,
+                afternoon: med.afternoon ?? false,
+                night: med.night ?? false,
+                instructions: med.instructions,
+                status: 'PENDING',
+              },
+            });
+          }
+        }
+
+        /* ─────────────────────────────
+       4️⃣ DISPENSE MEDICINES
+      ───────────────────────────── */
+
+        let paymentIncrement = 0;
+
+        const medicinesToDispense = await tx.prescriptionMedicine.findMany({
+          where: {
+            prescription_Id: prescription.id,
+            medicine_Id: Number(dto.medicines[0].medicine_Id), // Assuming one medicine per prescription for simplicity
+            batch_No: dto.medicines[0].batch_No,
+            route: dto.medicines[0].route,
+            dosage: dto.medicines[0].dosage,
+            after_food: dto.medicines[0].afterEat ?? false,
+            morning: dto.medicines[0].morning ?? false,
+            afternoon: dto.medicines[0].afternoon ?? false,
+            night: dto.medicines[0].night ?? false,
+            status: 'PENDING',
+          },
+        });
+
+        for (const pm of medicinesToDispense) {
+          const batch = await tx.medicineBatch.findUnique({
+            where: {
+              hospital_Id_medicine_id_batch_no: {
+                hospital_Id: Number(dto.hospital_Id),
+                medicine_id: pm.medicine_Id,
+                batch_no: dto.batch_No,
+              },
+            },
+          });
+
+          if (!batch || batch.quantity < pm.dispensed_quantity) {
+            throw new BadRequestException('Insufficient stock');
+          }
+
+          const amount = pm.dispensed_quantity * batch.selling_price_unit;
+
+          const existingDispense = await tx.prescriptionDispense.findFirst({
+            where: {
+              prescription_medicine_Id: pm.id,
+              batch_Id: batch.id,
+              hospital_Id: Number(dto.hospital_Id),
+            },
+          });
+
+          if (existingDispense) {
+            // 🔑 calculate delta only
+            const deltaQty =
+              pm.dispensed_quantity - existingDispense.dispensed_quantity;
+
+            if (deltaQty > 0) {
+              const deltaAmount = deltaQty * batch.selling_price_unit;
+
+              await tx.prescriptionDispense.update({
+                where: { id: existingDispense.id },
+                data: {
+                  dispensed_quantity: pm.dispensed_quantity,
+                  amount: amount,
+                  dispensed_by: Number(dto.pharmacist_Id),
+                },
+              });
+
+              paymentIncrement += deltaAmount;
+            }
+          } else {
+            await tx.prescriptionDispense.create({
+              data: {
+                hospital: { connect: { id: Number(dto.hospital_Id) } },
+                prescriptionMedicine: { connect: { id: pm.id } },
+                medicine: {
+                  connect: {
+                    hospital_Id_id: {
+                      hospital_Id: Number(dto.hospital_Id),
+                      id: pm.medicine_Id,
+                    },
+                  },
+                },
+                batch: { connect: { id: batch.id } },
+                dispensed_days: pm.days,
+                dispensed_quantity: pm.dispensed_quantity,
+                dispensed_by: Number(dto.pharmacist_Id),
+                amount,
+              },
+            });
+            paymentIncrement += amount;
+          }
+          /* ─────────────────────────────
+     4️⃣ UPDATE PAYMENT TOTAL
+     ───────────────────────────── */
+          await tx.payment.update({
+            where: { id: payment.id },
+            data: {
+              amount: { increment: paymentIncrement },
+              createdAt: dto.createdAt ?? Date.now(),
+            },
+          });
+        }
+
+        return {
+          prescriptionId: prescription.id,
+          message: 'Prescription created & medicines dispensed successfully',
+        };
+      },
+      { timeout: 30000 },
+    );
   }
 
   // 📄 GET PRESCRIPTION (Doctor / Pharmacy)
@@ -207,226 +839,253 @@ export class PrescriptionService {
       },
     });
   }
+
+  // async updatePrescriptionDispenseQuantity(id: number, dispensed_quantity: number, amount: number, batchNo: string) {
+  //   log('updatePrescriptionDispenseQuantity', id, dispensed_quantity, amount, batchNo);
+  //   const prescription = await this.prisma.prescriptionDispense.updateMany({
+  //     where: { id },
+  //     data: {
+  //       dispensed_quantity: { decrement: dispensed_quantity },
+  //       amount: { decrement: amount },
+  //     },
+  //   });
+  //   const getMedicineId = await this.prisma.prescriptionDispense.findUnique({
+  //     where: { batchNo },
+  //   });
+
+  //   const medicine = await this.prisma.medicine.updateMany({
+  //     where: { id: getMedicineId.medicine_Id },
+  //     data: {
+  //       stock: { decrement: dispensed_quantity},
+  //     },
+  //     include: {
+  //        batches:{
+  //         update: {
+  //           where: { batch_no: batchNo },
+  //           data: {
+  //             total_quantity: { decrement: dispensed_quantity },
+  //           },
+  //         },
+  //       },
+  //     }
+
+  //     });
+  //   }
+  // }
+
+  // async updatePrescriptionDispenseQuantity(
+  //   id: number,
+  //   dispensed_quantity: number,
+  //   amount: number,
+  //   batchNo: string,
+  //   days: number,
+  // ) {
+  //   return await this.prisma.$transaction(async (tx) => {
+  //     log(
+  //       'updatePrescriptionDispenseQuantity',
+  //       id,
+  //       dispensed_quantity,
+  //       amount,
+  //       batchNo,
+  //     );
+  //     const perMediDisp = await tx.prescriptionDispense.findFirst({
+  //       where: {
+  //         id,
+  //       },
+  //       select: {
+  //         amount: true,
+  //         dispensed_quantity: true,
+  //         dispensed_days: true,
+  //         prescription_medicine_Id: true,
+  //       },
+  //     });
+  //     const dispensedQuantity =
+  //       perMediDisp.dispensed_quantity - dispensed_quantity; //this patient allocated quantity 30 - current stack 20 => 10 decrease stack 10
+  //     const dispensedDays = perMediDisp.dispensed_days - days;
+  //     const dispensedAmount = perMediDisp.amount - amount;
+
+  //     // 1️⃣ Update prescription dispense
+  //     const prescription = await tx.prescriptionDispense.update({
+  //       where: { id },
+  //       data: {
+  //         dispensed_quantity: { decrement: dispensedQuantity },
+  //         dispensed_days: { decrement: dispensedDays },
+  //         amount: { decrement: dispensedAmount },
+  //       },
+  //       select: {
+  //         id: true,
+  //         prescription_medicine_Id: true,
+  //       },
+  //     });
+
+  //     const priscritionMedition = await tx.prescriptionMedicine.update({
+  //       where: { id: prescription.prescription_medicine_Id },
+  //       data: {
+  //         dispensed_quantity: { decrement: dispensedQuantity },
+  //         status: 'COMPLETED',
+  //       },
+  //     });
+
+  //     // 2️⃣ Get medicineId from batch
+  //     const batch = await tx.medicineBatch.findUnique({
+  //       where: { id: Number(batchNo) },
+  //       select: {
+  //         medicine_id: true,
+  //         hospital_Id: true,
+  //       },
+  //     });
+
+  //     if (!batch) {
+  //       throw new Error('Batch not found');
+  //     }
+
+  //     // 3️⃣ Update medicine stock
+  //     await tx.medicine.updateMany({
+  //       where: { id: batch.medicine_id, hospital_Id: batch.hospital_Id },
+  //       data: {
+  //         stock: { decrement: dispensedQuantity },
+  //       },
+  //     });
+
+  //     // 4️⃣ Update batch quantity
+  //     await tx.medicineBatch.updateMany({
+  //       where: {
+  //         id: Number(batchNo),
+  //         hospital_Id: batch.hospital_Id,
+  //         medicine_id: batch.medicine_id,
+  //       },
+  //       data: {
+  //         total_stock: { decrement: dispensedQuantity },
+  //       },
+  //     });
+
+  //     return {
+  //       success: true,
+  //       prescriptionId: prescription.id,
+  //     };
+  //   });
+  // }
+
+  async updatePrescriptionDispenseQuantity(
+    id: number,
+    current_quantity: number, // current stock shown in UI (20)
+    current_amount: number,
+    batchNo: string,
+    current_days: number,
+  ) {
+    log(
+      'quantity',
+      id,
+      current_amount,
+      current_days,
+      current_quantity,
+      batchNo,
+    );
+    return await this.prisma.$transaction(async (tx) => {
+      // 1️⃣ Fetch existing dispense record
+      const prev = await tx.prescriptionDispense.findUnique({
+        where: { id },
+        select: {
+          dispensed_quantity: true, // 30
+          dispensed_days: true,
+          amount: true,
+          prescription_medicine_Id: true,
+        },
+      });
+
+      if (!prev) {
+        throw new Error('Prescription dispense not found');
+      }
+
+      // 2️⃣ Calculate DELTA (what actually changed)
+      const deltaQuantity = prev.dispensed_quantity - current_quantity;
+      const deltaDays = prev.dispensed_days - current_days;
+      const deltaAmount = prev.amount - current_amount;
+
+      // 🔒 Safety checks
+      if (deltaQuantity <= 0) {
+        throw new Error('Invalid dispense quantity');
+      }
+
+      // 3️⃣ Update prescription dispense
+      const updatedDispense = await tx.prescriptionDispense.update({
+        where: { id },
+        data: {
+          dispensed_quantity: { decrement: deltaQuantity },
+          dispensed_days: { decrement: deltaDays },
+          amount: { decrement: deltaAmount },
+        },
+        select: {
+          prescription_medicine_Id: true,
+        },
+      });
+
+      // 4️⃣ Update prescription medicine (SOURCE OF TRUTH)
+      await tx.prescriptionMedicine.update({
+        where: { id: updatedDispense.prescription_medicine_Id },
+        data: {
+          dispensed_quantity: { decrement: deltaQuantity },
+        },
+      });
+
+      // 5️⃣ Get batch info
+      const batch = await tx.medicineBatch.findUnique({
+        where: { id: Number(batchNo) },
+        select: {
+          medicine_id: true,
+          hospital_Id: true,
+        },
+      });
+
+      if (!batch) {
+        throw new Error('Batch not found');
+      }
+
+      // 6️⃣ Update medicine master stock
+      // await tx.medicine.update({
+      //   where: {
+      //     id_hospital_Id: {
+      //       id: batch.medicine_id,
+      //       hospital_Id: batch.hospital_Id,
+      //     },
+      //   },
+      //   data: {
+      //     stock: { decrement: deltaQuantity },
+      //   },
+      // });
+
+      // // 7️⃣ Update batch stock
+      // await tx.medicineBatch.update({
+      //   where: { id: Number(batchNo) },
+      //   data: {
+      //     total_stock: { decrement: deltaQuantity },
+      //   },
+      // });
+
+      //3️⃣ Update medicine stock
+      await tx.medicine.updateMany({
+        where: { id: batch.medicine_id, hospital_Id: batch.hospital_Id },
+        data: {
+          stock: { decrement: deltaQuantity },
+        },
+      });
+
+      // 4️⃣ Update batch quantity
+      await tx.medicineBatch.updateMany({
+        where: {
+          id: Number(batchNo),
+          hospital_Id: batch.hospital_Id,
+          medicine_id: batch.medicine_id,
+        },
+        data: {
+          total_stock: { decrement: deltaQuantity },
+        },
+      });
+
+      return {
+        success: true,
+        dispensed_now: deltaQuantity,
+      };
+    });
+  }
 }
-
-//   // 🧑‍⚕️ CREATE PRESCRIPTION
-//   async createPrescription(dto: CreatePrescriptionDto) {
-//     log('prescription', dto);
-//     let payment = await tx.payment.findFirst({
-//   where: {
-//     hospital_Id: data.hospital_Id,
-//     patient_Id: data.patient_Id,
-//     consultation_Id: data.consultation_Id, // ✅ IMPORTANT
-//     type: 'MEDICINETONICINJECTIONFEES',
-//     status: 'PENDING',
-//   },
-// });
-
-//     return this.prisma.prescription.create({
-//       data: {
-//         hospital_Id: Number(dto.hospital_Id),
-//         prescription_no: `RX-${Date.now()}`,
-//         patient_Id: Number(dto.patient_Id),
-//         doctor_Id: dto.doctor_Id.toString(),
-//         consultation_Id: dto.consultation_Id,
-//         payment_Id: paymentId,
-//         notes: dto.notes,
-//         follow_up_date: dto.follow_up_date,
-//         valid_till: dto.valid_till,
-//         medicines: {
-//           create: dto.medicines.map((med) => ({
-//             medicine: {
-//               connect: { id: med.medicine_Id },
-//             },
-//             dosage: med.dosage,
-//             route: med.route as any, // enum cast
-//             frequency: med.frequency,
-//             days: med.days,
-//             total_quantity: med.total_quantity,
-//             after_food: med.after_food ?? false,
-//             morning: med.morning ?? false,
-//             afternoon: med.afternoon ?? false,
-//             night: med.night ?? false,
-//             instructions: med.instructions,
-//           })),
-//         },
-//       },
-//       include: {
-//         medicines: true,
-//       },
-//     });
-//   }
-
-// export class PrescriptionService {
-//   constructor(private readonly prisma: PrismaService) {}
-
-//   async createPrescription(dto: CreatePrescriptionDto) {
-//     return this.prisma.$transaction(async (tx) => {
-//       // 1️⃣ Find existing pending payment
-//       let payment = await tx.payment.findFirst({
-//         where: {
-//           hospital_Id: Number(dto.hospital_Id),
-//           patient_Id: Number(dto.patient_Id),
-//           consultation_Id: dto.consultation_Id,
-//           type: 'MEDICINETONICINJECTIONFEES',
-//           status: 'PENDING',
-//         },
-//       });
-
-//       // 2️⃣ If not exists → create payment
-//       if (!payment) {
-//         payment = await tx.payment.create({
-//           data: {
-//             hospital_Id: Number(dto.hospital_Id),
-//             patient_Id: Number(dto.patient_Id),
-//             consultation_Id: Number(dto.consultation_Id),
-//             type: 'MEDICINETONICINJECTIONFEES',
-//             reason: 'Prescription Fee',
-//             amount: , // update later when dispensing
-//             status: 'PENDING',
-//             createdBy: dto.doctor_Id.toString(),
-//           },
-//         });
-//       }
-
-//       // 3️⃣ Create prescription with payment_Id
-//       const prescription = await tx.prescription.create({
-//         data: {
-//           hospital_Id: Number(dto.hospital_Id),
-//           prescription_no: `RX-${Date.now()}`,
-//           patient_Id: Number(dto.patient_Id),
-//           doctor_Id: dto.doctor_Id.toString(),
-//           consultation_Id: dto.consultation_Id,
-//           payment_Id: payment.id, // ✅ correct
-//           notes: dto.notes,
-//           follow_up_date: dto.follow_up_date,
-//           valid_till: dto.valid_till,
-
-//           medicines: {
-//             create: dto.medicines.map((med) => ({
-//               medicine: {
-//                 connect: { id: med.medicine_Id },
-//               },
-//               dosage: med.dosage,
-//               route: med.route as any,
-//               frequency: med.frequency,
-//               days: med.days,
-//               total_quantity: med.total_quantity,
-//               after_food: med.after_food ?? false,
-//               morning: med.morning ?? false,
-//               afternoon: med.afternoon ?? false,
-//               night: med.night ?? false,
-//               instructions: med.instructions,
-//             })),
-//           },
-//         },
-//         include: {
-//           medicines: true,
-//         },
-//       });
-
-//       return prescription;
-//     });
-//   }
-
-//   // 🏥 DISPENSE MEDICINE (PHARMACY)
-//  async dispenseMedicine(
-
-//   dto: DispenseMedicineDto,
-// ) {
-//     log('despense',dto);
-//   return this.prisma.$transaction(async (tx) => {
-//     // 1. prescription medicine
-//     const prescriptionMedicine =
-//       await tx.prescriptionMedicine.findUnique({
-//         where: { id: dto.prescription_medicine_Id },
-//         include: { prescription: true },
-//       });
-
-//     if (!prescriptionMedicine) {
-//       throw new BadRequestException('Prescription medicine not found');
-//     }
-
-//     // 2. quantity check
-//     const remaining =
-//       prescriptionMedicine.total_quantity -
-//       prescriptionMedicine.dispensed_quantity;
-
-//     if (dto.dispensed_quantity > remaining) {
-//       throw new BadRequestException('Quantity exceeded');
-//     }
-
-//     // 3. batch check
-//     const batch = await tx.medicineBatch.findUnique({
-//   where: {
-//     hospital_Id_medicine_id_batch_no: {
-//       hospital_Id: dto.hospital_Id,
-//       medicine_id: prescriptionMedicine.medicine_Id,
-//       batch_no: dto.batch_Id.toString(), // STRING
-//     },
-//   },
-// });
-
-// log('batch',batch);
-//     if (!batch || batch.quantity < dto.dispensed_quantity) {
-//       throw new BadRequestException('Insufficient stock');
-//     }
-
-//     // 4. amount
-//     // const amount =
-//     //   dto.dispensed_quantity * batch.selling_price_unit;
-
-//     // 5. create dispense
-//     const dispense = await tx.prescriptionDispense.create({
-//       data: {
-//         hospital_Id: dto.hospital_Id,
-//         prescription_medicine_Id: dto.prescription_medicine_Id,
-//         medicine_Id: prescriptionMedicine.medicine_Id,
-//         batch_Id: Number(dto.batch_Id),
-//         dispensed_quantity: dto.dispensed_quantity,
-//         dispensed_by: Number(dto.pharmacist_Id),
-//       },
-//     });
-
-//     // 6. reduce batch stock
-//     // await tx.medicineBatch.update({
-//     //   where: { id: Number(dto.batch_Id) },
-//     //   data: {
-//     //     quantity: { decrement: dto.dispensed_quantity },
-//     //   },
-//     // });
-
-//     await tx.medicineBatch.update({
-//   where: {
-//     hospital_Id_medicine_id_batch_no: {
-//       hospital_Id: dto.hospital_Id,
-//       medicine_id: prescriptionMedicine.medicine_Id,
-//       batch_no: dto.batch_Id.toString(), // STRING
-//     },
-//   },
-//   data: {
-//     quantity: { decrement: dto.dispensed_quantity },
-//   },
-// });
-
-//     // 7. update prescription medicine
-//     const newQty =
-//       prescriptionMedicine.dispensed_quantity +
-//       dto.dispensed_quantity;
-
-//     await tx.prescriptionMedicine.update({
-//       where: { id: dto.prescription_medicine_Id },
-//       data: {
-//         dispensed_quantity: newQty,
-//         status:
-//           newQty === prescriptionMedicine.total_quantity
-//             ? 'COMPLETED'
-//             : 'ONGOING',
-//       },
-//     });
-
-//     return {
-//       dispense,
-//     };
-//   });
-// }
