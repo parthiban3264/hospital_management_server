@@ -14,6 +14,16 @@ export class PrescriptionController {
     log('prescription', dto);
     return this.prescriptionService.createPrescriptionAndDispense(dto);
   }
+  @Post('updateAndCreateMedicineAdministration/:id')
+  async medicineAdministration(@Param('id') id: string, @Body() dto: any) {
+    log('update administea', id, dto);
+    return this.prescriptionService.medicineAdministarion(Number(id), dto);
+  }
+  @Get('medical-prescriptions/:hospital_Id')
+  async getMedicalPrescription(@Param('hospital_Id') hospital_Id: string) {
+    log('hospital', hospital_Id);
+    return this.prescriptionService.getMedicalPrescription(Number(hospital_Id));
+  }
 
   // 🏥 DISPENSE MEDICINE
   //   @Post('dispense')
@@ -55,14 +65,8 @@ export class PrescriptionController {
       dto.dispensed_quantity,
       dto.amount,
       dto.batchNo,
-      dto.days
+      dto.days,
     );
     // Example of updating prescription dispense status
-  }
-
-  @Post('updateAndCreateMedicineAdministration/:id')
-  async medicineAdministration(@Param('id') id: string, @Body() dto: any) {
-    log('update administea', id, dto);
-    return this.prescriptionService.medicineAdministarion(Number(id), dto);
   }
 }

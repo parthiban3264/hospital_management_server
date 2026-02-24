@@ -1401,7 +1401,6 @@ export class ConsultationService {
   //       error: error.message,
   //     };
   //   }
-
   // }
 
   async findAll() {
@@ -1426,15 +1425,25 @@ export class ConsultationService {
         status: {
           in: ['PENDING', 'ENDPROCESSING', 'ONGOING', 'CANCELLED', 'COMPLETED'],
         },
-      }, //,'COMPLETED' assuming hospitalId is numeric
-      include: {
-        Hospital: true,
+      },
+      //,'COMPLETED' assuming hospitalId is numeric
+      select: {
+        status:true,
+        createdAt:true,
+        paymentStatus:true,
+        patientType:true,
+        Hospital: { select: { id: true, name: true } },
         Patient: {
-          include: {
-            TestingAndScanning: true,
+          select: {
+            id:true,
+            name:true,
+            phone:true,
+            address:true,
+            dob:true,
+            TestingAndScanning: {select:{id:true,status:true,paymentStatus:true,patient_Id:true,payment_Id:true}},
           },
         },
-        Doctor: true,
+        Doctor: {select: {id:true,name:true,user_Id:true}},
       },
       orderBy: {
         createdAt: 'asc',
