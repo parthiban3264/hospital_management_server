@@ -1428,10 +1428,23 @@ export class ConsultationService {
       },
       //,'COMPLETED' assuming hospitalId is numeric
       select: {
+        id:true,
+        patient_Id: true,
         status:true,
         createdAt:true,
         paymentStatus:true,
         patientType:true,
+        symptoms:true,
+        queueStatus:true,
+        emergency:true,
+        tokenNo:true,
+        cancelReason:true,
+        doctor_Id:true,
+        hospital_Id:true,
+        isTestOnly:true,
+        sugerTest:true,
+        sugar:true,
+        sugerTestQueue:true,
         Hospital: { select: { id: true, name: true } },
         Patient: {
           select: {
@@ -1443,7 +1456,7 @@ export class ConsultationService {
             TestingAndScanning: {select:{id:true,status:true,paymentStatus:true,patient_Id:true,payment_Id:true}},
           },
         },
-        Doctor: {select: {id:true,name:true,user_Id:true}},
+        Doctor: {select: {id:true,name:true,user_Id:true,specialist:true}},
       },
       orderBy: {
         createdAt: 'asc',
