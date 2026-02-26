@@ -602,30 +602,162 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class TestingAndScanningPatientService {
   constructor(private prisma: PrismaService) {}
 
+  // async create(data: any) {
+  //   return this.prisma.$transaction(async (tx) => {
+  //     // Step 1: Find an existing PENDING payment for the same patient in the same hospital
+
+  //     const isCtScan = data.type?.trim().toLowerCase() === 'ct-scan';
+
+  //     // 🔥 CT-SCAN → always create NEW payment and stop
+  //     if (isCtScan) {
+  //       const payment = await tx.payment.create({
+  //         data: {
+  //           hospital_Id: data.hospital_Id,
+  //           patient_Id: data.patient_Id,
+  //           reason: 'CT-Scan Fee',
+  //           status: 'PENDING',
+  //           consultation_Id: data.consultation_Id,
+  //           amount: data.amount,
+  //           type: 'TESTINGFEESANDSCANNINGFEE',
+  //           createdAt: data.createdAt,
+  //         },
+  //         include: {
+  //           Hospital: true,
+  //           Patient: true,
+  //           Consultation: true,
+  //         },
+  //       });
+  //       // ✅ STOP here
+  //     }
+  //     let payment = await tx.payment.findFirst({
+  //       where: {
+  //         hospital_Id: data.hospital_Id,
+  //         patient_Id: data.patient_Id,
+  //         type: 'TESTINGFEESANDSCANNINGFEE', // match your logic
+  //         status: 'PENDING',
+  //       },
+  //     });
+
+  //     // Step 2: Create or update payment
+  //     if (payment) {
+  //       payment = await tx.payment.update({
+  //         where: { id: payment.id },
+  //         data: {
+  //           amount: (payment.amount ?? 0) + (data.amount ?? 0),
+  //           updatedAt: data.createdAt,
+  //         },
+  //         include: {
+  //           Hospital: true,
+  //           //TestingAndScanningPatients: true,
+  //           Patient: true,
+  //           Consultation: true,
+  //         },
+  //       });
+  //     } else {
+  //       const reason =
+  //         data.isTestOnly !== true
+  //           ? 'Testing & Scanning Fee'
+  //           : 'Private Testing Fee';
+  //       payment = await tx.payment.create({
+  //         data: {
+  //           hospital_Id: data.hospital_Id,
+  //           patient_Id: data.patient_Id,
+  //           reason: reason,
+  //           status: 'PENDING',
+  //           consultation_Id: data.consultation_Id,
+  //           amount: data.amount,
+  //           type: 'TESTINGFEESANDSCANNINGFEE',
+  //           createdAt: data.createdAt,
+  //         },
+  //         include: {
+  //           Hospital: true,
+  //           //TestingAndScanningPatients: true,
+  //           Patient: true,
+  //           Consultation: true,
+  //         },
+  //       });
+  //       log('paymment:', payment);
+  //     }
+
+  //     // Step 3: Create new test linked to that payment
+  //     const test = await tx.testingAndScanningPatient.create({
+  //       data: {
+  //         hospital_Id: data.hospital_Id,
+  //         patient_Id: data.patient_Id,
+  //         doctor_Id: data.doctor_Id,
+  //         staff_Id: data.staff_Id,
+  //         consultation_Id: data.consultation_Id,
+  //         title: data.title,
+  //         scheduleDate: new Date(data.scheduleDate),
+  //         type: data.type,
+  //         selectedOptions: data.selectedOptions,
+  //         selectedOptionResults: data.selectedOptionResults,
+  //         selectedOptionAmounts: data.selectedOptionAmounts,
+  //         status: data.status,
+  //         amount: data.amount,
+  //         reason: data.reason,
+  //         paymentStatus: data.paymentStatus,
+  //         scanImages: data.scanImages,
+  //         result: data.result,
+  //         createdAt: data.createdAt,
+  //         payment_Id: isCtScan ? payment.id : payment.id, // link to the same payment
+  //       },
+  //     });
+  //     log('tset', test);
+  //     return { test, data: { payment } };
+  //   });
+  // }
+
   async create(data: any) {
-    log('Creating Testing & Scanning Patient with Payment...,data:', data);
-    return this.prisma.$transaction(async (tx) => {
-      // Step 1: Find an existing PENDING payment for the same patient in the same hospital
-      let payment = await tx.payment.findFirst({
+  return this.prisma.$transaction(async (tx) => {
+
+    const isCtScan = data.type?.trim().toLowerCase() == 'ct-scan' ? true : false;
+    log('Creating Testing & Scanning Patient with Payment...,data:', data, 'isCtScan:', isCtScan);
+
+    let payment; // ✅ declare once
+
+    if (isCtScan == true) {
+      // 🔥 Always create new payment for CT
+      payment = await tx.payment.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          patient_Id: data.patient_Id,
+          reason: 'CT-Scan Fee',
+          status: 'PENDING',
+          consultation_Id: data.consultation_Id,
+          amount: data.amount,
+          type: 'TESTINGFEESANDSCANNINGFEE',
+          createdAt: data.createdAt,
+        },
+        include: {
+          Hospital: true,
+          Patient: true,
+          Consultation: true,
+        },
+      });
+
+    } else {
+
+      // 🔎 Find existing PENDING
+      const existingPayment = await tx.payment.findFirst({
         where: {
           hospital_Id: data.hospital_Id,
           patient_Id: data.patient_Id,
-          type: 'TESTINGFEESANDSCANNINGFEE', // match your logic
+          reason: {not: 'CT-Scan Fee'}, // ensure we don't match CT payments
+          type: 'TESTINGFEESANDSCANNINGFEE',
           status: 'PENDING',
         },
       });
 
-      // Step 2: Create or update payment
-      if (payment) {
+      if (existingPayment) {
         payment = await tx.payment.update({
-          where: { id: payment.id },
+          where: { id: existingPayment.id },
           data: {
-            amount: (payment.amount ?? 0) + (data.amount ?? 0),
+            amount: (existingPayment.amount ?? 0) + (data.amount ?? 0),
             updatedAt: data.createdAt,
           },
           include: {
             Hospital: true,
-            //TestingAndScanningPatients: true,
             Patient: true,
             Consultation: true,
           },
@@ -635,11 +767,12 @@ export class TestingAndScanningPatientService {
           data.isTestOnly !== true
             ? 'Testing & Scanning Fee'
             : 'Private Testing Fee';
+
         payment = await tx.payment.create({
           data: {
             hospital_Id: data.hospital_Id,
             patient_Id: data.patient_Id,
-            reason: reason,
+            reason,
             status: 'PENDING',
             consultation_Id: data.consultation_Id,
             amount: data.amount,
@@ -648,42 +781,42 @@ export class TestingAndScanningPatientService {
           },
           include: {
             Hospital: true,
-            //TestingAndScanningPatients: true,
             Patient: true,
             Consultation: true,
           },
         });
-        log('paymment:', payment);
       }
+    }
 
-      // Step 3: Create new test linked to that payment
-      const test = await tx.testingAndScanningPatient.create({
-        data: {
-          hospital_Id: data.hospital_Id,
-          patient_Id: data.patient_Id,
-          doctor_Id: data.doctor_Id,
-          staff_Id: data.staff_Id,
-          consultation_Id: data.consultation_Id,
-          title: data.title,
-          scheduleDate: new Date(data.scheduleDate),
-          type: data.type,
-          selectedOptions: data.selectedOptions,
-          selectedOptionResults: data.selectedOptionResults,
-          selectedOptionAmounts: data.selectedOptionAmounts,
-          status: data.status,
-          amount: data.amount,
-          reason: data.reason,
-          paymentStatus: data.paymentStatus,
-          scanImages: data.scanImages,
-          result: data.result,
-          createdAt: data.createdAt,
-          payment_Id: payment.id, // link to the same payment
-        },
-      });
-      log('tset', test);
-      return { test, data: { payment } };
+    // ✅ Always use the correct payment here
+    const test = await tx.testingAndScanningPatient.create({
+      data: {
+        hospital_Id: data.hospital_Id,
+        patient_Id: data.patient_Id,
+        doctor_Id: data.doctor_Id,
+        staff_Id: data.staff_Id,
+        consultation_Id: data.consultation_Id,
+        title: data.title,
+        scheduleDate: new Date(data.scheduleDate),
+        type: data.type,
+        selectedOptions: data.selectedOptions,
+        selectedOptionResults: data.selectedOptionResults,
+        selectedOptionAmounts: data.selectedOptionAmounts,
+        status: data.status,
+        amount: data.amount,
+        reason: data.reason,
+        paymentStatus: data.paymentStatus,
+        scanImages: data.scanImages,
+        result: data.result,
+        createdAt: data.createdAt,
+        payment_Id: payment.id, // ✅ always correct now
+      },
     });
-  }
+
+    return { test, payment };
+  });
+}
+
   async updateTestingAndScanningByPayment(paymentId: number) {
     const result = await this.prisma.testingAndScanningPatient.updateMany({
       where: { payment_Id: Number(paymentId) },
@@ -763,6 +896,7 @@ export class TestingAndScanningPatientService {
                 id: true,
                 doctor_Id: true,
                 tokenNo: true,
+                displayToken:true,
                 tokenDate: true,
                 isTestOnly: true,
                 referredByDoctorName: true,
@@ -1080,6 +1214,9 @@ export class TestingAndScanningPatientService {
           tokenNo:
             patient.Consultation && patient.Consultation.length > 0
               ? (patient.Consultation[0].tokenNo ?? '-')
+              : '-',
+          displayToken: patient.Consultation && patient.Consultation.length > 0
+              ? (patient.Consultation[0].displayToken ?? '-')
               : '-',
           isTestOnly:
             patient.Consultation && patient.Consultation.length > 0

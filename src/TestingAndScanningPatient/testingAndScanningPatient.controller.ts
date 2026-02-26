@@ -593,7 +593,7 @@ export class TestingAndScanningPatientController {
 
   @Post('create')
   create(@Body() data: any) {
-    log('Creating Testing & Scanning Patient...,data:', data);
+      log('correct this work', data);
     return this.service.create(data);
   }
 

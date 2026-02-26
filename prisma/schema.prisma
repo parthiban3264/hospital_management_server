@@ -149,10 +149,8 @@ model Admin {
 
 model ButtonPermissions {
   id          Int    @id @default(autoincrement())
-  hospital_Id Int
   key         String
   designation String
-  defaultIds  Json?
 
   @@unique([designation, key])
 }
@@ -239,8 +237,9 @@ model Consultation {
   purpose     String
 
   // ✅ TOKEN SYSTEM
-  tokenNo   Int?
-  tokenDate DateTime?
+  tokenNo      Int?
+  tokenDate    DateTime?
+  displayToken String?
 
   symptoms             Boolean     @default(false)
   notes                Json?

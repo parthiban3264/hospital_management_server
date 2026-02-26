@@ -240,6 +240,8 @@ export class PaymentService {
             status: true,
             tokenDate: true,
             tokenNo: true,
+            displayToken: true,
+            isTestOnly: true,
           },
         },
         Admission: true,
@@ -315,6 +317,11 @@ export class PaymentService {
         hospital_Id: Number(hospitalId),
 
         Consultation: {},
+        TestingAndScanningPatients: {
+          none: {
+            type: 'CT-SCAN',
+          },
+        },
 
         NOT: {
           type: 'MEDICINETONICINJECTIONFEES',
@@ -355,24 +362,6 @@ export class PaymentService {
             },
           },
         ],
-
-        //   where: {
-        //     hospital_Id: Number(hospitalId),
-        //     status: {
-        //       in: ['PENDING','PAID','CANCELLED'], // Only pending or ongoing payments
-        //     },
-
-        //     Consultation: {
-        //        //isTestOnly:false,
-        //       //status: "PENDING",
-        //       //paymentStatus: true,
-        //       //symptoms: false,
-        //       //sugerTestQueue: false,
-        //     },
-        //     NOT: {type: 'MEDICINETONICINJECTIONFEES' },
-        //         createdAt: {
-        //   gte: sevenDaysAgo,
-        // },
       },
       include: {
         Hospital: { select: { id: true, name: true } },
@@ -411,6 +400,177 @@ export class PaymentService {
             tokenDate: true,
             tokenNo: true,
             isTestOnly: true,
+            referredByDoctorName: true,
+            displayToken: true,
+          },
+        },
+        Admission: {
+          select: {
+            id: true,
+            status: true,
+            patient_Id: true,
+            admitTime: true,
+            wardChange: true,
+            dischargeTime: true,
+            bedId: true,
+            staffChange: true,
+            bed: { include: { ward: true } },
+            charges: true,
+          },
+        },
+        TestingAndScanningPatients: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            status: true,
+            payment_Id: true,
+            consultation_Id: true,
+            amount: true,
+            selectedOptions: true,
+            selectedOptionAmounts: true,
+            unSelectedOptions: true,
+          },
+        },
+        MedicinePatient: {
+          select: {
+            id: true,
+            medicine_Id: true,
+            quantity: true,
+            payment_Id: true,
+            consultation_Id: true,
+            total: true,
+          },
+        },
+        TonicPatient: {
+          select: {
+            id: true,
+            tonic_Id: true,
+            quantity: true,
+            payment_Id: true,
+            consultation_Id: true,
+            total: true,
+          },
+        },
+        InjectionPatient: {
+          select: {
+            id: true,
+            injection_Id: true,
+            quantity: true,
+            payment_Id: true,
+            consultation_Id: true,
+            total: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc', // Sort by creation date
+      },
+    });
+  }
+
+  async findCtScanPendingPaymentsByHospitalNew(hospitalId: number) {
+    //   const sevenDaysAgo = new Date();
+    // sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const threeDaysAgoStr = dayjs()
+      .subtract(3, 'day')
+      .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
+    const twoDaysAgoStr = dayjs()
+      .subtract(2, 'day')
+      .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
+    const monthDaysAgoStr = dayjs()
+      .subtract(1, 'month')
+      .format('YYYY-MM-DD hh:mm A'); // match your DB format exactly
+
+    return this.prisma.payment.findMany({
+      where: {
+        hospital_Id: Number(hospitalId),
+
+        Consultation: {},
+        TestingAndScanningPatients: {
+          some: {
+            type: 'CT-SCAN',
+          },
+        },
+
+        NOT: {
+          type: 'MEDICINETONICINJECTIONFEES',
+        },
+
+        OR: [
+          // ✅ All PENDING (no date restriction)
+          {
+            status: 'PENDING',
+            createdAt: {
+              gte: threeDaysAgoStr, // ✅ Date object
+            },
+          },
+          {
+            status: 'PARTIALLY_PAID',
+            createdAt: {
+              gte: monthDaysAgoStr, // ✅ Date object
+            },
+          },
+          // ✅ PAID → only last 7 days
+          {
+            status: 'PAID',
+            updatedAt: {
+              gte: twoDaysAgoStr, // ✅ Date object
+            },
+          },
+          {
+            status: 'PAYLATER',
+            createdAt: {
+              gte: monthDaysAgoStr, // ✅ Date object
+            },
+          },
+          // ✅ CANCELLED → all (or add date if you want)
+          {
+            status: 'CANCELLED',
+            createdAt: {
+              gte: monthDaysAgoStr, // ✅ Date object
+            },
+          },
+        ],
+      },
+      include: {
+        Hospital: { select: { id: true, name: true } },
+        Patient: {
+          select: {
+            id: true,
+            user_Id: true,
+            name: true,
+            dob: true,
+            gender: true,
+            phone: true,
+            address: true,
+            createdAt: true,
+            bldGrp: true,
+          },
+        },
+        Consultation: {
+          select: {
+            id: true,
+            doctor_Id: true,
+            patient_Id: true,
+            sugar: true,
+            PK: true,
+            SPO2: true,
+            temperature: true,
+            height: true,
+            weight: true,
+            bp: true,
+            BMI: true,
+            emergency: true,
+            registrationFee: true,
+            sugarTestFee: true,
+            emergencyFee: true,
+            consultationFee: true,
+            status: true,
+            tokenDate: true,
+            tokenNo: true,
+            isTestOnly: true,
+            displayToken:true,
             referredByDoctorName: true,
           },
         },

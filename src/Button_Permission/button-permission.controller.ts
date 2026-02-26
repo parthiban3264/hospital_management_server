@@ -20,6 +20,7 @@ export class ButtonPermissionController {
 
   @Get('getAll')
   findAll() {
+    log('getAll called');
     return this.service.findAll();
   }
   // this not used currently

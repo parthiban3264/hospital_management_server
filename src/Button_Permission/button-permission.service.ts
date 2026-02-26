@@ -21,11 +21,10 @@ export class ButtonPermissionService {
   async findAll() {
     return this.prisma.buttonPermissions.findMany();
   }
-    async findAllByHospital(hospital_Id: number) {
-    return this.prisma.buttonPermissions.findMany({
-      where: { hospital_Id },   
-    });
-    }
+
+  async findAllByHospital(hospital_Id: number) {
+    return this.prisma.buttonPermissions.findMany();
+  }
 
   async findOne(id: number) {
     return this.prisma.buttonPermissions.findUnique({ where: { id } });

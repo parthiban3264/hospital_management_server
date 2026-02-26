@@ -916,150 +916,26 @@ import { equal } from 'assert';
 //import { format } from 'date-fns';
 import dayjs from 'dayjs';
 
+function generateDoctorPrefix(name: string): string {
+  if (!name) return '';
+
+  // Remove "Dr" and dots
+  const cleaned = name.replace(/dr\.?/i, '').replace(/\./g, '').trim();
+
+  const parts = cleaned.split(' ').filter(Boolean);
+
+  // Take first letter of each word
+  const prefix = parts.map((word) => word[0].toUpperCase()).join('');
+
+  return prefix;
+}
+
 @Injectable()
 export class ConsultationService {
   constructor(
     private prisma: PrismaService,
     private gateway: ConsultationGateway,
   ) {}
-
-  //   async create(data: any) {
-  //   try {
-  //     console.log('Creating consultation with data:', data);
-
-  //     // -------------------- FETCH FEES -------------------- //
-  //     const registrationFee = await this.prisma.fees.findFirst({
-  //       where: {
-  //         hospital_Id: Number(data.hospital_Id),
-  //         type: 'REGISTRATION FEE',
-  //       },
-  //     });
-
-  //     const emergencyFee = await this.prisma.fees.findFirst({
-  //       where: {
-  //         hospital_Id: Number(data.hospital_Id),
-  //         type: 'EMERGENCY FEE',
-  //       },
-  //     });
-
-  //     const sugarFee = await this.prisma.fees.findFirst({
-  //       where: {
-  //         hospital_Id: Number(data.hospital_Id),
-  //         type: 'SUGAR FEE',
-  //       },
-  //     });
-
-  //     // -------------------- FETCH DOCTOR FEE -------------------- //
-  //     const doctorData = await this.prisma.admin.findFirst({
-  //       where: {
-  //         hospital_Id: Number(data.hospital_Id),
-  //         user_Id: data.doctor_Id,
-  //       },
-  //     });
-
-  //     const doctorAmount = doctorData?.doctorAmount ?? 0;
-
-  //     // -------------------- AMOUNTS -------------------- //
-  //     const regAmount = registrationFee?.amount ?? 0;
-  //     const emergencyAmount = emergencyFee?.amount ?? 0;
-  //     const sugarAmount = sugarFee?.amount ?? 0;
-
-  //     log('Amounts:', {
-  //       regAmount,
-  //       doctorAmount,
-  //       emergencyAmount,
-  //       sugarAmount,
-  //     });
-
-  //     // -------------------- VALIDATION -------------------- //
-  //     if (!regAmount) {
-  //       return {
-  //         status: 'failed',
-  //         message:
-  //           '⚠️ Registration Fee is not set! Please assign Registration Fee first.',
-  //       };
-  //     }
-
-  //     // -------------------- CALCULATE TOTAL REGISTRATION PAYMENT -------------------- //
-  //     let totalRegistrationAmount = regAmount + doctorAmount;
-  //     let emergencyFeeAmount = 0;
-  //     let sugarFeeAmount = 0;
-
-  //     if (data.emergency === true) {
-  //       totalRegistrationAmount += emergencyAmount;
-  //       emergencyFeeAmount = emergencyAmount;
-  //     }
-
-  //     if (data.sugarTest === true) {
-  //       totalRegistrationAmount += sugarAmount;
-  //       sugarFeeAmount = sugarAmount;
-  //     }
-
-  //     // -------------------- CREATE CONSULTATION -------------------- //
-  //     const consultation = await this.prisma.consultation.create({
-  //       data: {
-  //         hospital_Id: Number(data.hospital_Id),
-  //         patient_Id: data.patient_Id,
-  //         doctor_Id: data.doctor_Id,
-  //         purpose: data.purpose,
-  //         symptoms: data.symptoms,
-
-  //         consultationFee: doctorAmount, // ✅ ONLY doctor fee
-  //         emergencyFee: emergencyFeeAmount,
-  //         sugarTestFee: sugarFeeAmount,
-  //         registrationFee: regAmount,
-
-  //         bp: data.bp,
-  //         weight: data.weight,
-  //         height: data.height,
-  //         sugar: data.sugar,
-  //         emergency: data.emergency === true,
-  //         sugerTest: data.sugarTest === true,
-  //         sugerTestQueue: data.sugerTestQueue === true,
-  //         temperature: data.temperature,
-
-  //         notes: data.notes ? JSON.parse(data.notes) : null,
-  //         paymentStatus: false,
-  //         createdAt: data.createdAt || new Date(),
-  //       },
-  //     });
-
-  //     console.log('Consultation created:', consultation.id);
-
-  //     // -------------------- CREATE PAYMENT -------------------- //
-  //     const payment = await this.prisma.payment.create({
-  //       data: {
-  //         hospital_Id: Number(data.hospital_Id),
-  //         patient_Id: data.patient_Id,
-  //         consultation_Id: consultation.id,
-
-  //         reason: 'Registration Fee',
-  //         status: 'PENDING',
-
-  //         amount: totalRegistrationAmount, // ✅ ALL fees combined
-
-  //         type: 'REGISTRATIONFEE',
-  //         createdAt: data.createdAt || new Date(),
-  //       },
-  //     });
-
-  //     // -------------------- SUCCESS RESPONSE -------------------- //
-  //     return {
-  //       status: 'success',
-  //       data: {
-  //         consultationId: consultation.id,
-  //         paymentId: payment.id,
-  //         totalAmount: totalRegistrationAmount,
-  //       },
-  //     };
-  //   } catch (error) {
-  //     console.error('Create consultation error:', error);
-  //     return {
-  //       status: 'failed',
-  //       error: error.message,
-  //     };
-  //   }
-  // }
 
   async create(data: any) {
     try {
@@ -1144,25 +1020,58 @@ export class ConsultationService {
       );
 
       // -------------------- STEP 2: Get the max token number for today -------------------- //
-      const maxTokenToday = await this.prisma.consultation.aggregate({
-        where: {
-          hospital_Id: Number(data.hospital_Id),
-          tokenDate: tokenDateOnly,
-        },
-        _max: {
-          tokenNo: true,
-        },
-      });
+      let maxTokenToday;
+      if (data.isTestOnly === true) {
+        maxTokenToday = await this.prisma.consultation.aggregate({
+          where: {
+            hospital_Id: Number(data.hospital_Id),
+            isTestOnly: true,
+            tokenDate: tokenDateOnly,
+          },
+          _max: {
+            tokenNo: true,
+          },
+        });
+      } else {
+        maxTokenToday = await this.prisma.consultation.aggregate({
+          where: {
+            hospital_Id: Number(data.hospital_Id),
+            doctor_Id: data.doctor_Id,
+            isTestOnly: false,
+            tokenDate: tokenDateOnly,
+          },
+          _max: {
+            tokenNo: true,
+          },
+        });
+      }
 
       // -------------------- STEP 3: Determine token number -------------------- //
       let tokenNo: number;
+      let displayToken: string;
 
       // ✅ Daily token logic: always increment from today's max
       tokenNo = (maxTokenToday._max.tokenNo || 0) + 1;
 
-      console.log(
-        `Assigning tokenNo: ${tokenNo} for hospital ${data.hospital_Id} on date ${tokenDateOnly.toISOString().split('T')[0]}`,
-      );
+      if (data.isTestOnly !== true) {
+        const doctorDataForPrefix = await this.prisma.admin.findFirst({
+        where: {
+          hospital_Id: Number(data.hospital_Id),
+          user_Id: data.doctor_Id,
+        },
+      });
+
+      const doctorName = doctorDataForPrefix?.name || '';
+      const prefix = generateDoctorPrefix(doctorName);
+
+       displayToken = `${prefix}-${tokenNo}`;
+      }else{
+        displayToken = `PVT-${tokenNo}`;
+      }
+
+      // console.log(
+      //   `Assigning tokenNo: ${tokenNo} for hospital ${data.hospital_Id} on date ${tokenDateOnly.toISOString().split('T')[0]}`,
+      // );
 
       // -------------------- CREATE CONSULTATION -------------------- //
       const consultation = await this.prisma.consultation.create({
@@ -1177,6 +1086,7 @@ export class ConsultationService {
           // ✅ TOKEN
           tokenNo: tokenNo,
           tokenDate: tokenDateOnly,
+          displayToken: displayToken,
           referredByDoctorName: data.referredByDoctorName || null,
           consultationFee: data.isTestOnly !== true ? doctorAmount : 0,
           emergencyFee: data.isTestOnly !== true ? emergencyFeeAmount : 0,
@@ -1197,9 +1107,6 @@ export class ConsultationService {
           createdAt: data.createdAt || new Date(),
         },
       });
-
-      console.log('Consultation created:', consultation.id);
-      console.log('Consultation created:', consultation);
 
       let payment;
 
@@ -1428,35 +1335,46 @@ export class ConsultationService {
       },
       //,'COMPLETED' assuming hospitalId is numeric
       select: {
-        id:true,
+        id: true,
         patient_Id: true,
-        status:true,
-        createdAt:true,
-        paymentStatus:true,
-        patientType:true,
-        symptoms:true,
-        queueStatus:true,
-        emergency:true,
-        tokenNo:true,
-        cancelReason:true,
-        doctor_Id:true,
-        hospital_Id:true,
-        isTestOnly:true,
-        sugerTest:true,
-        sugar:true,
-        sugerTestQueue:true,
+        status: true,
+        createdAt: true,
+        paymentStatus: true,
+        patientType: true,
+        symptoms: true,
+        queueStatus: true,
+        emergency: true,
+        tokenNo: true,
+        displayToken:true,
+        cancelReason: true,
+        doctor_Id: true,
+        hospital_Id: true,
+        isTestOnly: true,
+        sugerTest: true,
+        sugar: true,
+        sugerTestQueue: true,
         Hospital: { select: { id: true, name: true } },
         Patient: {
           select: {
-            id:true,
-            name:true,
-            phone:true,
-            address:true,
-            dob:true,
-            TestingAndScanning: {select:{id:true,status:true,paymentStatus:true,patient_Id:true,payment_Id:true}},
+            id: true,
+            name: true,
+            phone: true,
+            address: true,
+            dob: true,
+            TestingAndScanning: {
+              select: {
+                id: true,
+                status: true,
+                paymentStatus: true,
+                patient_Id: true,
+                payment_Id: true,
+              },
+            },
           },
         },
-        Doctor: {select: {id:true,name:true,user_Id:true,specialist:true}},
+        Doctor: {
+          select: { id: true, name: true, user_Id: true, specialist: true },
+        },
       },
       orderBy: {
         createdAt: 'asc',
@@ -1682,6 +1600,7 @@ export class ConsultationService {
         PK: c.PK,
         notes: c.notes,
         tokenNo: c.tokenNo,
+        displayToken: c.displayToken,
         tokenDate: c.tokenDate,
         payment: c.Payment,
         isTestOnly: c.isTestOnly,
