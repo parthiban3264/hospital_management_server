@@ -1021,6 +1021,7 @@ export class ConsultationService {
 
       // -------------------- STEP 2: Get the max token number for today -------------------- //
       let maxTokenToday;
+
       if (data.isTestOnly === true) {
         maxTokenToday = await this.prisma.consultation.aggregate({
           where: {
@@ -1055,17 +1056,17 @@ export class ConsultationService {
 
       if (data.isTestOnly !== true) {
         const doctorDataForPrefix = await this.prisma.admin.findFirst({
-        where: {
-          hospital_Id: Number(data.hospital_Id),
-          user_Id: data.doctor_Id,
-        },
-      });
+          where: {
+            hospital_Id: Number(data.hospital_Id),
+            user_Id: data.doctor_Id,
+          },
+        });
 
-      const doctorName = doctorDataForPrefix?.name || '';
-      const prefix = generateDoctorPrefix(doctorName);
+        const doctorName = doctorDataForPrefix?.name || '';
+        const prefix = generateDoctorPrefix(doctorName);
 
-       displayToken = `${prefix}-${tokenNo}`;
-      }else{
+        displayToken = `Dr ${prefix}-${tokenNo}`;
+      } else {
         displayToken = `PVT-${tokenNo}`;
       }
 
@@ -1345,7 +1346,7 @@ export class ConsultationService {
         queueStatus: true,
         emergency: true,
         tokenNo: true,
-        displayToken:true,
+        displayToken: true,
         cancelReason: true,
         doctor_Id: true,
         hospital_Id: true,
@@ -1688,6 +1689,7 @@ export class ConsultationService {
         Hospital: { select: { id: true, name: true } },
         Patient: {
           select: {
+            id: true,
             user_Id: true,
             name: true,
             gender: true,
@@ -1904,6 +1906,7 @@ export class ConsultationService {
         referredByDoctorName: c.referredByDoctorName,
         Prescription: c.Prescription,
         Patient: {
+          id: patient.id,
           patient_Id: patient.user_Id,
           name: patient.name,
           dob: patient.dob,
