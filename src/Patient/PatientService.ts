@@ -132,7 +132,7 @@ export class PatientService {
         } catch (error) {
           if (error.code === 'P2002') {
             // 🔁 If duplicate, increment ID
-            userIdNumber++;
+            userIdNumber = parseInt(`0${userIdNumber}`);
             console.log('Duplicate user_Id found. Trying:', userIdNumber);
           } else {
             throw error; // other errors
