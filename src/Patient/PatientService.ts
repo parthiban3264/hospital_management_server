@@ -115,30 +115,29 @@ export class PatientService {
       // });
 
       let user;
-      let userIdNumber = patient.id;
+let userIdNumber = patient.id;
 
-      while (true) {
-        try {
-          user = await tx.user.create({
-            data: {
-              hospital_Id: data.hospital_Id,
-              user_Id: userIdNumber.toString(),
-              password: hashedPassword,
-              role: 'PATIENT',
-            },
-          });
+while (true) {
+  try {
+    user = await tx.user.create({
+      data: {
+        hospital_Id: data.hospital_Id,
+        user_Id: userIdNumber.toString(),
+        password: hashedPassword,
+        role: 'PATIENT',
+      },
+    });
 
-          break; // ✅ success
-        } catch (error) {
-          if (error.code === 'P2002') {
-            // 🔁 If duplicate, increment ID
-            userIdNumber = parseInt(`0${userIdNumber}`);
-            console.log('Duplicate user_Id found. Trying:', userIdNumber);
-          } else {
-            throw error; // other errors
-          }
-        }
-      }
+    break; // ✅ success
+  } catch (error) {
+    if (error.code === 'P2002') {
+      // 🔁 If duplicate, increment ID
+      userIdNumber++;
+    } else {
+      throw error; // other errors
+    }
+  }
+}
 
       return { user, patient };
     });
@@ -165,10 +164,10 @@ export class PatientService {
   async findOneByUserId(hospital_Id: number, user_Id: string) {
     const patient = await this.prisma.patient.findUnique({
       where: {
-        id_hospital_Id: {
-          hospital_Id: hospital_Id,
-          id: Number(user_Id),
-        },
+         id_hospital_Id: {
+        hospital_Id: hospital_Id,
+        id: Number(user_Id),
+      },
       },
       include: {
         Consultation: { select: { id: true, patient_Id: true, status: true } },
@@ -220,10 +219,10 @@ export class PatientService {
   async updateByUserId(hospital_Id: number, user_Id: string, data: any) {
     const patient = await this.prisma.patient.update({
       where: {
-        id_hospital_Id: {
-          hospital_Id: hospital_Id,
-          id: Number(user_Id),
-        },
+         id_hospital_Id: {
+        hospital_Id: hospital_Id,
+        id: Number(user_Id),
+      },
       },
       data,
     });
@@ -250,19 +249,20 @@ export class PatientService {
   //   };
   // }
   async deleteByUserId(hospital_Id: number, user_Id: string) {
-    const patient = await this.prisma.patient.delete({
-      where: {
-        id_hospital_Id: {
-          hospital_Id: hospital_Id,
-          id: Number(user_Id),
-        },
+  const patient = await this.prisma.patient.delete({
+    where: {
+      id_hospital_Id: {
+        hospital_Id: hospital_Id,
+        id: Number(user_Id),
       },
-    });
+    },
+  });
 
-    return {
+  return {
       status: 'success',
       message: 'Patient deleted successfully',
       data: patient,
     };
-  }
+}
+
 }
