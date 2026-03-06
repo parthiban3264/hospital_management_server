@@ -1326,7 +1326,7 @@ export class ConsultationService {
     };
   }
 
-  async findAllByHospitalOverview(hospitalId: number) {
+  async findAllByHospital(hospitalId: number) {
     return this.prisma.consultation.findMany({
       where: {
         hospital_Id: Number(hospitalId),
@@ -1381,6 +1381,388 @@ export class ConsultationService {
         createdAt: 'asc',
       },
     });
+  }
+
+  async findAllByHospitalOverview(hospitalId: number) {
+    const hospital_Id = Number(hospitalId);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    /// Fetch consultations
+    const consultations = await this.prisma.consultation.findMany({
+      where: { hospital_Id },
+      select: {
+        status: true,
+        scanningTesting: true,
+        tokenDate: true,
+        emergency: true,
+        paymentStatus: true,
+        tokenNo: true,
+        displayToken: true,
+        doctor_Id: true,
+        isTestOnly: true,
+        sugerTest: true,
+        TeatingAndScanningPatient: true,
+        createdAt: true,
+        Doctor: {
+          select: {
+            user_Id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    /// Overall
+    let overallTotal = 0;
+    let overallTestOnlyTotal = 0;
+    let overallTestingScanning = 0;
+    let paymentCollectedOverall = 0;
+
+    const overallStatus: Record<string, number> = {};
+    const overallTestStatus: Record<string, number> = {};
+
+    /// Last 7 days registrations
+    const last7DaysRegistrations: Record<string, number> = {};
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      last7DaysRegistrations[key] = 0;
+    }
+
+    /// Today
+    let todayTotal = 0;
+    let todayTestOnlyTotal = 0;
+    let todayTestingScanning = 0;
+    let emergencyToday = 0;
+    let paymentCollectedToday = 0;
+    let lastTokenToday = 0;
+    let lastDisplayToken: string | null = null;
+
+    const todayStatus: Record<string, number> = {};
+
+    /// Doctor summary
+    const doctorMap: Record<string, {drName: string; total: number; lastToken: number,displayToken: string, time: string }> = {};
+
+    for (const c of consultations) {
+      /// Overall totals
+      if (c.isTestOnly) overallTestOnlyTotal++;
+      else overallTotal++;
+
+      if (c.scanningTesting) overallTestingScanning++;
+      if (c.paymentStatus) paymentCollectedOverall++;
+
+      if (c.status) {
+        overallStatus[c.status] = (overallStatus[c.status] ?? 0) + 1;
+        overallTestStatus[c.status] = (overallTestStatus[c.status] ?? 0) + 1;
+      }
+
+      /// Date processing
+      if (!c.tokenDate) continue;
+
+      const d = new Date(c.tokenDate);
+      const key = d.toISOString().split('T')[0];
+
+      /// Last 7 days
+      if (last7DaysRegistrations[key] !== undefined) {
+        last7DaysRegistrations[key]++;
+      }
+
+      /// Today
+      if (d >= todayStart && d <= todayEnd) {
+        if (c.isTestOnly) todayTestOnlyTotal++;
+        else todayTotal++;
+
+        if (c.status) todayStatus[c.status] = (todayStatus[c.status] ?? 0) + 1;
+
+        if (c.scanningTesting) todayTestingScanning++;
+        if (c.emergency) emergencyToday++;
+        if (c.paymentStatus) paymentCollectedToday++;
+
+        if (c.tokenNo && c.tokenNo > lastTokenToday) {
+          lastTokenToday = c.tokenNo;
+          lastDisplayToken = c.displayToken;
+        }
+
+        /// Doctor summary
+        if (c.doctor_Id) {
+          if (!doctorMap[c.doctor_Id]) {
+            doctorMap[c.doctor_Id] = { drName: '', total: 0, lastToken: 0 ,displayToken: '', time: '' };
+          }
+          doctorMap[c.doctor_Id].drName = c.Doctor.name;
+          doctorMap[c.doctor_Id].total++;
+
+          if (c.tokenNo && c.tokenNo > doctorMap[c.doctor_Id].lastToken) {
+            doctorMap[c.doctor_Id].lastToken = c.tokenNo;
+            doctorMap[c.doctor_Id].displayToken = c.displayToken;
+            doctorMap[c.doctor_Id].time = c.createdAt.split(' ')[1] + ' ' + c.createdAt.split(' ')[2];
+          }
+        }
+      }
+    }
+
+    /// Doctor summary array
+    const doctorToday = Object.entries(doctorMap).map(([doctorId, data]) => ({
+      // drName: data.drName,
+       doctorId,
+      // totalToday: data.total,
+      // lastTokenNumber: data.lastToken,
+      lastDisplayToken: data.displayToken,
+      time: data.time,
+    }));
+
+    /// -------- Analytics Summary --------
+
+    const values = Object.values(last7DaysRegistrations);
+
+    const todayCount = values[0] ?? 0;
+    const yesterdayCount = values[1] ?? 0;
+
+    let todayVsYesterdayPercentage = 0;
+
+    if (yesterdayCount > 0) {
+      todayVsYesterdayPercentage =
+        ((todayCount - yesterdayCount) / yesterdayCount) * 100;
+    }
+
+    const totalRegistrations = values.reduce((sum, v) => sum + v, 0);
+
+    const averagePerDay =
+      values.length > 0 ? totalRegistrations / values.length : 0;
+
+    /// -------- Final Response --------
+
+    return {
+      overall: {
+        total: overallTotal,
+        overallTestOnlyTotal,
+        overallEmergency: consultations.filter((c) => c.emergency).length,
+        overallSuger: consultations.filter((c) => c.sugerTest).length,
+        overallPaymentCollected: paymentCollectedOverall,
+        testingScanning: overallTestingScanning,
+        statusBreakdown: overallStatus,
+        testStatusBreakdown: overallTestStatus,
+      },
+
+      today: {
+        total: todayTotal,
+        todayTestOnlyTotal,
+        testingScanning: todayTestingScanning,
+        emergency: emergencyToday,
+        paymentCollected: paymentCollectedToday,
+        lastTokenNumber: lastTokenToday,
+        lastDisplayToken,
+        statusBreakdown: todayStatus,
+        doctorToday,
+      },
+
+      analytics: {
+        last7DaysRegistrations,
+        summary: {
+          todayVsYesterdayPercentage: Number(
+            todayVsYesterdayPercentage.toFixed(2),
+          ),
+          averagePerDay: Number(averagePerDay.toFixed(2)),
+        },
+      },
+    };
+  }
+
+   async findAllByHospitalOverviewByUserId(hospitalId: number,userId:string) {
+    const hospital_Id = Number(hospitalId);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    /// Fetch consultations
+    const consultations = await this.prisma.consultation.findMany({
+      where: { hospital_Id, doctor_Id: userId },
+      select: {
+        status: true,
+        scanningTesting: true,
+        tokenDate: true,
+        emergency: true,
+        paymentStatus: true,
+        tokenNo: true,
+        displayToken: true,
+        doctor_Id: true,
+        isTestOnly: true,
+        sugerTest: true,
+        TeatingAndScanningPatient: true,
+        createdAt: true,
+        Doctor: {
+          select: {
+            user_Id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    /// Overall
+    let overallTotal = 0;
+    let overallTestOnlyTotal = 0;
+    let overallTestingScanning = 0;
+    let paymentCollectedOverall = 0;
+
+    const overallStatus: Record<string, number> = {};
+    const overallTestStatus: Record<string, number> = {};
+
+    /// Last 7 days registrations
+    const last7DaysRegistrations: Record<string, number> = {};
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      last7DaysRegistrations[key] = 0;
+    }
+
+    /// Today
+    let todayTotal = 0;
+    let todayTestOnlyTotal = 0;
+    let todayTestingScanning = 0;
+    let emergencyToday = 0;
+    let paymentCollectedToday = 0;
+    let lastTokenToday = 0;
+    let lastDisplayToken: string | null = null;
+
+    const todayStatus: Record<string, number> = {};
+
+    /// Doctor summary
+    const doctorMap: Record<string, {drName: string; total: number; lastToken: number,displayToken: string, time: string }> = {};
+
+    for (const c of consultations) {
+      /// Overall totals
+      if (c.isTestOnly) overallTestOnlyTotal++;
+      else overallTotal++;
+
+      if (c.scanningTesting) overallTestingScanning++;
+      if (c.paymentStatus) paymentCollectedOverall++;
+
+      if (c.status) {
+        overallStatus[c.status] = (overallStatus[c.status] ?? 0) + 1;
+        overallTestStatus[c.status] = (overallTestStatus[c.status] ?? 0) + 1;
+      }
+
+      /// Date processing
+      if (!c.tokenDate) continue;
+
+      const d = new Date(c.tokenDate);
+      const key = d.toISOString().split('T')[0];
+
+      /// Last 7 days
+      if (last7DaysRegistrations[key] !== undefined) {
+        last7DaysRegistrations[key]++;
+      }
+
+      /// Today
+      if (d >= todayStart && d <= todayEnd) {
+        if (c.isTestOnly) todayTestOnlyTotal++;
+        else todayTotal++;
+
+        if (c.status) todayStatus[c.status] = (todayStatus[c.status] ?? 0) + 1;
+
+        if (c.scanningTesting) todayTestingScanning++;
+        if (c.emergency) emergencyToday++;
+        if (c.paymentStatus) paymentCollectedToday++;
+
+        if (c.tokenNo && c.tokenNo > lastTokenToday) {
+          lastTokenToday = c.tokenNo;
+          lastDisplayToken = c.displayToken;
+        }
+
+        /// Doctor summary
+        if (c.doctor_Id) {
+          if (!doctorMap[c.doctor_Id]) {
+            doctorMap[c.doctor_Id] = { drName: '', total: 0, lastToken: 0 ,displayToken: '', time: '' };
+          }
+          doctorMap[c.doctor_Id].drName = c.Doctor.name;
+          doctorMap[c.doctor_Id].total++;
+
+          if (c.tokenNo && c.tokenNo > doctorMap[c.doctor_Id].lastToken) {
+            doctorMap[c.doctor_Id].lastToken = c.tokenNo;
+            doctorMap[c.doctor_Id].displayToken = c.displayToken;
+            doctorMap[c.doctor_Id].time = c.createdAt.split(' ')[1] + ' ' + c.createdAt.split(' ')[2];
+          }
+        }
+      }
+    }
+
+    /// Doctor summary array
+    const doctorToday = Object.entries(doctorMap).map(([doctorId, data]) => ({
+      // drName: data.drName,
+       doctorId,
+      // totalToday: data.total,
+      // lastTokenNumber: data.lastToken,
+      lastDisplayToken: data.displayToken,
+      time: data.time,
+    }));
+
+    /// -------- Analytics Summary --------
+
+    const values = Object.values(last7DaysRegistrations);
+
+    const todayCount = values[0] ?? 0;
+    const yesterdayCount = values[1] ?? 0;
+
+    let todayVsYesterdayPercentage = 0;
+
+    if (yesterdayCount > 0) {
+      todayVsYesterdayPercentage =
+        ((todayCount - yesterdayCount) / yesterdayCount) * 100;
+    }
+
+    const totalRegistrations = values.reduce((sum, v) => sum + v, 0);
+
+    const averagePerDay =
+      values.length > 0 ? totalRegistrations / values.length : 0;
+
+    /// -------- Final Response --------
+
+    return {
+      overall: {
+        total: overallTotal,
+        overallTestOnlyTotal,
+        overallEmergency: consultations.filter((c) => c.emergency).length,
+        overallSuger: consultations.filter((c) => c.sugerTest).length,
+        overallPaymentCollected: paymentCollectedOverall,
+        testingScanning: overallTestingScanning,
+        statusBreakdown: overallStatus,
+        testStatusBreakdown: overallTestStatus,
+      },
+
+      today: {
+        total: todayTotal,
+        todayTestOnlyTotal,
+        testingScanning: todayTestingScanning,
+        emergency: emergencyToday,
+        paymentCollected: paymentCollectedToday,
+        lastTokenNumber: lastTokenToday,
+        lastDisplayToken,
+        statusBreakdown: todayStatus,
+        doctorToday,
+      },
+
+      analytics: {
+        last7DaysRegistrations,
+        summary: {
+          todayVsYesterdayPercentage: Number(
+            todayVsYesterdayPercentage.toFixed(2),
+          ),
+          averagePerDay: Number(averagePerDay.toFixed(2)),
+        },
+      },
+    };
   }
 
   async findAllByHospitalHistory(hospitalId: number, patientId: String) {

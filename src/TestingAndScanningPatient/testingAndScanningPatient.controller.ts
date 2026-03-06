@@ -602,6 +602,12 @@ export class TestingAndScanningPatientController {
     return this.service.findAll();
   }
 
+  
+  @Get('all/overview/:hospital_Id')
+  findAllOverviewTestandScan(@Param('hospital_Id') hospital_Id: number) {
+    return this.service.findAllOverviewTestandScan(Number(hospital_Id));
+  }
+
   @Get('all/:hospital_Id/:type')
   findAllTestandScanByType(
     @Param('hospital_Id') hospital_Id: number,
@@ -613,6 +619,7 @@ export class TestingAndScanningPatientController {
   findAllTestandScan(@Param('hospital_Id') hospital_Id: number) {
     return this.service.finfindAllTestandScan(Number(hospital_Id));
   }
+
 
   @Get('all/pendingPaymentStatus/:hospital_Id/:doctorId/:patientType')
   findAllEditTestandScan(

@@ -3,6 +3,8 @@ import { PrescriptionService } from './prescription.service';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { DispenseMedicineDto } from './dto/dispense-medicine.dto';
 import { log } from 'console';
+import { Cron } from '@nestjs/schedule';
+import { TimeSlot } from '@prisma/client';
 
 @Controller('prescriptions')
 export class PrescriptionController {
@@ -69,4 +71,25 @@ export class PrescriptionController {
     );
     // Example of updating prescription dispense status
   }
+
+  @Patch('medicineAdministrationStatus/:id')
+  async updateMedicineAdministrationStatus(
+    @Param('id') id: string,
+    @Body() dto: any,
+  ) {
+    log('updateMedicineAdministrationStatus', id, dto);
+    return this.prescriptionService.updateAdministrationStatus(
+      Number(id),
+      dto.status,
+    );
+    // Example of updating medicine administration status
+  }
+
+  @Get('inpatient/medicine-administration/status-analysis/:id')
+async getPatientStatusAnalysis(
+  @Param('id') consultationId: string,
+) {
+  return this.prescriptionService.getStatusAnalysis(+consultationId);
+}
+
 }

@@ -24,6 +24,12 @@ export class PaymentController {
   findAll(@Param('hospitalId') hospitalId: number) {
     return this.service.findAll(Number(hospitalId));
   }
+
+  @Get('all/overview/:hospitalId')
+  findAllOverview(@Param('hospitalId') hospitalId: number) {
+    return this.service.findAllOverview(Number(hospitalId));
+  }
+
   @Get('one/:hospitalId/:id')
   findOnes(@Param('hospitalId') hospitalId: number, @Param('id') id: number) {
     return this.service.findOnes(Number(hospitalId), id);

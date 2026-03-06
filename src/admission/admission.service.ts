@@ -1071,10 +1071,10 @@ export class AdmissionService {
         admission_Id: admissionId,
         type: 'DAILYTREATMENTFEE',
         status: { not: 'PAID' },
-        createdAt: {
-          gte: dateOnlyString(startOfDay),
-          lte: dateOnlyString(endOfDay),
-        },
+        // createdAt: {
+        //   gte: dateOnlyString(startOfDay),recendly change becase update dailypayment to discharge payment
+        //   lte: dateOnlyString(endOfDay),
+        // },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -1121,6 +1121,7 @@ export class AdmissionService {
         data: {
           type: 'DISCHARGEFEE',
           status: 'PENDING',
+          reason: 'Inpatient Discharge Fee',
           amount: totalCharges,
           createdAt: formatDateTime(new Date()),
           updatedAt: formatDateTime(new Date()),

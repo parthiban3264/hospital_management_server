@@ -570,7 +570,7 @@ export class PaymentService {
             tokenDate: true,
             tokenNo: true,
             isTestOnly: true,
-            displayToken:true,
+            displayToken: true,
             referredByDoctorName: true,
           },
         },
@@ -940,6 +940,74 @@ export class PaymentService {
       where: { hospital_Id: Number(hospital) },
     });
     return { status: 'success', message: 'Payments fetched', data: payments };
+  }
+
+  async findAllOverview(hospital: number) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const payments = await this.prisma.payment.findMany({
+      where: { hospital_Id: Number(hospital) },
+      select: {
+        status: true,
+        type: true,
+        createdAt: true,
+        paymentType: true,
+      },
+    });
+
+    const result = {
+      overall: {
+        total: payments.length,
+        status: {},
+        type: {},
+        paymentType: {},
+      },
+      today: {
+        total: 0,
+        status: {},
+        type: {},
+        paymentType: {},
+      },
+    };
+
+    for (const p of payments) {
+      // 🔹 OVERALL STATUS
+      result.overall.status[p.status] =
+        (result.overall.status[p.status] || 0) + 1;
+
+      // 🔹 OVERALL TYPE
+      result.overall.type[p.type] = (result.overall.type[p.type] || 0) + 1;
+
+      // 🔹 OVERALL PAYMENT TYPE
+      if (p.status === 'PAID') {
+        result.overall.paymentType[p.paymentType] =
+          (result.overall.paymentType[p.paymentType] || 0) + 1;
+      }
+
+      // 🔹 TODAY CHECK
+      const created = new Date(p.createdAt);
+      if (created >= todayStart && created <= todayEnd) {
+        result.today.total += 1;
+        result.today.status[p.status] =
+          (result.today.status[p.status] || 0) + 1;
+
+        result.today.type[p.type] = (result.today.type[p.type] || 0) + 1;
+        if (p.status === 'PAID') {
+          result.today.paymentType[p.paymentType] =
+            (result.today.paymentType[p.paymentType] || 0) + 1;
+        }
+      }
+    }
+
+    return {
+      status: 'success',
+      message: 'Payment overview fetched',
+      data: result,
+    };
   }
 
   async findOnes(hospital: number, id: number) {

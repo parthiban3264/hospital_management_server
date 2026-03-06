@@ -97,9 +97,22 @@ export class ConsultationController {
   }
 
    @Get('all/:hospitalId')
+  async findAllByHospital(@Param('hospitalId') hospitalId: number) {
+    
+    const consultations = await this.service.findAllByHospital(hospitalId);
+    return { status: 'success', message: 'Consultations fetched', data: consultations };
+  }
+  @Get('all/overview/:hospitalId')
   async findAllByHospitalOverview(@Param('hospitalId') hospitalId: number) {
     
     const consultations = await this.service.findAllByHospitalOverview(hospitalId);
+    return { status: 'success', message: 'Consultations fetched', data: consultations };
+  }
+
+   @Get('all/overview/:hospitalId/:userId')
+  async findAllByHospitalOverviewByUserId(@Param('hospitalId') hospitalId: number, @Param('userId') userId: string) {
+    
+    const consultations = await this.service.findAllByHospitalOverviewByUserId(hospitalId, userId);
     return { status: 'success', message: 'Consultations fetched', data: consultations };
   }
 

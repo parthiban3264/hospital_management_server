@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { DispenseMedicineDto } from './dto/dispense-medicine.dto';
 import { log } from 'console';
+import { TimeSlot } from '@prisma/client';
 
 @Injectable()
 export class PrescriptionService {
@@ -897,132 +898,6 @@ export class PrescriptionService {
     });
   }
 
-  // async updatePrescriptionDispenseQuantity(id: number, dispensed_quantity: number, amount: number, batchNo: string) {
-  //   log('updatePrescriptionDispenseQuantity', id, dispensed_quantity, amount, batchNo);
-  //   const prescription = await this.prisma.prescriptionDispense.updateMany({
-  //     where: { id },
-  //     data: {
-  //       dispensed_quantity: { decrement: dispensed_quantity },
-  //       amount: { decrement: amount },
-  //     },
-  //   });
-  //   const getMedicineId = await this.prisma.prescriptionDispense.findUnique({
-  //     where: { batchNo },
-  //   });
-
-  //   const medicine = await this.prisma.medicine.updateMany({
-  //     where: { id: getMedicineId.medicine_Id },
-  //     data: {
-  //       stock: { decrement: dispensed_quantity},
-  //     },
-  //     include: {
-  //        batches:{
-  //         update: {
-  //           where: { batch_no: batchNo },
-  //           data: {
-  //             total_quantity: { decrement: dispensed_quantity },
-  //           },
-  //         },
-  //       },
-  //     }
-
-  //     });
-  //   }
-  // }
-
-  // async updatePrescriptionDispenseQuantity(
-  //   id: number,
-  //   dispensed_quantity: number,
-  //   amount: number,
-  //   batchNo: string,
-  //   days: number,
-  // ) {
-  //   return await this.prisma.$transaction(async (tx) => {
-  //     log(
-  //       'updatePrescriptionDispenseQuantity',
-  //       id,
-  //       dispensed_quantity,
-  //       amount,
-  //       batchNo,
-  //     );
-  //     const perMediDisp = await tx.prescriptionDispense.findFirst({
-  //       where: {
-  //         id,
-  //       },
-  //       select: {
-  //         amount: true,
-  //         dispensed_quantity: true,
-  //         dispensed_days: true,
-  //         prescription_medicine_Id: true,
-  //       },
-  //     });
-  //     const dispensedQuantity =
-  //       perMediDisp.dispensed_quantity - dispensed_quantity; //this patient allocated quantity 30 - current stack 20 => 10 decrease stack 10
-  //     const dispensedDays = perMediDisp.dispensed_days - days;
-  //     const dispensedAmount = perMediDisp.amount - amount;
-
-  //     // 1️⃣ Update prescription dispense
-  //     const prescription = await tx.prescriptionDispense.update({
-  //       where: { id },
-  //       data: {
-  //         dispensed_quantity: { decrement: dispensedQuantity },
-  //         dispensed_days: { decrement: dispensedDays },
-  //         amount: { decrement: dispensedAmount },
-  //       },
-  //       select: {
-  //         id: true,
-  //         prescription_medicine_Id: true,
-  //       },
-  //     });
-
-  //     const priscritionMedition = await tx.prescriptionMedicine.update({
-  //       where: { id: prescription.prescription_medicine_Id },
-  //       data: {
-  //         dispensed_quantity: { decrement: dispensedQuantity },
-  //         status: 'COMPLETED',
-  //       },
-  //     });
-
-  //     // 2️⃣ Get medicineId from batch
-  //     const batch = await tx.medicineBatch.findUnique({
-  //       where: { id: Number(batchNo) },
-  //       select: {
-  //         medicine_id: true,
-  //         hospital_Id: true,
-  //       },
-  //     });
-
-  //     if (!batch) {
-  //       throw new Error('Batch not found');
-  //     }
-
-  //     // 3️⃣ Update medicine stock
-  //     await tx.medicine.updateMany({
-  //       where: { id: batch.medicine_id, hospital_Id: batch.hospital_Id },
-  //       data: {
-  //         stock: { decrement: dispensedQuantity },
-  //       },
-  //     });
-
-  //     // 4️⃣ Update batch quantity
-  //     await tx.medicineBatch.updateMany({
-  //       where: {
-  //         id: Number(batchNo),
-  //         hospital_Id: batch.hospital_Id,
-  //         medicine_id: batch.medicine_id,
-  //       },
-  //       data: {
-  //         total_stock: { decrement: dispensedQuantity },
-  //       },
-  //     });
-
-  //     return {
-  //       success: true,
-  //       prescriptionId: prescription.id,
-  //     };
-  //   });
-  // }
-
   async updatePrescriptionDispenseQuantity(
     id: number,
     current_quantity: number, // current stock shown in UI (20)
@@ -1145,4 +1020,129 @@ export class PrescriptionService {
       };
     });
   }
+
+  async updateAdministrationStatus(id: number, status: string) {
+    return this.prisma.medicineAdministration.update({
+      where: { id },
+      data: { status: status as any },
+    });
+  }
+
+  async updateExpiredMedicineAdministrations(timeSlot: TimeSlot) {
+    log(
+      `[CRON] ${new Date().toISOString()} - Checking for expired ${timeSlot} administrations...`,
+    );
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // start of today
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const result = await this.prisma.medicineAdministration.updateMany({
+      where: {
+        status: 'PENDING',
+        time_slot: timeSlot,
+
+        // ✅ Include all past days + today
+        date: {
+          lt: tomorrow, // anything before tomorrow = today & previous
+        },
+
+        Prescription: {
+          medicines: {
+            some: {
+              medicine: {
+                category: {
+                  notIn: ['TONIC', 'INJECTIONS', 'CREAMS', 'OINTMENT'],
+                },
+              },
+            },
+          },
+        },
+      },
+      data: {
+        status: 'MISSED',
+      },
+    });
+
+    console.log(
+      `[CRON] ${new Date().toISOString()} - Marked ${result.count} ${timeSlot} administrations as MISSED`,
+    );
+  }
+
+async getStatusAnalysis(consultationId: number) {
+
+  // 1️⃣ Get all prescriptions for this consultation
+  const prescriptions = await this.prisma.prescription.findMany({
+    where: {
+      consultation_Id: consultationId,
+    },
+    select: { id: true },
+  });
+
+  if (!prescriptions || prescriptions.length === 0) {
+    return {
+      summary: { total: 0, taken: 0, missed: 0, pending: 0 },
+      slotWise: {
+        MORNING: { taken: 0, missed: 0, pending: 0 },
+        AFTERNOON: { taken: 0, missed: 0, pending: 0 },
+        NIGHT: { taken: 0, missed: 0, pending: 0 },
+      },
+    };
+  }
+
+  const prescriptionIds = prescriptions.map(p => p.id);
+
+  // 2️⃣ Get all administrations for those prescriptions
+  const records = await this.prisma.medicineAdministration.findMany({
+    where: {
+      prescription_id: { in: prescriptionIds },
+    },
+    select: {
+      status: true,
+      time_slot: true,
+      medicine_name: true,
+      dose:true,
+      date:true,
+    },
+  });
+
+  // ---------- SUMMARY ----------
+  const summary = {
+    total: records.length,
+    taken: 0,
+    missed: 0,
+    pending: 0,
+  };
+
+  const slotWise = {
+    MORNING: { taken: 0, missed: 0, pending: 0 },
+    AFTERNOON: { taken: 0, missed: 0, pending: 0 },
+    NIGHT: { taken: 0, missed: 0, pending: 0 },
+  };
+
+  for (const record of records) {
+    const status = record.status?.toUpperCase();
+    const slot = record.time_slot?.toUpperCase();
+
+    // Summary count
+    if (status === 'TAKEN') summary.taken++;
+    else if (status === 'MISSED') summary.missed++;
+    else if (status === 'PENDING') summary.pending++;
+
+    // Slot-wise count
+    if (slot && slotWise[slot]) {
+      if (status === 'TAKEN') slotWise[slot].taken++;
+      else if (status === 'MISSED') slotWise[slot].missed++;
+      else if (status === 'PENDING') slotWise[slot].pending++;
+    }
+  }
+
+  return {
+    summary,
+    slotWise,
+    records
+  };
+}
+
 }

@@ -709,70 +709,25 @@ export class TestingAndScanningPatientService {
   // }
 
   async create(data: any) {
-  return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
+      const isCtScan =
+        data.type?.trim().toLowerCase() == 'ct-scan' ? true : false;
+      log(
+        'Creating Testing & Scanning Patient with Payment...,data:',
+        data,
+        'isCtScan:',
+        isCtScan,
+      );
 
-    const isCtScan = data.type?.trim().toLowerCase() == 'ct-scan' ? true : false;
-    log('Creating Testing & Scanning Patient with Payment...,data:', data, 'isCtScan:', isCtScan);
+      let payment; // ✅ declare once
 
-    let payment; // ✅ declare once
-
-    if (isCtScan == true) {
-      // 🔥 Always create new payment for CT
-      payment = await tx.payment.create({
-        data: {
-          hospital_Id: data.hospital_Id,
-          patient_Id: data.patient_Id,
-          reason: 'CT-Scan Fee',
-          status: 'PENDING',
-          consultation_Id: data.consultation_Id,
-          amount: data.amount,
-          type: 'TESTINGFEESANDSCANNINGFEE',
-          createdAt: data.createdAt,
-        },
-        include: {
-          Hospital: true,
-          Patient: true,
-          Consultation: true,
-        },
-      });
-
-    } else {
-
-      // 🔎 Find existing PENDING
-      const existingPayment = await tx.payment.findFirst({
-        where: {
-          hospital_Id: data.hospital_Id,
-          patient_Id: data.patient_Id,
-          reason: {not: 'CT-Scan Fee'}, // ensure we don't match CT payments
-          type: 'TESTINGFEESANDSCANNINGFEE',
-          status: 'PENDING',
-        },
-      });
-
-      if (existingPayment) {
-        payment = await tx.payment.update({
-          where: { id: existingPayment.id },
-          data: {
-            amount: (existingPayment.amount ?? 0) + (data.amount ?? 0),
-            updatedAt: data.createdAt,
-          },
-          include: {
-            Hospital: true,
-            Patient: true,
-            Consultation: true,
-          },
-        });
-      } else {
-        const reason =
-          data.isTestOnly !== true
-            ? 'Testing & Scanning Fee'
-            : 'Private Testing Fee';
-
+      if (isCtScan == true) {
+        // 🔥 Always create new payment for CT
         payment = await tx.payment.create({
           data: {
             hospital_Id: data.hospital_Id,
             patient_Id: data.patient_Id,
-            reason,
+            reason: 'CT-Scan Fee',
             status: 'PENDING',
             consultation_Id: data.consultation_Id,
             amount: data.amount,
@@ -785,37 +740,85 @@ export class TestingAndScanningPatientService {
             Consultation: true,
           },
         });
+      } else {
+        // 🔎 Find existing PENDING
+        const existingPayment = await tx.payment.findFirst({
+          where: {
+            hospital_Id: data.hospital_Id,
+            patient_Id: data.patient_Id,
+            reason: { not: 'CT-Scan Fee' }, // ensure we don't match CT payments
+            type: 'TESTINGFEESANDSCANNINGFEE',
+            status: 'PENDING',
+          },
+        });
+
+        if (existingPayment) {
+          payment = await tx.payment.update({
+            where: { id: existingPayment.id },
+            data: {
+              amount: (existingPayment.amount ?? 0) + (data.amount ?? 0),
+              updatedAt: data.createdAt,
+            },
+            include: {
+              Hospital: true,
+              Patient: true,
+              Consultation: true,
+            },
+          });
+        } else {
+          const reason =
+            data.isTestOnly !== true
+              ? 'Testing & Scanning Fee'
+              : 'Private Testing Fee';
+
+          payment = await tx.payment.create({
+            data: {
+              hospital_Id: data.hospital_Id,
+              patient_Id: data.patient_Id,
+              reason,
+              status: 'PENDING',
+              consultation_Id: data.consultation_Id,
+              amount: data.amount,
+              type: 'TESTINGFEESANDSCANNINGFEE',
+              createdAt: data.createdAt,
+            },
+            include: {
+              Hospital: true,
+              Patient: true,
+              Consultation: true,
+            },
+          });
+        }
       }
-    }
 
-    // ✅ Always use the correct payment here
-    const test = await tx.testingAndScanningPatient.create({
-      data: {
-        hospital_Id: data.hospital_Id,
-        patient_Id: data.patient_Id,
-        doctor_Id: data.doctor_Id,
-        staff_Id: data.staff_Id,
-        consultation_Id: data.consultation_Id,
-        title: data.title,
-        scheduleDate: new Date(data.scheduleDate),
-        type: data.type,
-        selectedOptions: data.selectedOptions,
-        selectedOptionResults: data.selectedOptionResults,
-        selectedOptionAmounts: data.selectedOptionAmounts,
-        status: data.status,
-        amount: data.amount,
-        reason: data.reason,
-        paymentStatus: data.paymentStatus,
-        scanImages: data.scanImages,
-        result: data.result,
-        createdAt: data.createdAt,
-        payment_Id: payment.id, // ✅ always correct now
-      },
+      // ✅ Always use the correct payment here
+      const test = await tx.testingAndScanningPatient.create({
+        data: {
+          hospital_Id: data.hospital_Id,
+          patient_Id: data.patient_Id,
+          doctor_Id: data.doctor_Id,
+          staff_Id: data.staff_Id,
+          consultation_Id: data.consultation_Id,
+          title: data.title,
+          scheduleDate: new Date(data.scheduleDate),
+          type: data.type,
+          selectedOptions: data.selectedOptions,
+          selectedOptionResults: data.selectedOptionResults,
+          selectedOptionAmounts: data.selectedOptionAmounts,
+          status: data.status,
+          amount: data.amount,
+          reason: data.reason,
+          paymentStatus: data.paymentStatus,
+          scanImages: data.scanImages,
+          result: data.result,
+          createdAt: data.createdAt,
+          payment_Id: payment.id, // ✅ always correct now
+        },
+      });
+
+      return { test, payment };
     });
-
-    return { test, payment };
-  });
-}
+  }
 
   async updateTestingAndScanningByPayment(paymentId: number) {
     const result = await this.prisma.testingAndScanningPatient.updateMany({
@@ -896,7 +899,7 @@ export class TestingAndScanningPatientService {
                 id: true,
                 doctor_Id: true,
                 tokenNo: true,
-                displayToken:true,
+                displayToken: true,
                 tokenDate: true,
                 isTestOnly: true,
                 referredByDoctorName: true,
@@ -1215,7 +1218,8 @@ export class TestingAndScanningPatientService {
             patient.Consultation && patient.Consultation.length > 0
               ? (patient.Consultation[0].tokenNo ?? '-')
               : '-',
-          displayToken: patient.Consultation && patient.Consultation.length > 0
+          displayToken:
+            patient.Consultation && patient.Consultation.length > 0
               ? (patient.Consultation[0].displayToken ?? '-')
               : '-',
           isTestOnly:
@@ -1256,6 +1260,73 @@ export class TestingAndScanningPatientService {
       },
     });
     return { status: 'success', message: 'Records fetched', data: records };
+  }
+
+  async findAllOverviewTestandScan(hospital_Id: number) {
+    const hospitalId = Number(hospital_Id);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    /// Fetch only needed fields
+    const records = await this.prisma.testingAndScanningPatient.findMany({
+      where: { hospital_Id: hospitalId },
+      select: {
+        status: true,
+        scheduleDate: true,
+      },
+    });
+
+    /// Overall
+    const overall = {
+      total: records.length,
+      PENDING: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+      ABANDONED: 0,
+    };
+
+    /// Today
+    const today = {
+      total: 0,
+      PENDING: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+      ABANDONED: 0,
+    };
+
+    for (const r of records) {
+      const status = r.status ?? 'PENDING';
+
+      /// Overall count
+      if (overall[status] !== undefined) {
+        overall[status]++;
+      } else {
+        overall[status] = 1;
+      }
+
+      /// Today count
+      if (r.scheduleDate) {
+        const d = new Date(r.scheduleDate);
+        if (d >= todayStart && d <= todayEnd) {
+          today.total++;
+
+          if (today[status] !== undefined) {
+            today[status]++;
+          } else {
+            today[status] = 1;
+          }
+        }
+      }
+    }
+
+    return {
+      overall,
+      today,
+    };
   }
 
   async finfindAllEditTestandScan(
