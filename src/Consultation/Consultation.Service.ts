@@ -1448,7 +1448,16 @@ export class ConsultationService {
     const todayStatus: Record<string, number> = {};
 
     /// Doctor summary
-    const doctorMap: Record<string, {drName: string; total: number; lastToken: number,displayToken: string, time: string }> = {};
+    const doctorMap: Record<
+      string,
+      {
+        drName: string;
+        total: number;
+        lastToken: number;
+        displayToken: string;
+        time: string;
+      }
+    > = {};
 
     for (const c of consultations) {
       /// Overall totals
@@ -1493,7 +1502,13 @@ export class ConsultationService {
         /// Doctor summary
         if (c.doctor_Id) {
           if (!doctorMap[c.doctor_Id]) {
-            doctorMap[c.doctor_Id] = { drName: '', total: 0, lastToken: 0 ,displayToken: '', time: '' };
+            doctorMap[c.doctor_Id] = {
+              drName: '',
+              total: 0,
+              lastToken: 0,
+              displayToken: '',
+              time: '',
+            };
           }
           doctorMap[c.doctor_Id].drName = c.Doctor.name;
           doctorMap[c.doctor_Id].total++;
@@ -1501,7 +1516,8 @@ export class ConsultationService {
           if (c.tokenNo && c.tokenNo > doctorMap[c.doctor_Id].lastToken) {
             doctorMap[c.doctor_Id].lastToken = c.tokenNo;
             doctorMap[c.doctor_Id].displayToken = c.displayToken;
-            doctorMap[c.doctor_Id].time = c.createdAt.split(' ')[1] + ' ' + c.createdAt.split(' ')[2];
+            doctorMap[c.doctor_Id].time =
+              c.createdAt.split(' ')[1] + ' ' + c.createdAt.split(' ')[2];
           }
         }
       }
@@ -1510,7 +1526,7 @@ export class ConsultationService {
     /// Doctor summary array
     const doctorToday = Object.entries(doctorMap).map(([doctorId, data]) => ({
       // drName: data.drName,
-       doctorId,
+      doctorId,
       // totalToday: data.total,
       // lastTokenNumber: data.lastToken,
       lastDisplayToken: data.displayToken,
@@ -1523,10 +1539,22 @@ export class ConsultationService {
 
     const todayCount = values[0] ?? 0;
     const yesterdayCount = values[1] ?? 0;
+    
 
     let todayVsYesterdayPercentage = 0;
 
-    if (yesterdayCount > 0) {
+    // if (yesterdayCount > 0) {
+    //   todayVsYesterdayPercentage =
+    //     ((todayCount - yesterdayCount) / yesterdayCount) * 100;
+    // }
+
+    if (yesterdayCount == 0) {
+      if (todayCount > 0) {
+        todayVsYesterdayPercentage = 100;
+      } else {
+        todayVsYesterdayPercentage = 0;
+      }
+    } else {
       todayVsYesterdayPercentage =
         ((todayCount - yesterdayCount) / yesterdayCount) * 100;
     }
@@ -1574,7 +1602,7 @@ export class ConsultationService {
     };
   }
 
-   async findAllByHospitalOverviewByUserId(hospitalId: number,userId:string) {
+  async findAllByHospitalOverviewByUserId(hospitalId: number, userId: string) {
     const hospital_Id = Number(hospitalId);
 
     const todayStart = new Date();
@@ -1639,7 +1667,16 @@ export class ConsultationService {
     const todayStatus: Record<string, number> = {};
 
     /// Doctor summary
-    const doctorMap: Record<string, {drName: string; total: number; lastToken: number,displayToken: string, time: string }> = {};
+    const doctorMap: Record<
+      string,
+      {
+        drName: string;
+        total: number;
+        lastToken: number;
+        displayToken: string;
+        time: string;
+      }
+    > = {};
 
     for (const c of consultations) {
       /// Overall totals
@@ -1684,7 +1721,13 @@ export class ConsultationService {
         /// Doctor summary
         if (c.doctor_Id) {
           if (!doctorMap[c.doctor_Id]) {
-            doctorMap[c.doctor_Id] = { drName: '', total: 0, lastToken: 0 ,displayToken: '', time: '' };
+            doctorMap[c.doctor_Id] = {
+              drName: '',
+              total: 0,
+              lastToken: 0,
+              displayToken: '',
+              time: '',
+            };
           }
           doctorMap[c.doctor_Id].drName = c.Doctor.name;
           doctorMap[c.doctor_Id].total++;
@@ -1692,7 +1735,8 @@ export class ConsultationService {
           if (c.tokenNo && c.tokenNo > doctorMap[c.doctor_Id].lastToken) {
             doctorMap[c.doctor_Id].lastToken = c.tokenNo;
             doctorMap[c.doctor_Id].displayToken = c.displayToken;
-            doctorMap[c.doctor_Id].time = c.createdAt.split(' ')[1] + ' ' + c.createdAt.split(' ')[2];
+            doctorMap[c.doctor_Id].time =
+              c.createdAt.split(' ')[1] + ' ' + c.createdAt.split(' ')[2];
           }
         }
       }
@@ -1701,7 +1745,7 @@ export class ConsultationService {
     /// Doctor summary array
     const doctorToday = Object.entries(doctorMap).map(([doctorId, data]) => ({
       // drName: data.drName,
-       doctorId,
+      doctorId,
       // totalToday: data.total,
       // lastTokenNumber: data.lastToken,
       lastDisplayToken: data.displayToken,
@@ -1717,10 +1761,22 @@ export class ConsultationService {
 
     let todayVsYesterdayPercentage = 0;
 
-    if (yesterdayCount > 0) {
+    // if (yesterdayCount > 0) {
+    //   todayVsYesterdayPercentage =
+    //     ((todayCount - yesterdayCount) / yesterdayCount) * 100;
+    // }
+
+     if (yesterdayCount == 0) {
+      if (todayCount > 0) {
+        todayVsYesterdayPercentage = 100;
+      } else {
+        todayVsYesterdayPercentage = 0;
+      }
+    } else {
       todayVsYesterdayPercentage =
         ((todayCount - yesterdayCount) / yesterdayCount) * 100;
     }
+
 
     const totalRegistrations = values.reduce((sum, v) => sum + v, 0);
 
