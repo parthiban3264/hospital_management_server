@@ -174,4 +174,10 @@ export class ConsultationController {
   remove(@Param("id") id: number) {
     return this.service.remove(+id);
   }
+
+  @Get('all/getByInitial/:hospitalId')
+  async getRecentConsultations(@Param('hospitalId') hospitalId: number) {
+    const consultations = await this.service.getRecentConsultations(hospitalId);
+    return { status: 'success', message: 'Recent consultations fetched', data: consultations };
+  }
 }

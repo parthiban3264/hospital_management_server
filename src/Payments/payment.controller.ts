@@ -20,6 +20,11 @@ export class PaymentController {
     return this.service.create(data);
   }
 
+  @Post('create/supplementary')
+  supplementarybillcreate(@Body() data: any) {
+    return this.service.supplementarybillcreate(data);
+  }
+
   @Get('all/:hospitalId')
   findAll(@Param('hospitalId') hospitalId: number) {
     return this.service.findAll(Number(hospitalId));
@@ -47,6 +52,13 @@ export class PaymentController {
   @Get('all/ct-scan/pendingFee/:hospitalId')
   async getCtScanPendingPayment(@Param('hospitalId') hospitalId: number) {
     return this.service.findCtScanPendingPaymentsByHospitalNew(
+      Number(hospitalId),
+    );
+  }
+
+  @Get('all/initial/pendingFee/:hospitalId')
+  async getInitialPendingPayment(@Param('hospitalId') hospitalId: number) {
+    return this.service.findInitialPendingPaymentsByHospitalNew(
       Number(hospitalId),
     );
   }
@@ -84,6 +96,21 @@ export class PaymentController {
   @Get('all/paid/Accounts/:hospitalId')
   async getPaidAccounts(@Param('hospitalId') hospitalId: number) {
     return this.service.findPaidByHospitalAccounts(hospitalId);
+  }
+
+  @Get('all/paid/Accounts/filterData/:hospitalId')
+  async getPaidAccountsFilterData(
+    @Param('hospitalId') hospitalId: number,
+    @Query('day') day?: string,
+    @Query('month') month?: number,
+    @Query('year') year?: number,
+  ) {
+    return this.service.findPaidByHospitalAccountsFilterData(
+      hospitalId,
+      day?.toString(),
+      month,
+      year,
+    );
   }
 
   @Get('getById/:id')

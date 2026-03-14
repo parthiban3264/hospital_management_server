@@ -1093,7 +1093,7 @@ export class ConsultationService {
           emergencyFee: data.isTestOnly !== true ? emergencyFeeAmount : 0,
           sugarTestFee: data.isTestOnly !== true ? sugarFeeAmount : 0,
           registrationFee: data.isTestOnly !== true ? regAmount : 0,
-
+          consultationDrFee: data.isTestOnly !== true ? doctorAmount : 0,
           bp: data.bp,
           weight: data.weight,
           height: data.height,
@@ -2579,5 +2579,37 @@ export class ConsultationService {
         abandonedAt: new Date(),
       },
     });
+  }
+
+
+  async getRecentConsultations(hospital_Id: number){ 
+    const recentConsultations = await this.prisma.consultation.findMany({
+      where: {
+        hospital_Id: Number(hospital_Id),
+        status: { in: ['PENDING', 'ENDPROCESSING', 'ONGOING'] },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select:{
+        id: true,
+        patient_Id: true,
+        doctor_Id: true,
+        purpose: true,
+        status: true,
+        Admission : true,
+        createdAt:true,
+        Patient:{
+          select:{
+            id:true,
+            user_Id:true,
+            name: true,
+            phone: true,
+            address: true,
+          }
+        }
+      }
+    });
+    return recentConsultations;
   }
 }

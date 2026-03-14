@@ -246,6 +246,7 @@ model Consultation {
   referredByDoctorName String?
   registrationFee      Float       @default(0)
   consultationFee      Float       @default(0)
+  consultationDrFee    Float       @default(0)
   emergencyFee         Float       @default(0)
   sugarTestFee         Float       @default(0)
   cancelReason         String?
@@ -525,14 +526,16 @@ enum PaymentStatus {
 enum Type {
   REGISTRATIONFEE
   TESTINGFEESANDSCANNINGFEE
-  TREATMENTFEE
-  MEDICINEFEEANDINJECTIONFEE
-  MEDICINETONICINJECTIONFEES
-  ROOMCHARGE
+  DISCHARGEFEE
   ADMISSIONFEE
   ADVANCEFEE
   DAILYTREATMENTFEE
-  DISCHARGEFEE
+  INITIALFEE
+  SUPPLEMENTARYFEE
+  MEDICINEFEEANDINJECTIONFEE
+  MEDICINETONICINJECTIONFEES
+  ROOMCHARGE
+  TREATMENTFEE
   OTHER
 }
 
@@ -545,6 +548,7 @@ model Payment {
   prescription_Id Int?
   admission_Id    Int?
   reason          String
+  notes           String @default("-")
   status          PaymentStatus @default(PENDING)
   amount          Float?
   received_Amount Float?
@@ -566,6 +570,17 @@ model Payment {
   TonicPatient               TonicPatient[]
   Consultation               Consultation?               @relation(fields: [consultation_Id], references: [id])
   Prescription               Prescription[]
+  Supplementary              SupplementaryBill[]
+}
+
+model SupplementaryBill {
+  id Int @id @default(autoincrement())
+  payment_Id Int  
+  description String @default("-")
+  amount Float @default(0)
+  createdAt String
+  updateAt String?
+  Payment Payment  @relation(fields: [payment_Id], references: [id])
 }
 
 //////just create but not use ////////
