@@ -104,12 +104,16 @@ export class PaymentController {
     @Query('day') day?: string,
     @Query('month') month?: number,
     @Query('year') year?: number,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
   ) {
     return this.service.findPaidByHospitalAccountsFilterData(
       hospitalId,
       day?.toString(),
       month,
       year,
+      fromDate,
+      toDate,
     );
   }
 

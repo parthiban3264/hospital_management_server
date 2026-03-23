@@ -108,6 +108,7 @@ export class AdmissionServiceCron {
 // 19:00 every day
 @Cron('0 0 19 * * *')
 async createDailyPayment1850() {
+  log('work')
   await this.AdmissionService.createDailyPayment();
 }
 

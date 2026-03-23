@@ -36,7 +36,17 @@
 //   }
 // }
 
-import { Controller, Get, Post, Patch, Delete, Body, Param, HttpStatus, HttpException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  HttpStatus,
+  HttpException,
+} from '@nestjs/common';
 import { PatientService } from './PatientService';
 
 @Controller('patients')
@@ -48,13 +58,14 @@ export class PatientController {
   //   console.log('body work', body);
   //   return this.patientService.create(body);
   // }
-   @Post('create')
+  @Post('create')
   async create(@Body() createPatientDto: any) {
     try {
       console.log(createPatientDto);
-      
+
       // Call service method to create user + patient
-      const result = await this.patientService.createPatientWithUser(createPatientDto);
+      const result =
+        await this.patientService.createPatientWithUser(createPatientDto);
 
       return {
         statusCode: HttpStatus.CREATED,
@@ -72,6 +83,11 @@ export class PatientController {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  @Get('get/bldGrp/:hospital_Id')
+  async takePatientBloodGrp(@Param('hospital_Id') hospital_Id: string) {
+    return this.patientService.takePatientBloodGrp(Number(hospital_Id));
   }
 
   @Get('all')
@@ -103,9 +119,19 @@ export class PatientController {
     @Param('user_Id') user_Id: string,
     @Body() body: any,
   ) {
-    console.log('Updating patient for hospital_Id:', hospital_Id, 'and user_Id:', user_Id,body);
-    
-    return this.patientService.updateByUserId(Number(hospital_Id), user_Id, body);
+    console.log(
+      'Updating patient for hospital_Id:',
+      hospital_Id,
+      'and user_Id:',
+      user_Id,
+      body,
+    );
+
+    return this.patientService.updateByUserId(
+      Number(hospital_Id),
+      user_Id,
+      body,
+    );
   }
 
   // ✅ Delete
@@ -117,4 +143,3 @@ export class PatientController {
     return this.patientService.deleteByUserId(Number(hospital_Id), user_Id);
   }
 }
-

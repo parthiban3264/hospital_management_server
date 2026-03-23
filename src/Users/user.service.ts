@@ -105,6 +105,7 @@ export class UserService {
 
   async update(id: number, data: any) {
     try {
+      log('id',id ,data)
       let updateData = { ...data };
       if (data.password) {
         updateData.password = await bcrypt.hash(data.password, 10);
@@ -113,6 +114,7 @@ export class UserService {
         where: { id },
         data: updateData,
       });
+      log('user',user)
       return { status: 'success', data: user };
     } catch (error) {
       return { status: 'failed', error: error.message };

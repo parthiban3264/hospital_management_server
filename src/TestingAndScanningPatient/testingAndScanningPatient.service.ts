@@ -712,12 +712,6 @@ export class TestingAndScanningPatientService {
     return this.prisma.$transaction(async (tx) => {
       const isCtScan =
         data.type?.trim().toLowerCase() == 'ct-scan' ? true : false;
-      log(
-        'Creating Testing & Scanning Patient with Payment...,data:',
-        data,
-        'isCtScan:',
-        isCtScan,
-      );
 
       let payment; // ✅ declare once
 
@@ -757,7 +751,9 @@ export class TestingAndScanningPatientService {
             where: { id: existingPayment.id },
             data: {
               amount: (existingPayment.amount ?? 0) + (data.amount ?? 0),
+              createdAt: data.createdAt,
               updatedAt: data.createdAt,
+              consultation_Id: data.consultation_Id,
             },
             include: {
               Hospital: true,
@@ -1158,9 +1154,6 @@ export class TestingAndScanningPatientService {
             result: selectedOptionResults[opt.optionName] ?? 'N/A',
           };
         });
-
-        log('Merged options for test', test.title, ':', mergedOptions);
-        log('Merged options for test', ':', testOptions);
         return {
           id: test.id,
           title: test.title,
@@ -1186,6 +1179,10 @@ export class TestingAndScanningPatientService {
             consultationId: String(consultation.id),
           };
       }
+      const lastConsultation =
+        patient.Consultation && patient.Consultation.length > 0
+          ? patient.Consultation[patient.Consultation.length - 1]
+          : null;
 
       return {
         id: rec.id,
@@ -1214,22 +1211,30 @@ export class TestingAndScanningPatientService {
               ? ((patient.phone as any).mobile ?? '-')
               : '-',
           doctor: doctorInfo,
-          tokenNo:
-            patient.Consultation && patient.Consultation.length > 0
-              ? (patient.Consultation[0].tokenNo ?? '-')
-              : '-',
-          displayToken:
-            patient.Consultation && patient.Consultation.length > 0
-              ? (patient.Consultation[0].displayToken ?? '-')
-              : '-',
-          isTestOnly:
-            patient.Consultation && patient.Consultation.length > 0
-              ? (patient.Consultation[0].isTestOnly ?? false)
-              : false,
-          referredByDoctorName:
-            patient.Consultation && patient.Consultation.length > 0
-              ? (patient.Consultation[0].referredByDoctorName ?? '-')
-              : '-',
+          // tokenNo:
+          //   patient.Consultation && patient.Consultation.length > 0
+          //     ? (patient.Consultation[0].tokenNo ?? '-')
+          //     : '-',
+          // displayToken:
+          //   patient.Consultation && patient.Consultation.length > 0
+          //     ? (patient.Consultation[].displayToken ?? '-')
+          //     : '-',
+          // isTestOnly:
+          //   patient.Consultation && patient.Consultation.length > 0
+          //     ? (patient.Consultation[0].isTestOnly ?? false)
+          //     : false,
+          // referredByDoctorName:
+          //   patient.Consultation && patient.Consultation.length > 0
+          //     ? (patient.Consultation[0].referredByDoctorName ?? '-')
+          //     : '-',
+
+          tokenNo: lastConsultation?.tokenNo ?? '-',
+
+          displayToken: lastConsultation?.displayToken ?? '-',
+
+          isTestOnly: lastConsultation?.isTestOnly ?? false,
+
+          referredByDoctorName: lastConsultation?.referredByDoctorName ?? '-',
         },
         Hospital: {
           name: hospital.name ?? 'N/A',

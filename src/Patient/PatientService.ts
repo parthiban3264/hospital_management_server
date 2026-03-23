@@ -115,29 +115,29 @@ export class PatientService {
       // });
 
       let user;
-let userIdNumber = patient.id;
+      let userIdNumber = patient.id;
 
-while (true) {
-  try {
-    user = await tx.user.create({
-      data: {
-        hospital_Id: data.hospital_Id,
-        user_Id: userIdNumber.toString(),
-        password: hashedPassword,
-        role: 'PATIENT',
-      },
-    });
+      while (true) {
+        try {
+          user = await tx.user.create({
+            data: {
+              hospital_Id: data.hospital_Id,
+              user_Id: userIdNumber.toString(),
+              password: hashedPassword,
+              role: 'PATIENT',
+            },
+          });
 
-    break; // ✅ success
-  } catch (error) {
-    if (error.code === 'P2002') {
-      // 🔁 If duplicate, increment ID
-      userIdNumber++;
-    } else {
-      throw error; // other errors
-    }
-  }
-}
+          break; // ✅ success
+        } catch (error) {
+          if (error.code === 'P2002') {
+            // 🔁 If duplicate, increment ID
+            userIdNumber++;
+          } else {
+            throw error; // other errors
+          }
+        }
+      }
 
       return { user, patient };
     });
@@ -164,10 +164,10 @@ while (true) {
   async findOneByUserId(hospital_Id: number, user_Id: string) {
     const patient = await this.prisma.patient.findUnique({
       where: {
-         id_hospital_Id: {
-        hospital_Id: hospital_Id,
-        id: Number(user_Id),
-      },
+        id_hospital_Id: {
+          hospital_Id: hospital_Id,
+          id: Number(user_Id),
+        },
       },
       include: {
         Consultation: { select: { id: true, patient_Id: true, status: true } },
@@ -219,10 +219,10 @@ while (true) {
   async updateByUserId(hospital_Id: number, user_Id: string, data: any) {
     const patient = await this.prisma.patient.update({
       where: {
-         id_hospital_Id: {
-        hospital_Id: hospital_Id,
-        id: Number(user_Id),
-      },
+        id_hospital_Id: {
+          hospital_Id: hospital_Id,
+          id: Number(user_Id),
+        },
       },
       data,
     });
@@ -249,20 +249,73 @@ while (true) {
   //   };
   // }
   async deleteByUserId(hospital_Id: number, user_Id: string) {
-  const patient = await this.prisma.patient.delete({
-    where: {
-      id_hospital_Id: {
-        hospital_Id: hospital_Id,
-        id: Number(user_Id),
+    const patient = await this.prisma.patient.delete({
+      where: {
+        id_hospital_Id: {
+          hospital_Id: hospital_Id,
+          id: Number(user_Id),
+        },
       },
-    },
-  });
+    });
 
-  return {
+    return {
       status: 'success',
       message: 'Patient deleted successfully',
       data: patient,
     };
-}
+  }
 
+async takePatientBloodGrp(hospitalId: number) {
+  const today = new Date();
+  const cutoffDate = new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const patients = await this.prisma.patient.findMany({
+    where: {
+      hospital_Id: hospitalId,
+      dob: {
+        lte: cutoffDate, // 18+
+      },
+    },
+    select: {
+      id: true,
+      user_Id: true,
+      name: true,
+      gender: true,
+      phone: true,
+      bldGrp: true,
+      address:true,
+      dob: true,
+      bld_donate_date: true,
+    },
+  });
+
+  /// ✅ Blood group count (skip unknown/null)
+  const bloodGroupCount = patients.reduce((acc, p) => {
+    const group = p.bldGrp;
+
+    // ❌ skip null / undefined / empty / UNKNOWN
+    if (!group || group === "UNKNOWN") {
+      return acc;
+    }
+
+    if (!acc[group]) {
+      acc[group] = 0;
+    }
+
+    acc[group]++;
+
+    return acc;
+  }, {} as Record<string, number>);
+
+  const patientData = {
+    bloodGroupCount,
+    patients,
+  };
+
+  return patientData;
+}
 }

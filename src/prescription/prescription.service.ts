@@ -596,6 +596,7 @@ export class PrescriptionService {
   }
 
   async createPrescriptionAndDispense(dto: CreatePrescriptionDto) {
+    log('medicine',dto);
     return this.prisma.$transaction(
       async (tx) => {
         /* ─────────────────────────────
@@ -682,7 +683,7 @@ export class PrescriptionService {
               hospital_Id_medicine_id_batch_no: {
                 hospital_Id: Number(dto.hospital_Id),
                 medicine_id: med.medicine_Id,
-                batch_no: dto.batch_No,
+                batch_no: med.batch_No,
               },
             },
           });
@@ -755,6 +756,7 @@ export class PrescriptionService {
             status: 'PENDING',
           },
         });
+        
 
         for (const pm of medicinesToDispense) {
           const batch = await tx.medicineBatch.findUnique({
@@ -762,7 +764,7 @@ export class PrescriptionService {
               hospital_Id_medicine_id_batch_no: {
                 hospital_Id: Number(dto.hospital_Id),
                 medicine_id: pm.medicine_Id,
-                batch_no: dto.batch_No,
+                batch_no: pm.batch_No,
               },
             },
           });
@@ -794,7 +796,7 @@ export class PrescriptionService {
                 data: {
                   dispensed_quantity: pm.dispensed_quantity,
                   amount: amount,
-                  dispensed_by: Number(dto.pharmacist_Id),
+                  dispensed_by: 0,//Number(dto.pharmacist_Id),
                 },
               });
 
@@ -816,7 +818,7 @@ export class PrescriptionService {
                 batch: { connect: { id: batch.id } },
                 dispensed_days: pm.days,
                 dispensed_quantity: pm.dispensed_quantity,
-                dispensed_by: Number(dto.pharmacist_Id),
+                dispensed_by: 0, //dto.pharmish_Id
                 amount,
               },
             });

@@ -24,26 +24,26 @@ export class AdminService {
 
     console.log('User ID:', user_Id, 'Phone:', data.phone);
 
-   let permissions: number[] = [];
+    let permissions: number[] = [];
 
-const role = data.role?.toString().toUpperCase();
+    const role = data.role?.toString().toUpperCase();
 
-const rolePermissionMap: Record<string, number[]> = {
-  DOCTOR: [6, 8],
+    const rolePermissionMap: Record<string, number[]> = {
+      DOCTOR: [6, 8],
 
-  NURSE: [1, 2, 14, 15],
+      NURSE: [1, 2, 14, 15],
 
-  CASHIER: [12],
+      CASHIER: [12],
 
-  'LAB TECHNICIAN': [3, 4, 7, 9, 10, 11, 16, 17],
+      'LAB TECHNICIAN': [3, 4, 7, 9, 10, 11, 16, 17],
 
-  'MEDICAL STAFF': [5],
-};
+      'MEDICAL STAFF': [5],
+    };
 
-// ❌ Do NOT assign permissions to Admin / Super Admin
-if (role !== 'ADMIN') {
-  permissions = rolePermissionMap[role] ?? [];
-}
+    // ❌ Do NOT assign permissions to Admin / Super Admin
+    if (role !== 'ADMIN') {
+      permissions = rolePermissionMap[role] ?? [];
+    }
 
     try {
       // 👉 Step 1: Check if user exists in SAME hospital
@@ -151,38 +151,35 @@ if (role !== 'ADMIN') {
   }
 
   // async findAllByHospitalAndRole(hospital_Id: number, role: string) {
-  
+
   //   return this.prisma.admin.findMany({
   //     where: { hospital_Id, role},
   //     include: { Hospital: true, User: true },
   //   });
   // }
-  async findAllByHospitalAndRole(
-  hospital_Id: number,
-  roles: string[],
-) {
-  return this.prisma.admin.findMany({
-    where: {
-      hospital_Id,
-      OR: [
-        // Doctor → always allowed
-        {
-          role: 'DOCTOR',
-        },
+  async findAllByHospitalAndRole(hospital_Id: number, roles: string[]) {
+    return this.prisma.admin.findMany({
+      where: {
+        hospital_Id,
+        OR: [
+          // Doctor → always allowed
+          {
+            role: 'DOCTOR',
+          },
 
-        // Admin → only if accessDoctorRole = true
-        {
-          role: 'ADMIN',
-          accessDoctorRole: true,
-        },
-      ],
-    },
-    include: {
-      Hospital: true,
-      User: true,
-    },
-  });
-}
+          // Admin → only if accessDoctorRole = true
+          {
+            role: 'ADMIN',
+            accessDoctorRole: true,
+          },
+        ],
+      },
+      include: {
+        Hospital: true,
+        User: true,
+      },
+    });
+  }
 
   async findAllByHospitalAdmin(hospital_Id: number) {
     return this.prisma.admin.findMany({
@@ -208,24 +205,23 @@ if (role !== 'ADMIN') {
       include: { Hospital: true, User: true },
     });
   }
-  
-async checkUserIdExists(
-  hospital_Id: number,
-  userId: string,
-): Promise<boolean> {
-  const admin = await this.prisma.admin.findUnique({
-    where: {
-      hospital_Id_user_Id: {
-        hospital_Id,
-        user_Id: userId,
+
+  async checkUserIdExists(
+    hospital_Id: number,
+    userId: string,
+  ): Promise<boolean> {
+    const admin = await this.prisma.admin.findUnique({
+      where: {
+        hospital_Id_user_Id: {
+          hospital_Id,
+          user_Id: userId,
+        },
       },
-    },
-    select: { id: true }, // minimal payload
-  });
+      select: { id: true }, // minimal payload
+    });
 
-  return !!admin;
-}
-
+    return !!admin;
+  }
 
   async update(id: number, data: any) {
     console.log('data', data);
@@ -240,7 +236,8 @@ async checkUserIdExists(
           assignDoctorId: data.assignDoctorId,
           accessDoctorRole: data.accessDoctorRole,
           accessAdminRole: data.accessAdminRole,
-          inPatientAmount: data.inPatientAmount
+          inPatientAmount: data.inPatientAmount,
+          isFirstLogin:data.isFirstLogin,
         },
       });
       log('Updated Admin:', admin);
@@ -250,6 +247,21 @@ async checkUserIdExists(
       return { status: 'failed', error: error.message };
     }
   }
+
+   async updateIsFirstLogin(id: number, data: any) {
+      try {
+        log('id',id ,data)
+        let updateData = { ...data };
+        const user = await this.prisma.admin.update({
+          where: { id },
+          data: updateData,
+        });
+        log('user',user)
+        return { status: 'success', data: user };
+      } catch (error) {
+        return { status: 'failed', error: error.message };
+      }
+    }
 
   async updateByAdmin(hospital_Id: number, user_Id: string, data: any) {
     log('updateByAdmin data', data);
@@ -274,37 +286,33 @@ async checkUserIdExists(
     }
   }
 
-  async saveAdminPhoto(
-  hospital_Id: number,
-  user_Id: string,
-  filename: string,
-) {
-  try {
-    const photoUrl = filename; // the file path or URL
-    const admin = await this.prisma.admin.update({
-      where: {
-        hospital_Id_user_Id: {  // composite unique key
-          hospital_Id,
-          user_Id,
+  async saveAdminPhoto(hospital_Id: number, user_Id: string, filename: string) {
+    try {
+      const photoUrl = filename; // the file path or URL
+      const admin = await this.prisma.admin.update({
+        where: {
+          hospital_Id_user_Id: {
+            // composite unique key
+            hospital_Id,
+            user_Id,
+          },
         },
-      },
-      data: { photo: photoUrl },
-    });
+        data: { photo: photoUrl },
+      });
 
-    return {
-      status: 'success',
-      photo: photoUrl, // returned to Flutter
-      data: admin,
-    };
-  } catch (error) {
-    console.error('Upload Error:', error);
-    return {
-      status: 'failed',
-      message: 'Failed to upload profile image',
-    };
+      return {
+        status: 'success',
+        photo: photoUrl, // returned to Flutter
+        data: admin,
+      };
+    } catch (error) {
+      console.error('Upload Error:', error);
+      return {
+        status: 'failed',
+        message: 'Failed to upload profile image',
+      };
+    }
   }
-}
-
 
   // async remove(id: number) {
   //   try {
@@ -320,40 +328,38 @@ async checkUserIdExists(
   // }
 
   async remove(id: number) {
-  try {
-    await this.prisma.$transaction(async (tx) => {
-      // 1️⃣ Find admin to get user_Id
-     const admin = await tx.admin.findUnique({
-  where: { id },
-  select: {
-    User: { select: { id: true } }, // get user primary key
-  },
-});
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // 1️⃣ Find admin to get user_Id
+        const admin = await tx.admin.findUnique({
+          where: { id },
+          select: {
+            User: { select: { id: true } }, // get user primary key
+          },
+        });
 
+        if (!admin) {
+          throw new Error('Admin not found');
+        }
 
-      if (!admin) {
-        throw new Error("Admin not found");
-      }
+        // 2️⃣ Delete admin
+        await tx.admin.delete({
+          where: { id },
+        });
 
-      // 2️⃣ Delete admin
-      await tx.admin.delete({
-        where: { id },
+        // 3️⃣ Delete related user
+        await tx.user.delete({
+          where: { id: admin.User.id }, // ✅ use primary key
+        });
       });
 
-      // 3️⃣ Delete related user
-  await tx.user.delete({
-  where: { id: admin.User.id }, // ✅ use primary key
-});
-    });
-
-    return { status: 'success', message: 'Admin deleted successfully' };
-  } catch (error) {
-    return { status: 'failed', error: error.message };
+      return { status: 'success', message: 'Admin deleted successfully' };
+    } catch (error) {
+      return { status: 'failed', error: error.message };
+    }
   }
-}
 
-
-   // 🔹 New method: fetch permissions IDs + keys
+  // 🔹 New method: fetch permissions IDs + keys
   // async getStaffPermissions(hospitalId: number, userId: string) {
   //   // Find the staff/admin
   //   const staff = await this.prisma.admin.findUnique({

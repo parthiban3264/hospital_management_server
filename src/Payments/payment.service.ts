@@ -1221,6 +1221,8 @@ export class PaymentService {
     day?: string,
     month?: number,
     year?: number,
+    fromDate?: string,
+    toDate?: string,
   ) {
     const now = new Date();
 
@@ -1233,7 +1235,7 @@ export class PaymentService {
     let selectedDay = selectedDate.getDate();
 
     // ---- DAY RANGE ----
-    const todayStart = new Date(
+    let todayStart = new Date(
       selectedYear,
       selectedMonth,
       selectedDay,
@@ -1242,7 +1244,7 @@ export class PaymentService {
       0,
       0,
     );
-    const todayEnd = new Date(
+    let todayEnd = new Date(
       selectedYear,
       selectedMonth,
       selectedDay,
@@ -1267,6 +1269,15 @@ export class PaymentService {
     // ---- YEAR RANGE ----
     const yearStart = new Date(selectedYear, 0, 1);
     const yearEnd = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
+
+    // ---- PERIODICAL RANGE ----
+    if (fromDate && toDate) {
+      todayStart = new Date(fromDate);
+      todayStart.setHours(0, 0, 0, 0);
+
+      todayEnd = new Date(toDate);
+      todayEnd.setHours(23, 59, 59, 999);
+    }
 
     // ---- FETCH DATA ----
     const [payments, drawings, incExp, consultations, drFee] =
@@ -1316,12 +1327,23 @@ export class PaymentService {
         this.prisma.consultation.findMany({
           where: { hospital_Id: Number(hospitalId), paymentStatus: true },
           select: {
+            id: true,
             consultationFee: true,
             registrationFee: true,
             sugarTestFee: true,
             emergencyFee: true,
             createdAt: true,
             doctor_Id: true,
+            Payment: {
+              where: { status: 'PAID' },
+              select: {
+                id: true,
+                type: true,
+                createdAt: true,
+                amount: true,
+                paymentType: true,
+              },
+            },
           },
         }),
         this.prisma.admin.findMany({
@@ -1343,12 +1365,12 @@ export class PaymentService {
         totalExpense: 0,
         totalDrawingIn: 0,
         totalDrawingOut: 0,
-        registerationFee: 0,
-        consultationFee: 0,
-        sugarTestFee: 0,
-        emergencyFee: 0,
-        testingAmount: 0,
-        ScanningAmount: 0,
+        registerationFee: {},
+        consultationFee: {},
+        sugarTestFee: {},
+        emergencyFee: {},
+        testingAmount: {},
+        ScanningAmount: {},
         paymentType: {},
         type: {},
         consultationDrFee: {},
@@ -1359,12 +1381,12 @@ export class PaymentService {
         totalExpense: 0,
         totalDrawingIn: 0,
         totalDrawingOut: 0,
-        registerationFee: 0,
-        consultationFee: 0,
-        sugarTestFee: 0,
-        emergencyFee: 0,
-        testingAmount: 0,
-        ScanningAmount: 0,
+        registerationFee: {},
+        consultationFee: {},
+        sugarTestFee: {},
+        emergencyFee: {},
+        testingAmount: {},
+        ScanningAmount: {},
         paymentType: {},
         type: {},
         consultationDrFee: {},
@@ -1375,12 +1397,12 @@ export class PaymentService {
         totalExpense: 0,
         totalDrawingIn: 0,
         totalDrawingOut: 0,
-        registerationFee: 0,
-        consultationFee: 0,
-        sugarTestFee: 0,
-        emergencyFee: 0,
-        testingAmount: 0,
-        ScanningAmount: 0,
+        registerationFee: {},
+        consultationFee: {},
+        sugarTestFee: {},
+        emergencyFee: {},
+        testingAmount: {},
+        ScanningAmount: {},
         paymentType: {},
         type: {},
         consultationDrFee: {},
@@ -1399,56 +1421,167 @@ export class PaymentService {
         const created = new Date(c.createdAt);
 
         if (created >= todayStart && created <= todayEnd) {
-          result.today.registerationFee += c.registrationFee ?? 0;
-          result.today.consultationFee += c.consultationFee ?? 0;
-          result.today.sugarTestFee += c.sugarTestFee ?? 0;
-          result.today.emergencyFee += c.emergencyFee ?? 0;
+          c.Payment.forEach((p) => {
+            const paymentType = p.paymentType;
 
-          // doctor calculation
+            // initialize objects if not exist
+            result.today.registerationFee[paymentType] =
+              result.today.registerationFee[paymentType] || 0;
+
+            result.today.consultationFee[paymentType] =
+              result.today.consultationFee[paymentType] || 0;
+
+            result.today.sugarTestFee[paymentType] =
+              result.today.sugarTestFee[paymentType] || 0;
+
+            result.today.emergencyFee[paymentType] =
+              result.today.emergencyFee[paymentType] || 0;
+
+            if (p.type === 'REGISTRATIONFEE') {
+              result.today.registerationFee[paymentType] += Number(
+                c.registrationFee ?? 0,
+              );
+              result.today.consultationFee[paymentType] += Number(
+                c.consultationFee ?? 0,
+              );
+              result.today.sugarTestFee[paymentType] += Number(
+                c.sugarTestFee ?? 0,
+              );
+              result.today.emergencyFee[paymentType] += Number(
+                c.emergencyFee ?? 0,
+              );
+            }
+          });
+
           const doctor = drFee.find((d) => d.user_Id === c.doctor_Id);
 
           if (doctor) {
             const name = doctor.name;
 
             result.today.consultationDrFee[name] =
-              (result.today.consultationDrFee[name] || 0) +
-              (doctor.doctorAmount ?? 0);
+              result.today.consultationDrFee[name] || {};
+
+            // assume consultation paid via same payment type
+            const paymentType = c.Payment[0]?.paymentType;
+
+            if (paymentType) {
+              result.today.consultationDrFee[name][paymentType] =
+                result.today.consultationDrFee[name][paymentType] || 0;
+
+              result.today.consultationDrFee[name][paymentType] += Number(
+                doctor.doctorAmount ?? 0,
+              );
+            }
           }
         }
 
         if (created >= monthStart && created <= monthEnd) {
-          result.month.registerationFee += c.registrationFee ?? 0;
-          result.month.consultationFee += c.consultationFee ?? 0;
-          result.month.sugarTestFee += c.sugarTestFee ?? 0;
-          result.month.emergencyFee += c.emergencyFee ?? 0;
+          c.Payment.forEach((p) => {
+            const paymentType = p.paymentType;
 
-          // doctor calculation
+            // initialize objects if not exist
+            result.month.registerationFee[paymentType] =
+              result.month.registerationFee[paymentType] || 0;
+
+            result.month.consultationFee[paymentType] =
+              result.month.consultationFee[paymentType] || 0;
+
+            result.month.sugarTestFee[paymentType] =
+              result.month.sugarTestFee[paymentType] || 0;
+
+            result.month.emergencyFee[paymentType] =
+              result.month.emergencyFee[paymentType] || 0;
+
+            if (p.type === 'REGISTRATIONFEE') {
+              result.month.registerationFee[paymentType] += Number(
+                c.registrationFee ?? 0,
+              );
+              result.month.consultationFee[paymentType] += Number(
+                c.consultationFee ?? 0,
+              );
+              result.month.sugarTestFee[paymentType] += Number(
+                c.sugarTestFee ?? 0,
+              );
+              result.month.emergencyFee[paymentType] += Number(
+                c.emergencyFee ?? 0,
+              );
+            }
+          });
+
           const doctor = drFee.find((d) => d.user_Id === c.doctor_Id);
 
           if (doctor) {
             const name = doctor.name;
 
             result.month.consultationDrFee[name] =
-              (result.month.consultationDrFee[name] || 0) +
-              (doctor.doctorAmount ?? 0);
+              result.month.consultationDrFee[name] || {};
+
+            // assume consultation paid via same payment type
+            const paymentType = c.Payment[0]?.paymentType;
+
+            if (paymentType) {
+              result.month.consultationDrFee[name][paymentType] =
+                result.month.consultationDrFee[name][paymentType] || 0;
+
+              result.month.consultationDrFee[name][paymentType] += Number(
+                doctor.doctorAmount ?? 0,
+              );
+            }
           }
         }
 
         if (created >= yearStart && created <= yearEnd) {
-          result.year.registerationFee += c.registrationFee ?? 0;
-          result.year.consultationFee += c.consultationFee ?? 0;
-          result.year.sugarTestFee += c.sugarTestFee ?? 0;
-          result.year.emergencyFee += c.emergencyFee ?? 0;
+          c.Payment.forEach((p) => {
+            const paymentType = p.paymentType;
 
-          // doctor calculation
+            // initialize objects if not exist
+            result.year.registerationFee[paymentType] =
+              result.year.registerationFee[paymentType] || 0;
+
+            result.year.consultationFee[paymentType] =
+              result.year.consultationFee[paymentType] || 0;
+
+            result.year.sugarTestFee[paymentType] =
+              result.year.sugarTestFee[paymentType] || 0;
+
+            result.year.emergencyFee[paymentType] =
+              result.year.emergencyFee[paymentType] || 0;
+
+            if (p.type === 'REGISTRATIONFEE') {
+              result.year.registerationFee[paymentType] += Number(
+                c.registrationFee ?? 0,
+              );
+              result.year.consultationFee[paymentType] += Number(
+                c.consultationFee ?? 0,
+              );
+              result.year.sugarTestFee[paymentType] += Number(
+                c.sugarTestFee ?? 0,
+              );
+              result.year.emergencyFee[paymentType] += Number(
+                c.emergencyFee ?? 0,
+              );
+            }
+          });
+
           const doctor = drFee.find((d) => d.user_Id === c.doctor_Id);
 
           if (doctor) {
             const name = doctor.name;
 
             result.year.consultationDrFee[name] =
-              (result.year.consultationDrFee[name] || 0) +
-              (doctor.doctorAmount ?? 0);
+              result.year.consultationDrFee[name] || {};
+
+            // assume consultation paid via same payment type
+            const paymentType = c.Payment[0]?.paymentType;
+
+            if (paymentType) {
+              result.year.consultationDrFee[name][paymentType] =
+                result.year.consultationDrFee[name][paymentType] || 0;
+
+              result.year.consultationDrFee[name][paymentType] += Number(
+                doctor.doctorAmount ?? 0,
+              );
+            }
           }
         }
       }
@@ -1473,11 +1606,19 @@ export class PaymentService {
           (result.today.type[p.type][p.paymentType] || 0) + amount;
 
         if (p.TestingAndScanningPatients.length > 0) {
+          const paymentType = p.paymentType;
+
+          result.today.testingAmount[paymentType] =
+            result.today.testingAmount[paymentType] || 0;
+
+          result.today.ScanningAmount[paymentType] =
+            result.today.ScanningAmount[paymentType] || 0;
+
           for (const ts of p.TestingAndScanningPatients) {
             if (ts.type.toUpperCase() === 'TESTS') {
-              result.today.testingAmount += ts.amount;
+              result.today.testingAmount[paymentType] += Number(ts.amount);
             } else {
-              result.today.ScanningAmount += ts.amount;
+              result.today.ScanningAmount[paymentType] += Number(ts.amount);
             }
           }
         }
@@ -1491,17 +1632,25 @@ export class PaymentService {
 
         // result.month.type[p.type] = (result.month.type[p.type] || 0) + amount;
 
-           result.month.type[p.type] = result.month.type[p.type] || {};
+        result.month.type[p.type] = result.month.type[p.type] || {};
 
         result.month.type[p.type][p.paymentType] =
           (result.month.type[p.type][p.paymentType] || 0) + amount;
 
         if (p.TestingAndScanningPatients.length > 0) {
+          const paymentType = p.paymentType;
+
+          result.month.testingAmount[paymentType] =
+            result.month.testingAmount[paymentType] || 0;
+
+          result.month.ScanningAmount[paymentType] =
+            result.month.ScanningAmount[paymentType] || 0;
+
           for (const ts of p.TestingAndScanningPatients) {
             if (ts.type.toUpperCase() === 'TESTS') {
-              result.month.testingAmount += ts.amount;
-            } else if (ts.type.toUpperCase() !== 'TESTS') {
-              result.month.ScanningAmount += ts.amount;
+              result.month.testingAmount[paymentType] += Number(ts.amount);
+            } else {
+              result.month.ScanningAmount[paymentType] += Number(ts.amount);
             }
           }
         }
@@ -1515,17 +1664,25 @@ export class PaymentService {
 
         // result.year.type[p.type] = (result.year.type[p.type] || 0) + amount;
 
-           result.year.type[p.type] = result.year.type[p.type] || {};
+        result.year.type[p.type] = result.year.type[p.type] || {};
 
         result.year.type[p.type][p.paymentType] =
           (result.year.type[p.type][p.paymentType] || 0) + amount;
 
         if (p.TestingAndScanningPatients.length > 0) {
+          const paymentType = p.paymentType;
+
+          result.year.testingAmount[paymentType] =
+            result.year.testingAmount[paymentType] || 0;
+
+          result.year.ScanningAmount[paymentType] =
+            result.year.ScanningAmount[paymentType] || 0;
+
           for (const ts of p.TestingAndScanningPatients) {
             if (ts.type.toUpperCase() === 'TESTS') {
-              result.year.testingAmount += ts.amount;
-            } else if (ts.type.toUpperCase() !== 'TESTS') {
-              result.year.ScanningAmount += ts.amount;
+              result.year.testingAmount[paymentType] += Number(ts.amount);
+            } else {
+              result.year.ScanningAmount[paymentType] += Number(ts.amount);
             }
           }
         }

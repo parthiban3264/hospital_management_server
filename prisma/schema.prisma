@@ -110,6 +110,10 @@ model User {
 
   @@unique([hospital_Id, user_Id])
 }
+enum accountType {
+  DEMO
+  REAL
+}
 
 model Admin {
   id               Int            @id @default(autoincrement())
@@ -122,7 +126,9 @@ model Admin {
   accessAdminRole  Boolean        @default(false) // e.g., Super Admin, Finance Admin, etc.
   doctorAmount     Float?         @default(0)
   inPatientAmount  Float?         @default(0)
+  isFirstLogin     Boolean        @default(true)
   specialist       String?
+  accountType      accountType    @default(REAL)
   assignDoctorId   String? // for Nurse/Staff to assign Doctor
   permissions      Json? // store [1,2,3] etc for Medical Staff; keep NULL for ADMIN
   phone            String
@@ -172,17 +178,18 @@ model AdminStrator {
 }
 
 model Patient {
-  id          Int //@id @default(autoincrement())
-  hospital_Id Int
-  user_Id     String?
-  staff_Id    String
-  name        String
-  ac_name     String?
-  phone       Json
-  email       Json
-  photo       String?       @default("null")
-  status      PatientStatus @default(ACTIVE)
-  address     Json?
+  id              Int //@id @default(autoincrement())
+  hospital_Id     Int
+  user_Id         String?
+  staff_Id        String
+  name            String
+  ac_name         String?
+  phone           Json
+  email           Json
+  photo           String?       @default("null")
+  status          PatientStatus @default(ACTIVE)
+  address         Json?
+  bld_donate_date String?
 
   dob                DateTime
   gender             String?
@@ -227,6 +234,28 @@ enum QueueStatus {
   DRQUEUE
   COMPLETED
   CANCELLED
+}
+
+model app_versions {
+  id              Int     @id @default(autoincrement())
+  platform        String //android/ios/web 
+  latest_version  String
+  min_version     String
+  playStoreUrl    String  @db.Text
+  update_message  String  @db.Text
+  is_force_update Boolean
+  createdAt       String
+  updatedAt       String?
+}
+
+model play_store_customar {
+  id               Int     @id @default(autoincrement())
+  isAgreement      Boolean  @default(false)
+  isInterested     Boolean  @default(false)
+  personalDetails  Json
+  hospitalDetails  Json
+  createdAt        String
+  updateAt         String?
 }
 
 model Consultation {
@@ -530,6 +559,7 @@ enum Type {
   ADMISSIONFEE
   ADVANCEFEE
   DAILYTREATMENTFEE
+  ROOMFEE
   INITIALFEE
   SUPPLEMENTARYFEE
   MEDICINEFEEANDINJECTIONFEE
@@ -548,7 +578,7 @@ model Payment {
   prescription_Id Int?
   admission_Id    Int?
   reason          String
-  notes           String @default("-")
+  notes           String        @default("-")
   status          PaymentStatus @default(PENDING)
   amount          Float?
   received_Amount Float?
@@ -574,13 +604,13 @@ model Payment {
 }
 
 model SupplementaryBill {
-  id Int @id @default(autoincrement())
-  payment_Id Int  
-  description String @default("-")
-  amount Float @default(0)
-  createdAt String
-  updateAt String?
-  Payment Payment  @relation(fields: [payment_Id], references: [id])
+  id          Int     @id @default(autoincrement())
+  payment_Id  Int
+  description String  @default("-")
+  amount      Float   @default(0)
+  createdAt   String
+  updateAt    String?
+  Payment     Payment @relation(fields: [payment_Id], references: [id])
 }
 
 //////just create but not use ////////

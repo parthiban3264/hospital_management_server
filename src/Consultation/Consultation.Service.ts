@@ -2423,7 +2423,7 @@ export class ConsultationService {
       mode == 0
         ? { medicineTonic: true }
         : mode == 1
-          ? { Injection: true, medicineTonic: false }
+          ? { Injection: true, medicineTonic: true } //change false
           : {};
     const medi = await this.prisma.consultation.findMany({
       where: {

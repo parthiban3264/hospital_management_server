@@ -88,6 +88,7 @@ export class AdminController {
   async getAllByHospitalAdmin(@Param('hospital_Id') hospital_Id: string) {
     return this.adminService.findAllByHospitalAdmin(Number(hospital_Id));
   }
+
   @Patch('updateById/:id')
   update(@Param('id') id: string, @Body() data: any) {
     console.log('updateId', data, id);
@@ -110,6 +111,11 @@ export class AdminController {
       );
     }
     return { status: 'success', data: admin };
+  }
+
+  @Patch("isFirstLogin/updateById/:id")
+  updateIsFirstLogin(@Param("id") id: string, @Body() data: any) {
+    return this.adminService.updateIsFirstLogin(+id, data);
   }
 
   @Get('check-user-id/:hospital_Id/:userId')
