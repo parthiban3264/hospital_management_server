@@ -682,7 +682,7 @@ export class AdmissionService {
       await prisma.payment.updateMany({
         where: {
           admission_Id: admission.id,
-          type: 'DAILYTREATMENTFEE',
+          type: { in: ['DAILYTREATMENTFEE', 'ROOMFEE'] },
           status: 'PENDING',
         },
         data: {
