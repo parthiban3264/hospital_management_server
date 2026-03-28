@@ -49,83 +49,111 @@ import {
   Request,
   Req,
   BadRequestException,
-} from "@nestjs/common";
-import { UserService } from "./user.service";
-import { JwtAuthGuard } from "../jwt/jwt-auth.guard";
-import { log } from "console";
-import { AuthGuard } from "@nestjs/passport";
+} from '@nestjs/common';
+import { UserService } from './user.service';
+import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
+import { log } from 'console';
+import { AuthGuard } from '@nestjs/passport';
 
-@Controller("users")
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post("create")
+  @Post('create')
   create(@Body() data: any) {
     return this.userService.create(data);
   }
 
-  @Get("all")
+  @Get('all')
   findAll() {
     return this.userService.findAll();
   }
 
-  @Get("getById/:id")
-  findOne(@Param("id") id: string) {
+  @Get('getById/:id')
+  findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
   }
 
-  @Patch("updateById/:id")
-  update(@Param("id") id: string, @Body() data: any) {
+  @Patch('updateById/:id')
+  update(@Param('id') id: string, @Body() data: any) {
     return this.userService.update(+id, data);
   }
 
-  @Delete("deleteById/:id")
-  remove(@Param("id") id: string) {
+  @Delete('deleteById/:id')
+  remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
 
   // -------------------- LOGIN --------------------
-  @Post("login")
+  @Post('login')
   login(@Body() data: any) {
-    console.log("Login attempt:", data);
+    console.log('Login attempt:', data);
     return this.userService.login(data);
   }
- 
+
+  //----------------------App version -------------------
+
+  @Get('app-info/:data')
+  app_versionTaken(@Param('data') data: any) {
+    log('platform', data);
+    return this.userService.app_versionTaken(data);
+  }
+
+  @Get('app-version')
+  getAll() {
+    return this.userService.getAppVersion();
+  }
+
+  @Post('app-version')
+  createAppVersion(@Body() data: any) {
+    log(data)
+    return this.userService.CreateAppVersion(data);
+  }
+
+  @Patch('app-version/:id')
+  updateAppVersion(@Body() data: any, @Param('id') id: number) {
+    return this.userService.updateAppVersion(+id, data);
+  }
+
+  @Delete('app-version/:id')
+  deleteAppVersion(@Param('id') id: number) {
+    return this.userService.deleteAppVersion(+id);
+  }
   // -------------------- LOGOUT --------------------
-   
+
   @Post('logout/:hospital_Id/:id')
-  async logout(@Param("hospital_Id") hospital_Id: string, @Param("id") id: string) {
+  async logout(
+    @Param('hospital_Id') hospital_Id: string,
+    @Param('id') id: string,
+  ) {
     log('Logout request received:', id);
     // req.user is set by JWT AuthGuard
-    const userId = id; 
+    const userId = id;
     return this.userService.logout(userId, Number(hospital_Id));
   }
-//  @Post('force-logout')
-//   forceLogout(@Body() data: any) {
-//     return this.userService.forceLogout(data);
-//   }
-
-
+  //  @Post('force-logout')
+  //   forceLogout(@Body() data: any) {
+  //     return this.userService.forceLogout(data);
+  //   }
 
   // -------------------- PROTECTED ROUTE EXAMPLE --------------------
   @UseGuards(JwtAuthGuard)
-  @Get("profile")
+  @Get('profile')
   getProfile(@Request() req) {
-    return { message: "Protected data", user: req.user };
+    return { message: 'Protected data', user: req.user };
   }
 
   @Post('CheckOldPassword/:id')
-async checkOldPassword(@Param('id') id: string, @Body() body: any) {
-  const { oldPassword } = body;
+  async checkOldPassword(@Param('id') id: string, @Body() body: any) {
+    const { oldPassword } = body;
 
-  if (!oldPassword) throw new BadRequestException('Old password required');
+    if (!oldPassword) throw new BadRequestException('Old password required');
 
-  const valid = await this.userService.verifyOldPassword(+id, oldPassword);
+    const valid = await this.userService.verifyOldPassword(+id, oldPassword);
 
-  // ✅ return JSON with boolean
-  return { result: valid };
-}
-
+    // ✅ return JSON with boolean
+    return { result: valid };
+  }
 
   @Patch('ChangePassword/:id')
   async changePassword(@Param('id') id: string, @Body() body: any) {
@@ -136,7 +164,7 @@ async checkOldPassword(@Param('id') id: string, @Body() body: any) {
     return this.userService.updatePassword(+id, newPassword);
   }
 
-@Get('GetByUserId/:userId/:hospital_Id')
+  @Get('GetByUserId/:userId/:hospital_Id')
   async getByUserId(
     @Param('userId') userId: string,
     @Param('hospital_Id') hospital_Id: string,
@@ -144,5 +172,4 @@ async checkOldPassword(@Param('id') id: string, @Body() body: any) {
     // ✅ Must return the service result
     return await this.userService.getByUserId(userId, Number(hospital_Id));
   }
-
 }

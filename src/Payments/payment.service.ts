@@ -374,7 +374,13 @@ export class PaymentService {
     return orderedPayments;
   }
 
-  async findPendingPaymentsByHospitalNew(hospitalId: number) {
+  async findPendingPaymentsByHospitalNew(
+    hospitalId: number,
+    isCtscan: boolean,
+  ) {
+    log('isCtscan', isCtscan);
+    const isCtScanBool = String(isCtscan) === 'true';
+    log('isCtScanBool',isCtScanBool);
     //   const sevenDaysAgo = new Date();
     // sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const threeDaysAgoStr = dayjs()
@@ -391,12 +397,13 @@ export class PaymentService {
       where: {
         hospital_Id: Number(hospitalId),
 
-        Consultation: {},
-        TestingAndScanningPatients: {
-          none: {
-            type: 'CT-SCAN',
+        ...(!isCtScanBool && {
+          TestingAndScanningPatients: {
+            none: { type: 'CT-SCAN' },
           },
-        },
+        }),
+
+        Consultation: {},
 
         type: {
           notIn: ['MEDICINETONICINJECTIONFEES', 'SUPPLEMENTARYFEE'],

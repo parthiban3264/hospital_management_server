@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
+import { log } from 'console';
 
 @Controller('payments')
 export class PaymentController {
@@ -44,9 +45,10 @@ export class PaymentController {
   async getPendingPayments(@Param('hospitalId') hospitalId: number) {
     return this.service.findPendingPaymentsByHospital(hospitalId);
   }
-  @Get('all/pendingFee/:hospitalId')
-  async getPendingPayment(@Param('hospitalId') hospitalId: number) {
-    return this.service.findPendingPaymentsByHospitalNew(Number(hospitalId));
+  @Get('all/pendingFee/:hospitalId/:isCtscan')
+  async getPendingPayment(@Param('hospitalId') hospitalId: number,@Param('isCtscan') isCtscan:boolean) {
+    
+    return this.service.findPendingPaymentsByHospitalNew(Number(hospitalId),isCtscan);
   }
 
   @Get('all/ct-scan/pendingFee/:hospitalId')
