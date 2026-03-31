@@ -27,6 +27,11 @@ export class SubmitTicketController {
     return this.service.findOne(Number(id));
   }
 
+  @Patch(':id')
+  update(@Param('id') id: number, @Body() updateDto: any) {
+    return this.service.update(Number(id), updateDto);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(Number(id));

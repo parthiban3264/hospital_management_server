@@ -107,6 +107,19 @@ const ticket = await prisma.submitTicket.create({
     return ticket;
   }
 
+  async update(id: number, dto : any) {
+    await this.findOne(id);
+    return prisma.submitTicket.update({
+      where: { id },
+      data: {
+        description: dto.description,
+        status: dto.status,
+        updated_at: new Date(),
+        // Add other fields if needed
+      },
+    });
+  }
+
 
   // Delete a ticket
   async remove(id: number) {

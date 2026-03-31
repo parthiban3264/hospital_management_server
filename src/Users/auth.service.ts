@@ -94,35 +94,103 @@ export class AuthService {
   //   });
   //    return { status: 'success', message: 'Password updated successfully' };
   // }
-  async adminResetPassword(hospitalId: number, userId: number) {
-    log('work', userId);
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-        hospital_Id: hospitalId,
-      },
-    });
 
-    if (!user) throw new NotFoundException('User not found');
+  async adminResetPassword(
+  hospitalId: number,
+  userId: number,
+  password: boolean,
+  logout: boolean
+) {
+  log('work', userId);
 
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+      hospital_Id: hospitalId,
+    },
+  });
+
+  if (!user) throw new NotFoundException('User not found');
+
+  // 🔹 Prepare dynamic update object
+  const updateData: any = {};
+
+  // ✅ If password reset selected
+  if (password) {
     const newPassword = 'abc123';
     const hashed = await bcrypt.hash(newPassword, 12);
-    log('hased', hashed);
-
-    const users = await prisma.user.update({
-      where: {
-        id: userId, // ✅ works correctly now
-        hospital_Id: hospitalId,
-      },
-      data: {
-        password: hashed,
-      },
-    });
-    log('users', users);
-
-    return {
-      status: 'success',
-      message: 'Password updated successfully',
-    };
+    updateData.password = hashed;
   }
+
+  // ✅ If logout selected
+  if (logout) {
+    updateData.isLoggedIn = false;
+    updateData.device_Id = null;
+  }
+
+  // ❌ If nothing selected
+  if (Object.keys(updateData).length === 0) {
+    throw new BadRequestException('No action selected');
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: userId,
+      hospital_Id: hospitalId,
+    },
+    data: updateData, // ✅ dynamic update
+  });
+
+  log('updatedUser', updatedUser);
+
+  // return {
+  //   status: 'success',
+  //   message: 'Action completed successfully',
+  // };
+  return {
+  status: 'success',
+  message: password && logout
+    ? 'Password reset & logged out from all devices'
+    : password
+    ? 'Password reset successfully'
+    : 'Logged out from all devices',
+};
+}
+
+
+  // async adminResetPassword(hospitalId: number, userId: number,password: boolean, logout: boolean) {
+  //   log('work', userId);
+  //   const user = await prisma.user.findUnique({
+  //     where: {
+  //       id: userId,
+  //       hospital_Id: hospitalId,
+  //     },
+  //   });
+
+  //   if (!user) throw new NotFoundException('User not found');
+
+  //   const newPassword = 'abc123';
+  //   const hashed = await bcrypt.hash(newPassword, 12);
+  //   log('hased', hashed);
+
+  //   const users = await prisma.user.update({
+  //     where: {
+  //       id: userId, // ✅ works correctly now
+  //       hospital_Id: hospitalId,
+  //     },
+  //     data: {
+  //       password: hashed,
+  //       isLoggedIn: false, // ✅ set isFirstLogin to true
+  //       device_Id: null, // ✅ clear device_Id to force logout from all devices
+  //     },
+  //   });
+  //   log('users', users);
+
+  //   return {
+  //     status: 'success',
+  //     message: 'Password updated successfully',
+  //   };
+  // }
+
+
 }
